@@ -1,0 +1,15 @@
+targets:
+  $default:
+    builders:
+      bdd_flutter|bdd_test_builder:
+        options:
+          generate_widget_tests: true
+
+builders:
+  bdd_flutter|bdd_test_builder:
+    import: "package:bdd_flutter/src/builder.dart"
+    builder_factories: ["bddTestBuilder"]
+    build_extensions:
+      { ".feature": [".bdd.dart", ".scenario.dart", "_test.dart"] }
+    auto_apply: dependents
+    build_to: source
