@@ -1,3 +1,4 @@
+/// Decorator enum for the feature file
 enum DecoratorEnum {
   unitTest('@unitTest'),
   widgetTest('@widgetTest');

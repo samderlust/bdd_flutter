@@ -7,7 +7,9 @@ import 'package:build/build.dart';
 import 'helpers/scenario_file_builder.dart';
 import 'helpers/test_file_builder.dart';
 
+/// A builder that generates test files from feature files
 class BDDTestBuilder implements Builder {
+  /// Whether to generate widget tests
   final bool generateWidgetTests;
 
   BDDTestBuilder({this.generateWidgetTests = true});

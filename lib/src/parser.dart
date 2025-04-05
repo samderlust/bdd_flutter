@@ -6,6 +6,7 @@ import 'domain/feature.dart';
 import 'domain/scenario.dart';
 import 'domain/step.dart';
 
+/// Parse a feature file and return a Feature object
 Feature parseFeatureFile(String content, bool generateWidgetTests) {
   final lines = content.split('\n').map((line) => line.trim()).toList();
   String? featureName;
