@@ -1,0 +1,171 @@
+import 'package:bdd_flutter/src/domain/decorator_enum.dart';
+import 'package:build/build.dart';
+
+import '../domain/feature.dart';
+import '../domain/scenario.dart';
+import '../domain/step.dart';
+
+class BDDFeatureBuilder {
+  final bool generateWidgetTests;
+
+  BDDFeatureBuilder({required this.generateWidgetTests});
+
+  /// Parse a feature file and return a Feature object
+  Future<Feature> build(BuildStep buildStep) async {
+    final inputId = buildStep.inputId;
+    final featureContent = await buildStep.readAsString(inputId);
+    return parseFeature(featureContent);
+  }
+
+  Feature parseFeature(String featureContent) {
+    final lines =
+        featureContent.split('\n').map((line) => line.trim()).toList();
+    String? featureName;
+    List<Scenario> scenarios = [];
+    List<Step> currentSteps = [];
+    String? currentScenarioName;
+    List<Map<String, String>>? currentExamples;
+    List<String>? exampleHeaders;
+    Set<DecoratorEnum> featureDecorators = {};
+    Set<DecoratorEnum> currentScenarioDecorators = {};
+
+    Map<int, Set<DecoratorEnum>> scenarioDecoratorsMap = {};
+
+    for (var i = 0; i < lines.length; i++) {
+      final line = lines[i];
+      if (line.startsWith('Feature:')) {
+        featureName = line.substring('Feature:'.length).trim();
+      } else if (line.startsWith('@')) {
+        if (featureName == null) {
+          featureDecorators.add(DecoratorEnum.fromText(line));
+        } else {
+          currentScenarioDecorators.add(DecoratorEnum.fromText(line));
+        }
+      } else if (line.startsWith('Scenario:')) {
+        // Store decorators for the current scenario before adding it
+        if (currentScenarioName != null && currentSteps.isNotEmpty) {
+          Set<DecoratorEnum> tempDecorators = {};
+          // Get decorators for the previous scenario
+          if (scenarioDecoratorsMap[scenarios.length] != null) {
+            tempDecorators = scenarioDecoratorsMap[scenarios.length]!;
+          }
+          final proccessedDecorators = _processDecorators(
+            tempDecorators,
+            featureDecorators,
+          );
+          scenarios.add(
+            Scenario(
+              currentScenarioName,
+              List.from(currentSteps),
+              examples: currentExamples,
+              decorators: proccessedDecorators,
+            ),
+          );
+          currentSteps.clear();
+        }
+
+        // Store decorators for the new scenario
+        scenarioDecoratorsMap[scenarios.length] = {
+          ...currentScenarioDecorators
+        };
+        currentScenarioDecorators.clear();
+
+        // if currentScenarioDecoratorsIndex == 1 which means the first scenario
+        // here is the safe place to process the feature decorators for once
+        if (scenarios.isEmpty) {
+          featureDecorators.validate();
+          if (generateWidgetTests && !featureDecorators.hasUnitTest) {
+            featureDecorators.add(DecoratorEnum.widgetTest);
+          } else if (!generateWidgetTests && !featureDecorators.hasWidgetTest) {
+            featureDecorators.add(DecoratorEnum.unitTest);
+          }
+        }
+        currentScenarioName = line.substring('Scenario:'.length).trim();
+        currentExamples = null;
+        exampleHeaders = null;
+      } else if (line.startsWith('Given') ||
+          line.startsWith('When') ||
+          line.startsWith('Then')) {
+        final keyword = line.split(' ')[0];
+        final text = line.substring(keyword.length).trim();
+        currentSteps.add(Step(keyword, text));
+      } else if (line.startsWith('Examples:')) {
+        currentExamples = [];
+        exampleHeaders = null;
+        // Skip the header row
+        i++;
+        if (i < lines.length) {
+          final headerLine = lines[i];
+          if (headerLine.startsWith('|')) {
+            exampleHeaders = headerLine
+                .split('|')
+                .map((cell) => cell.trim())
+                .where((cell) => cell.isNotEmpty)
+                .toList();
+          }
+        }
+      } else if (line.startsWith('|') &&
+          currentExamples != null &&
+          exampleHeaders != null) {
+        final cells = line
+            .split('|')
+            .map((cell) => cell.trim())
+            .where((cell) => cell.isNotEmpty)
+            .toList();
+
+        if (cells.length == exampleHeaders.length) {
+          currentExamples.add(Map.fromIterables(exampleHeaders, cells));
+        }
+      }
+    }
+
+    if (currentScenarioName != null && currentSteps.isNotEmpty) {
+      final proccessedDecorators = _processDecorators(
+        scenarioDecoratorsMap[scenarios.length] ?? {},
+        featureDecorators,
+      );
+
+      final scenario = Scenario(
+        currentScenarioName,
+        currentSteps,
+        examples: currentExamples,
+        decorators: proccessedDecorators,
+      );
+      scenarios.add(scenario);
+      currentScenarioDecorators.clear();
+    }
+
+    if (featureName == null) {
+      throw Exception('No Feature defined in the file');
+    }
+
+    return Feature(
+      featureName,
+      scenarios,
+      decorators: {...featureDecorators}..validate(),
+    );
+  }
+
+  /// pass the decorators from the feature and the scenario
+  /// and return the decorators that should be used for the scenario
+  /// decorators on the scenario will override the decorators on the feature
+  Set<DecoratorEnum> _processDecorators(
+    Set<DecoratorEnum> decorators,
+    Set<DecoratorEnum> featureDecorators,
+  ) {
+    decorators.validate();
+    // if the feature has @unitTest and the scenario has @widgetTest,
+    // then remove the @unitTest from the scenario decorators
+    if (featureDecorators.hasUnitTest && decorators.hasWidgetTest) {
+      return {...featureDecorators, ...decorators}
+        ..remove(DecoratorEnum.unitTest);
+    }
+    // if the feature has @widgetTest and the scenario has @unitTest,
+    // then remove the @widgetTest from the scenario decorators
+    if (featureDecorators.hasWidgetTest && decorators.hasUnitTest) {
+      return {...featureDecorators, ...decorators}
+        ..remove(DecoratorEnum.widgetTest);
+    }
+    return {...featureDecorators, ...decorators};
+  }
+}

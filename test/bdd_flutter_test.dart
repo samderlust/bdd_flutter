@@ -1,8 +1,9 @@
+import 'package:bdd_flutter/src/bdd_builders/bdd_feature_builder.dart';
 import 'package:bdd_flutter/src/domain/decorator_enum.dart';
-import 'package:bdd_flutter/src/parser.dart';
 import 'package:test/test.dart';
 
 void main() {
+  final featureBuilder = BDDFeatureBuilder(generateWidgetTests: true);
   group('Parse feature file with default options', () {
     test('widget test by default', () {
       const featureContent = '''
@@ -16,7 +17,7 @@ Feature: Comms Permissions
             | true           | shows the create new DM chat button |
             | false          | hides the create new DM chat button |
     ''';
-      final feature = parseFeatureFile(featureContent, true);
+      final feature = featureBuilder.parseFeature(featureContent);
       expect(feature.name, 'Comms Permissions');
       expect(feature.scenarios.length, 1);
       final scenario = feature.scenarios.first;
@@ -35,7 +36,7 @@ Feature: Comms Permissions
         When user attempts to create a direct channel
         Then <expected_result>
     ''';
-      final feature = parseFeatureFile(featureContent, true);
+      final feature = featureBuilder.parseFeature(featureContent);
       expect(feature.name, 'Comms Permissions');
       expect(feature.scenarios.length, 1);
       expect(feature.decorators, contains(DecoratorEnum.unitTest));
@@ -51,7 +52,7 @@ Feature: Comms Permissions
         When user attempts to create a direct channel
         Then <expected_result>
     ''';
-      final feature = parseFeatureFile(featureContent, true);
+      final feature = featureBuilder.parseFeature(featureContent);
       expect(feature.name, 'Comms Permissions');
       expect(feature.scenarios.length, 1);
       expect(feature.decorators, contains(DecoratorEnum.unitTest));

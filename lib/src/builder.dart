@@ -1,18 +1,16 @@
 // lib/builder.dart
 import 'dart:async';
 
-import 'package:bdd_flutter/src/parser.dart';
+import 'package:bdd_flutter/src/domain/bdd_options.dart';
 import 'package:build/build.dart';
 
-import 'helpers/scenario_file_builder.dart';
-import 'helpers/test_file_builder.dart';
+import 'bdd_builders/bdd_factory.dart';
 
 /// A builder that generates test files from feature files
 class BDDTestBuilder implements Builder {
-  /// Whether to generate widget tests
-  final bool generateWidgetTests;
+  final BDDOptions options;
 
-  BDDTestBuilder({this.generateWidgetTests = true});
+  BDDTestBuilder({required this.options});
 
   @override
   final buildExtensions = const {
@@ -21,29 +19,11 @@ class BDDTestBuilder implements Builder {
 
   @override
   Future<void> build(BuildStep buildStep) async {
-    final inputId = buildStep.inputId;
-    final scenarioOutputId = inputId.changeExtension('_scenarios.dart');
-    final testOutputId = inputId.changeExtension('_test.dart');
+    final factory = BDDFactory.create(options);
 
-    final featureContent = await buildStep.readAsString(inputId);
-    final feature = parseFeatureFile(featureContent, generateWidgetTests);
+    final feature = await factory.featureBuilder.build(buildStep);
 
-    final scenarioContent = await buildScenarioFile(
-      feature: feature,
-      generateWidgetTests: generateWidgetTests,
-    );
-    await buildStep.writeAsString(scenarioOutputId, scenarioContent);
-
-    final testContent = await buildTestFile(
-      feature: feature,
-      generateWidgetTests: generateWidgetTests,
-    );
-    await buildStep.writeAsString(testOutputId, testContent);
+    await factory.scenarioBuilder.build(buildStep, feature);
+    await factory.testFileBuilder.build(buildStep, feature);
   }
-}
-
-Builder bddTestBuilder(BuilderOptions options) {
-  final config = options.config;
-  final generateWidgetTests = config['generate_widget_tests'] as bool? ?? true;
-  return BDDTestBuilder(generateWidgetTests: generateWidgetTests);
 }
