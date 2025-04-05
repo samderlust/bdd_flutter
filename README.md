@@ -1,6 +1,6 @@
 # BDD Flutter
 
-A Flutter package that helps you write BDD (Behavior Driven Development) tests using Gherkin syntax.
+A powerful Flutter package that simplifies Behavior Driven Development (BDD) by automatically generating test files from Gherkin feature files. Write expressive tests in plain English using Given/When/Then scenarios and let BDD Flutter handle the boilerplate code generation.
 
 ## Features
 
