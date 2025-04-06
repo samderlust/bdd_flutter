@@ -1,5 +1,9 @@
 class BDDOptions {
   final bool generateWidgetTests;
+  final bool enableReporter;
 
-  BDDOptions({required this.generateWidgetTests});
+  BDDOptions({
+    this.generateWidgetTests = true,
+    this.enableReporter = false,
+  });
 }

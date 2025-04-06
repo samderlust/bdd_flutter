@@ -2,6 +2,8 @@ import 'package:bdd_flutter/src/builder.dart';
 import 'package:bdd_flutter/src/domain/bdd_options.dart';
 import 'package:build/build.dart';
 
+export 'src/feature/report/test_reporter.dart';
+
 /// A Flutter package for Behavior-Driven Development (BDD) testing.
 ///
 /// This package allows you to write tests in a BDD style using feature files
@@ -60,6 +62,10 @@ import 'package:build/build.dart';
 Builder bddTestBuilder(BuilderOptions options) {
   final config = options.config;
   final generateWidgetTests = config['generate_widget_tests'] as bool? ?? true;
-  final bddOptions = BDDOptions(generateWidgetTests: generateWidgetTests);
+  final enableReporter = config['enable_reporter'] as bool? ?? false;
+  final bddOptions = BDDOptions(
+    generateWidgetTests: generateWidgetTests,
+    enableReporter: enableReporter,
+  );
   return BDDTestBuilder(options: bddOptions);
 }
