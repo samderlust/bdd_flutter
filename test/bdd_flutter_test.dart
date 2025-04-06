@@ -1,5 +1,5 @@
 import 'package:bdd_flutter/src/bdd_builders/bdd_feature_builder.dart';
-import 'package:bdd_flutter/src/domain/decorator_enum.dart';
+import 'package:bdd_flutter/src/domain/decorator.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -21,7 +21,7 @@ Feature: Comms Permissions
       expect(feature.name, 'Comms Permissions');
       expect(feature.scenarios.length, 1);
       final scenario = feature.scenarios.first;
-      expect(scenario.decorators, contains(DecoratorEnum.widgetTest));
+      expect(scenario.decorators, contains(BDDDecorator.widgetTest()));
 
       expect(scenario.steps.length, 3);
       expect(scenario.examples?.length, 2);
@@ -39,8 +39,9 @@ Feature: Comms Permissions
       final feature = featureBuilder.parseFeature(featureContent);
       expect(feature.name, 'Comms Permissions');
       expect(feature.scenarios.length, 1);
-      expect(feature.decorators, contains(DecoratorEnum.unitTest));
-      expect(feature.scenarios[0].decorators, contains(DecoratorEnum.unitTest));
+      expect(feature.decorators, contains(BDDDecorator.unitTest()));
+      expect(
+          feature.scenarios[0].decorators, contains(BDDDecorator.unitTest()));
     });
     test('scenario decorator override feature decorator', () {
       const featureContent = '''
@@ -55,10 +56,10 @@ Feature: Comms Permissions
       final feature = featureBuilder.parseFeature(featureContent);
       expect(feature.name, 'Comms Permissions');
       expect(feature.scenarios.length, 1);
-      expect(feature.decorators, contains(DecoratorEnum.unitTest));
+      expect(feature.decorators, contains(BDDDecorator.unitTest()));
       expect(
         feature.scenarios.first.decorators,
-        contains(DecoratorEnum.widgetTest),
+        contains(BDDDecorator.widgetTest()),
       );
     });
   });
