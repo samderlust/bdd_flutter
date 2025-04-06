@@ -5,13 +5,17 @@ class IncrementScenario {
     // TODO: Implement Given I have a counter with value 0
   }
 
-  static Future<void> iIncrementTheCounterBy(WidgetTester tester, dynamic value) async {
+  static Future<void> iIncrementTheCounterBy(
+    WidgetTester tester,
+    dynamic value,
+  ) async {
     // TODO: Implement When I increment the counter by <value>
   }
 
-  static Future<void> theCounterShouldHaveValue(WidgetTester tester, dynamic expected_value) async {
+  static Future<void> theCounterShouldHaveValue(
+    WidgetTester tester,
+    dynamic expected_value,
+  ) async {
     // TODO: Implement Then the counter should have value <expected_value>
   }
-
 }
-
