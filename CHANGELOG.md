@@ -3,6 +3,7 @@
 - add `@disableReporter` and `@enableReporter` decorators
 - fix build_runner error
 - improve documentation
+- change log to stdout
 - update readme
 
 ## 0.1.1
