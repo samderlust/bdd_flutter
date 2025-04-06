@@ -1,6 +1,7 @@
 import 'package:bdd_flutter/src/domain/decorator_enum.dart';
 import 'package:build/build.dart';
 
+import '../domain/decorator.dart';
 import '../domain/feature.dart';
 import '../domain/scenario.dart';
 import '../domain/step.dart';
@@ -26,10 +27,10 @@ class BDDFeatureBuilder {
     String? currentScenarioName;
     List<Map<String, String>>? currentExamples;
     List<String>? exampleHeaders;
-    Set<DecoratorEnum> featureDecorators = {};
-    Set<DecoratorEnum> currentScenarioDecorators = {};
+    Set<BDDDecorator> featureDecorators = {};
+    Set<BDDDecorator> currentScenarioDecorators = {};
 
-    Map<int, Set<DecoratorEnum>> scenarioDecoratorsMap = {};
+    Map<int, Set<BDDDecorator>> scenarioDecoratorsMap = {};
 
     for (var i = 0; i < lines.length; i++) {
       final line = lines[i];
@@ -37,14 +38,14 @@ class BDDFeatureBuilder {
         featureName = line.substring('Feature:'.length).trim();
       } else if (line.startsWith('@')) {
         if (featureName == null) {
-          featureDecorators.add(DecoratorEnum.fromText(line));
+          featureDecorators.add(BDDDecorator.fromString(line));
         } else {
-          currentScenarioDecorators.add(DecoratorEnum.fromText(line));
+          currentScenarioDecorators.add(BDDDecorator.fromString(line));
         }
       } else if (line.startsWith('Scenario:')) {
         // Store decorators for the current scenario before adding it
         if (currentScenarioName != null && currentSteps.isNotEmpty) {
-          Set<DecoratorEnum> tempDecorators = {};
+          Set<BDDDecorator> tempDecorators = {};
           // Get decorators for the previous scenario
           if (scenarioDecoratorsMap[scenarios.length] != null) {
             tempDecorators = scenarioDecoratorsMap[scenarios.length]!;
@@ -75,9 +76,9 @@ class BDDFeatureBuilder {
         if (scenarios.isEmpty) {
           featureDecorators.validate();
           if (generateWidgetTests && !featureDecorators.hasUnitTest) {
-            featureDecorators.add(DecoratorEnum.widgetTest);
+            featureDecorators.add(BDDDecorator.widgetTest());
           } else if (!generateWidgetTests && !featureDecorators.hasWidgetTest) {
-            featureDecorators.add(DecoratorEnum.unitTest);
+            featureDecorators.add(BDDDecorator.unitTest());
           }
         }
         currentScenarioName = line.substring('Scenario:'.length).trim();
@@ -149,22 +150,22 @@ class BDDFeatureBuilder {
   /// pass the decorators from the feature and the scenario
   /// and return the decorators that should be used for the scenario
   /// decorators on the scenario will override the decorators on the feature
-  Set<DecoratorEnum> _processDecorators(
-    Set<DecoratorEnum> decorators,
-    Set<DecoratorEnum> featureDecorators,
+  Set<BDDDecorator> _processDecorators(
+    Set<BDDDecorator> decorators,
+    Set<BDDDecorator> featureDecorators,
   ) {
     decorators.validate();
     // if the feature has @unitTest and the scenario has @widgetTest,
     // then remove the @unitTest from the scenario decorators
     if (featureDecorators.hasUnitTest && decorators.hasWidgetTest) {
       return {...featureDecorators, ...decorators}
-        ..remove(DecoratorEnum.unitTest);
+        ..removeWhere((e) => e.isUnitTest);
     }
     // if the feature has @widgetTest and the scenario has @unitTest,
     // then remove the @widgetTest from the scenario decorators
     if (featureDecorators.hasWidgetTest && decorators.hasUnitTest) {
       return {...featureDecorators, ...decorators}
-        ..remove(DecoratorEnum.widgetTest);
+        ..remove(BDDDecorator.widgetTest);
     }
     return {...featureDecorators, ...decorators};
   }

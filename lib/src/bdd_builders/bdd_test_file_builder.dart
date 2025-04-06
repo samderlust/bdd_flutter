@@ -23,7 +23,7 @@ class BDDTestFileBuilder {
     buffer.writeln("  group('${feature.name}', () {");
 
     for (var scenario in feature.scenarios) {
-      final className = scenario.name.toClassName;
+      final className = scenario.className;
 
       final isUnitTest = scenario.isUnitTest;
 

@@ -7,7 +7,7 @@ targets:
 
 builders:
   bdd_flutter|bdd_test_builder:
-    import: "package:bdd_flutter/src/builder.dart"
+    import: "package:bdd_flutter/bdd_flutter.dart"
     builder_factories: ["bddTestBuilder"]
     build_extensions:
       { ".feature": [".bdd.dart", ".scenario.dart", "_test.dart"] }

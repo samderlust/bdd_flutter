@@ -23,8 +23,7 @@ class ScenariosFileBuilder {
     for (var scenario in feature.scenarios) {
       final isUnitTest = scenario.isUnitTest;
 
-      final className = scenario.name.toClassName;
-      buffer.writeln("class $className {");
+      buffer.writeln("class ${scenario.className} {");
 
       // Create static methods for each step in the scenario
       for (var step in scenario.steps) {

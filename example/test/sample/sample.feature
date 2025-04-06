@@ -4,7 +4,7 @@ Feature: Sample
     When I run the sample feature
     Then I should see the sample feature
 
-
+  @className("CounterCustomName")
   Scenario: Counter
     Given I have a counter
     When I increment the counter
