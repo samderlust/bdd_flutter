@@ -1,4 +1,6 @@
-import 'decorator_enum.dart';
+import 'package:bdd_flutter/src/extensions/string_x.dart';
+
+import 'decorator.dart';
 import 'step.dart';
 
 /// A scenario is a collection of steps
@@ -13,7 +15,7 @@ class Scenario {
   final List<Map<String, String>>? examples;
 
   /// The decorators of the scenario
-  final Set<DecoratorEnum> decorators;
+  final Set<BDDDecorator> decorators;
 
   Scenario(this.name, this.steps, {this.examples, this.decorators = const {}});
 
@@ -26,4 +28,11 @@ class Scenario {
 extension ScenarioX on Scenario {
   bool get isUnitTest => decorators.hasUnitTest;
   bool get isWidgetTest => decorators.hasWidgetTest;
+
+  String get className {
+    if (decorators.hasClassName) {
+      return decorators.firstWhere((e) => e.isClassName).value!;
+    }
+    return name.toClassName;
+  }
 }

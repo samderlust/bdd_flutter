@@ -1,5 +1,4 @@
-import 'package:bdd_flutter/src/domain/decorator_enum.dart';
-
+import 'decorator.dart';
 import 'scenario.dart';
 
 /// A feature is a collection of scenarios
@@ -11,7 +10,7 @@ class Feature {
   final List<Scenario> scenarios;
 
   /// The decorators of the feature
-  final Set<DecoratorEnum> decorators;
+  final Set<BDDDecorator> decorators;
 
   Feature(this.name, this.scenarios, {this.decorators = const {}});
 }

@@ -72,8 +72,9 @@ by default, the builder will generate widget tests. By setting `generate_widget_
 
 You can use the following decorators to control the test generation:
 
-- `@unitTest`: Generate a unit test (ignore build.yaml config)
-- `@widgetTest`: Generate a widget test (ignore build.yaml config)
+- `@unitTest`: Generate a unit test (ignore build.yaml config) - (apply to feature, scenario)
+- `@widgetTest`: Generate a widget test (ignore build.yaml config) - (apply to feature, scenario)
+- `@className`: Generate a class name for the scenario - (apply to scenario)
 
 decorators can be used at the feature, scenario level. The lower the level, the more specific the decorator and it will override the upper level decorator.
 

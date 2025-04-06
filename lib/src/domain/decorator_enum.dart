@@ -1,11 +1,13 @@
 /// Decorator enum for the feature file
 enum DecoratorEnum {
-  unitTest('@unitTest'),
-  widgetTest('@widgetTest');
+  unitTest('@unitTest', 'unitTest'),
+  widgetTest('@widgetTest', 'widgetTest'),
+  className('@className', null);
 
-  const DecoratorEnum(this.text);
+  const DecoratorEnum(this.text, this.value);
 
   final String text;
+  final String? value;
 
   static DecoratorEnum fromText(String text) {
     return _enumMapper(text.trim());
@@ -13,14 +15,12 @@ enum DecoratorEnum {
 }
 
 DecoratorEnum _enumMapper(String text) {
-  switch (text) {
-    case '@unitTest':
-      return DecoratorEnum.unitTest;
-    case '@widgetTest':
-      return DecoratorEnum.widgetTest;
-    default:
-      throw Exception('Invalid decorator: $text');
-  }
+  return switch (text) {
+    '@unitTest' => DecoratorEnum.unitTest,
+    '@widgetTest' => DecoratorEnum.widgetTest,
+    var t when t.contains("@className") => DecoratorEnum.className,
+    _ => throw Exception('Invalid decorator: $text')
+  };
 }
 
 extension DecoratorSetX on Set<DecoratorEnum> {

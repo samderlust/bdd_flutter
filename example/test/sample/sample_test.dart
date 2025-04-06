@@ -9,9 +9,9 @@ void main() {
       await SampleScenario.iShouldSeeTheSampleFeature(tester);
     });
     testWidgets('Counter', (tester) async {
-      await CounterScenario.iHaveACounter(tester);
-      await CounterScenario.iIncrementTheCounter(tester);
-      await CounterScenario.iShouldSeeTheCounterIncremented(tester);
+      await CounterCustomName.iHaveACounter(tester);
+      await CounterCustomName.iIncrementTheCounter(tester);
+      await CounterCustomName.iShouldSeeTheCounterIncremented(tester);
     });
     test('Counter with examples', () async {
       await CounterWithExamplesScenario.iHaveACounter();
