@@ -23,4 +23,10 @@ extension StringX on String {
   String get toClassName {
     return "${name}Scenario";
   }
+
+  String get snakeCaseToCamelCase {
+    return split('_')
+        .map((word) => word[0].toLowerCase() + word.substring(1).toLowerCase())
+        .join('');
+  }
 }

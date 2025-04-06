@@ -10,6 +10,8 @@ class BDDDecorator {
       BDDDecorator(DecoratorType.enableReporter, null);
   factory BDDDecorator.disableReporter() =>
       BDDDecorator(DecoratorType.disableReporter, null);
+  factory BDDDecorator.className(String name) =>
+      BDDDecorator(DecoratorType.className, name);
 
   static BDDDecorator fromString(String text) {
     return switch (text) {
@@ -63,13 +65,6 @@ extension BDDDecoratorSetX on Set<BDDDecorator> {
   bool get hasClassName => any((e) => e.isClassName);
   bool get hasEnableReporter => any((e) => e.isEnableReporter);
   bool get hasDisableReporter => any((e) => e.isDisableReporter);
-  void validate() {
-    if (hasUnitTest && hasWidgetTest) {
-      throw Exception(
-        'Cannot have both @unitTest and @widgetTest decorators at the same time',
-      );
-    }
-  }
 }
 
 String? _extractClassNameValue(String text) {

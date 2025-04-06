@@ -59,7 +59,7 @@ class ScenariosFileBuilder {
 
     for (var match in matches) {
       final paramName = match.group(1)!;
-      params.add('dynamic $paramName');
+      params.add('dynamic ${paramName.snakeCaseToCamelCase}');
     }
 
     return params.join(', ');

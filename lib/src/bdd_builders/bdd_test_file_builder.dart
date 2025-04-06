@@ -95,13 +95,12 @@ class BDDTestFileBuilder {
           for (var step in scenario.steps) {
             if (step.keyword != 'Given') {
               // Skip Given steps as they're already called
-              final methodName = step.text.toMethodName;
               final params = <String>[];
 
               // Extract parameters from the example values
               example.forEach((key, value) {
                 if (step.text.contains('<$key>')) {
-                  params.add("'$value'");
+                  params.add("'${value.snakeCaseToCamelCase}'");
                 }
               });
 

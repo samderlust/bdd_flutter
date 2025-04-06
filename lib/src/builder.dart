@@ -27,3 +27,14 @@ class BDDTestBuilder implements Builder {
     await factory.testFileBuilder.build(buildStep, feature);
   }
 }
+
+Builder bddTestBuilder(BuilderOptions options) {
+  final config = options.config;
+  final generateWidgetTests = config['generate_widget_tests'] as bool? ?? true;
+  final enableReporter = config['enable_reporter'] as bool? ?? false;
+  final bddOptions = BDDOptions(
+    generateWidgetTests: generateWidgetTests,
+    enableReporter: enableReporter,
+  );
+  return BDDTestBuilder(options: bddOptions);
+}

@@ -5,6 +5,7 @@ import '../domain/decorator.dart';
 import '../domain/feature.dart';
 import '../domain/scenario.dart';
 import '../domain/step.dart';
+import '../domain/validators/decorators_validator.dart';
 
 class BDDFeatureBuilder {
   final BDDOptions options;
@@ -15,6 +16,7 @@ class BDDFeatureBuilder {
   Future<Feature> build(BuildStep buildStep) async {
     final inputId = buildStep.inputId;
     final featureContent = await buildStep.readAsString(inputId);
+    print("start parsing feature : ${inputId}");
     return parseFeature(featureContent);
   }
 
@@ -71,16 +73,13 @@ class BDDFeatureBuilder {
         };
         currentScenarioDecorators.clear();
 
-        // if currentScenarioDecoratorsIndex == 1 which means the first scenario
+        // if scenarios.isEmpty, which means the first scenario
         // here is the safe place to process the feature decorators for once
         if (scenarios.isEmpty) {
-          featureDecorators.validate();
-          if (options.generateWidgetTests && !featureDecorators.hasUnitTest) {
-            featureDecorators.add(BDDDecorator.widgetTest());
-          } else if (!options.generateWidgetTests &&
-              !featureDecorators.hasWidgetTest) {
-            featureDecorators.add(BDDDecorator.unitTest());
-          }
+          featureDecorators = DecoratorsValidator.getValidFeatureDecorator(
+            featureDecorators,
+            options,
+          );
         }
         currentScenarioName = line.substring('Scenario:'.length).trim();
         currentExamples = null;
@@ -141,15 +140,16 @@ class BDDFeatureBuilder {
       throw Exception('No Feature defined in the file');
     }
 
-    if (options.enableReporter && !featureDecorators.hasEnableReporter) {
-      featureDecorators.add(BDDDecorator.enableReporter());
-    }
-
-    return Feature(
+    final feature = Feature(
       featureName,
       scenarios,
-      decorators: {...featureDecorators}..validate(),
+      decorators: featureDecorators,
     );
+    // scenarioDecoratorsMap.clear();
+    // currentScenarioDecorators.clear();
+    // featureDecorators.clear();
+    print("end parsing feature : ${feature.name}");
+    return feature;
   }
 
   /// pass the decorators from the feature and the scenario
@@ -159,7 +159,7 @@ class BDDFeatureBuilder {
     Set<BDDDecorator> decorators,
     Set<BDDDecorator> featureDecorators,
   ) {
-    decorators.validate();
+    DecoratorsValidator.validateScenarioDecorators(decorators);
     // if the feature has @unitTest and the scenario has @widgetTest,
     // then remove the @unitTest from the scenario decorators
     if (featureDecorators.hasUnitTest && decorators.hasWidgetTest) {

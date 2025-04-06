@@ -1,4 +1,4 @@
-@enableReporter
+@disableReporter
 Feature: Calculator
 
   Scenario: Add two numbers
@@ -7,6 +7,7 @@ Feature: Calculator
     When I add them together
     Then the result should be 3 
 
+  @className("Subtract")
   Scenario: Subtract two numbers
     Given I have the number 5
     And I have the number 3

@@ -4,7 +4,7 @@ import 'bdd_test_file_builder.dart';
 import 'scenario_file_builder.dart';
 
 class BDDFactory {
-  final featureBuilder;
+  final BDDFeatureBuilder featureBuilder;
   final ScenariosFileBuilder scenarioBuilder;
   final BDDTestFileBuilder testFileBuilder;
 
