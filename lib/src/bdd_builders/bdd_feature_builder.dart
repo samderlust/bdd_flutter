@@ -1,14 +1,15 @@
 import 'package:build/build.dart';
 
+import '../domain/bdd_options.dart';
 import '../domain/decorator.dart';
 import '../domain/feature.dart';
 import '../domain/scenario.dart';
 import '../domain/step.dart';
 
 class BDDFeatureBuilder {
-  final bool generateWidgetTests;
+  final BDDOptions options;
 
-  BDDFeatureBuilder({required this.generateWidgetTests});
+  BDDFeatureBuilder({required this.options});
 
   /// Parse a feature file and return a Feature object
   Future<Feature> build(BuildStep buildStep) async {
@@ -74,9 +75,10 @@ class BDDFeatureBuilder {
         // here is the safe place to process the feature decorators for once
         if (scenarios.isEmpty) {
           featureDecorators.validate();
-          if (generateWidgetTests && !featureDecorators.hasUnitTest) {
+          if (options.generateWidgetTests && !featureDecorators.hasUnitTest) {
             featureDecorators.add(BDDDecorator.widgetTest());
-          } else if (!generateWidgetTests && !featureDecorators.hasWidgetTest) {
+          } else if (!options.generateWidgetTests &&
+              !featureDecorators.hasWidgetTest) {
             featureDecorators.add(BDDDecorator.unitTest());
           }
         }
@@ -137,6 +139,10 @@ class BDDFeatureBuilder {
 
     if (featureName == null) {
       throw Exception('No Feature defined in the file');
+    }
+
+    if (options.enableReporter && !featureDecorators.hasEnableReporter) {
+      featureDecorators.add(BDDDecorator.enableReporter());
     }
 
     return Feature(

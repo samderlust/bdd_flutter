@@ -1,3 +1,4 @@
+@enableReporter
 Feature: Counter
   Scenario: Increment
     Given I have a counter with value 0

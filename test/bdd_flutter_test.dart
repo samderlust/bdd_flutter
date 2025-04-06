@@ -1,9 +1,12 @@
 import 'package:bdd_flutter/src/bdd_builders/bdd_feature_builder.dart';
+import 'package:bdd_flutter/src/domain/bdd_options.dart';
 import 'package:bdd_flutter/src/domain/decorator.dart';
 import 'package:test/test.dart';
 
 void main() {
-  final featureBuilder = BDDFeatureBuilder(generateWidgetTests: true);
+  final featureBuilder = BDDFeatureBuilder(
+    options: BDDOptions(generateWidgetTests: true),
+  );
   group('Parse feature file with default options', () {
     test('widget test by default', () {
       const featureContent = '''

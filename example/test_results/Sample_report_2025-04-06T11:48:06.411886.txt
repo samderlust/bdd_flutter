@@ -1,0 +1,20 @@
+Feature: Sample
+Total Scenarios: 2
+Total Steps: 5
+Total Passed: 4
+Total Failed: 1
+Total Time: 148ms
+
+--------------------------------
+	Scenario: Sample
+		Given I have a sample feature: ✓
+		When I run the sample feature: ✗
+		Then I should see the sample feature: ✓
+	Scenario: Counter
+		Given I have a counter: ✓
+		When I increment the counter: ✓
+--------------------------------
+ERROR:
+		When I run the sample feature: Expected: <false>
+  Actual: <true>
+

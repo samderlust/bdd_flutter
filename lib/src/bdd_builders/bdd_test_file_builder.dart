@@ -1,7 +1,9 @@
+import 'package:bdd_flutter/src/domain/decorator.dart';
 import 'package:build/build.dart';
 
 import '../domain/feature.dart';
 import '../domain/scenario.dart';
+import '../domain/step.dart';
 import '../extensions/string_x.dart';
 
 class BDDTestFileBuilder {
@@ -16,10 +18,30 @@ class BDDTestFileBuilder {
   Future<String> buildTestFile(Feature feature) async {
     final buffer = StringBuffer();
     buffer.writeln("import 'package:flutter_test/flutter_test.dart';");
+    //add reporter import if needed
+    if (feature.decorators.hasEnableReporter) {
+      buffer.writeln("import 'package:bdd_flutter/bdd_flutter.dart';");
+    }
+
     buffer.writeln("import  '${feature.name.toLowerCase()}_scenarios.dart';");
     buffer.writeln();
 
     buffer.writeln("void main() {");
+    //add reporter initialization if needed
+    if (feature.decorators.hasEnableReporter) {
+      buffer.writeln(
+          "  final reporter = BDDTestReporter(featureName: '${feature.name}');");
+      buffer.writeln("  setUpAll(() {");
+      buffer.writeln("    reporter.testStarted(); // start recording");
+      buffer.writeln("  });");
+      buffer.writeln("  tearDownAll(() {");
+      buffer.writeln("    reporter.testFinished(); // stop recording");
+      buffer.writeln("    reporter.printReport(); // print report");
+      buffer.writeln(
+          "    //reporter.saveReportToFile(); //uncomment to save report to file");
+      buffer.writeln("  });");
+    }
+
     buffer.writeln("  group('${feature.name}', () {");
 
     for (var scenario in feature.scenarios) {
@@ -37,16 +59,31 @@ class BDDTestFileBuilder {
             .writeln("    $testFunction('${scenario.name}', (tester) async {");
       }
 
+      //add start scenario if needed
+      if (feature.decorators.hasEnableReporter) {
+        buffer.writeln("\t\t\t reporter.startScenario('${scenario.name}');");
+      }
+
       if (scenario.examples != null && scenario.examples!.isNotEmpty) {
         // First, call all setup steps (Given steps) once
         for (var step in scenario.steps) {
           if (step.keyword == 'Given') {
-            final methodName = step.text.toMethodName;
-            if (isUnitTest) {
-              buffer.writeln("      await $className.$methodName();");
-            } else {
-              buffer.writeln("      await $className.$methodName(tester);");
-            }
+            buffer.writeln(_generateTestFunction(
+              buffer,
+              testFunction,
+              scenario.name,
+              className,
+              step,
+              feature.decorators.hasEnableReporter,
+              isUnitTest,
+              [],
+            ));
+            // final methodName = step.text.toMethodName;
+            // if (isUnitTest) {
+            //   buffer.writeln("      await $className.$methodName();");
+            // } else {
+            //   buffer.writeln("      await $className.$methodName(tester);");
+            // }
           }
         }
 
@@ -68,27 +105,51 @@ class BDDTestFileBuilder {
                 }
               });
 
-              if (!isUnitTest) {
-                buffer.writeln(
-                  "      await $className.$methodName(tester${params.isNotEmpty ? ', ${params.join(', ')}' : ''});",
-                );
-              } else {
-                buffer.writeln(
-                  "      await $className.$methodName(${params.isNotEmpty ? params.join(', ') : ''});",
-                );
-              }
+              buffer.writeln(
+                _generateTestFunction(
+                  buffer,
+                  testFunction,
+                  scenario.name,
+                  className,
+                  step,
+                  feature.decorators.hasEnableReporter,
+                  isUnitTest,
+                  params,
+                ),
+              );
+
+              // if (!isUnitTest) {
+              //   buffer.writeln(
+              //     "      await $className.$methodName(tester${params.isNotEmpty ? ', ${params.join(', ')}' : ''});",
+              //   );
+              // } else {
+              //   buffer.writeln(
+              //     "      await $className.$methodName(${params.isNotEmpty ? params.join(', ') : ''});",
+              //   );
+              // }
             }
           }
         }
       } else {
         // For scenarios without examples, just call all steps once
         for (var step in scenario.steps) {
-          final methodName = step.text.toMethodName;
-          if (!isUnitTest) {
-            buffer.writeln("      await $className.$methodName(tester);");
-          } else {
-            buffer.writeln("      await $className.$methodName();");
-          }
+          // final methodName = step.text.toMethodName;
+          // if (!isUnitTest) {
+          //   buffer.writeln("      await $className.$methodName(tester);");
+          // } else {
+          //   buffer.writeln("      await $className.$methodName();");
+          // }
+
+          buffer.writeln(_generateTestFunction(
+            buffer,
+            testFunction,
+            scenario.name,
+            className,
+            step,
+            feature.decorators.hasEnableReporter,
+            isUnitTest,
+            [],
+          ));
         }
       }
       buffer.writeln("    });");
@@ -98,5 +159,25 @@ class BDDTestFileBuilder {
     buffer.writeln("}");
 
     return buffer.toString();
+  }
+}
+
+String _generateTestFunction(
+  StringBuffer buffer,
+  String testFunction,
+  String scenarioName,
+  String className,
+  Step step,
+  bool withReporter,
+  bool isUnitTest,
+  List<String> params,
+) {
+  final methodName = step.text.toMethodName;
+  if (withReporter) {
+    return ('''\tawait reporter.guard(() => 
+    $className.$methodName(${isUnitTest ? '' : 'tester,'}${params.isNotEmpty ? params.join(', ') : ''}), 
+    '${step.message}',);''');
+  } else {
+    return ("\tawait $className.$methodName(${isUnitTest ? '' : 'tester,'}${params.isNotEmpty ? params.join(', ') : ''});");
   }
 }

@@ -64,6 +64,7 @@ targets:
       bdd_flutter|bdd_test_builder:
         options:
           generate_widget_tests: false
+          enable_reporter: true
 ```
 
 by default, the builder will generate widget tests. By setting `generate_widget_tests` to `false`, the builder will generate unit tests instead.
@@ -82,6 +83,9 @@ You can use the following decorators to control the test generation:
   - Generate a custom class name for the scenario
   - apply to scenario
   - example: `@className("CustomName")`
+- `@enableReporter`:
+  - Enable the reporter for the tests in the feature
+  - apply to feature
 
 decorators can be used at the feature, scenario level. The lower the level, the more specific the decorator and it will override the upper level decorator.
 

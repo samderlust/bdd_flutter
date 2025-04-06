@@ -6,11 +6,17 @@ class BDDDecorator {
   factory BDDDecorator.unitTest() => BDDDecorator(DecoratorType.unitTest, null);
   factory BDDDecorator.widgetTest() =>
       BDDDecorator(DecoratorType.widgetTest, null);
+  factory BDDDecorator.enableReporter() =>
+      BDDDecorator(DecoratorType.enableReporter, null);
+  factory BDDDecorator.disableReporter() =>
+      BDDDecorator(DecoratorType.disableReporter, null);
 
   static BDDDecorator fromString(String text) {
     return switch (text) {
       '@unitTest' => BDDDecorator(DecoratorType.unitTest, null),
       '@widgetTest' => BDDDecorator(DecoratorType.widgetTest, null),
+      '@enableReporter' => BDDDecorator(DecoratorType.enableReporter, null),
+      '@disableReporter' => BDDDecorator(DecoratorType.disableReporter, null),
       var t when t.contains("@className") =>
         BDDDecorator(DecoratorType.className, _extractClassNameValue(t)),
       _ => BDDDecorator(DecoratorType.unknown, null)
@@ -38,6 +44,8 @@ enum DecoratorType {
   unitTest,
   widgetTest,
   className,
+  enableReporter,
+  disableReporter,
   unknown,
 }
 
@@ -45,13 +53,16 @@ extension BDDDecoratorX on BDDDecorator {
   bool get isUnitTest => type == DecoratorType.unitTest;
   bool get isWidgetTest => type == DecoratorType.widgetTest;
   bool get isClassName => type == DecoratorType.className;
+  bool get isEnableReporter => type == DecoratorType.enableReporter;
+  bool get isDisableReporter => type == DecoratorType.disableReporter;
 }
 
 extension BDDDecoratorSetX on Set<BDDDecorator> {
   bool get hasUnitTest => any((e) => e.isUnitTest);
   bool get hasWidgetTest => any((e) => e.isWidgetTest);
   bool get hasClassName => any((e) => e.isClassName);
-
+  bool get hasEnableReporter => any((e) => e.isEnableReporter);
+  bool get hasDisableReporter => any((e) => e.isDisableReporter);
   void validate() {
     if (hasUnitTest && hasWidgetTest) {
       throw Exception(

@@ -8,3 +8,7 @@ class Step {
 
   Step(this.keyword, this.text);
 }
+
+extension StepX on Step {
+  String get message => '$keyword $text';
+}
