@@ -1,5 +1,3 @@
-import 'dart:developer';
-
 import 'package:bdd_flutter/src/domain/bdd_options.dart';
 
 import '../decorator.dart';

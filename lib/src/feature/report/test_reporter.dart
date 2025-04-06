@@ -47,7 +47,7 @@ class BDDTestReporter {
     if (logCallback != null) {
       logCallback!(message);
     } else {
-      print(message);
+      stdout.writeln(message);
     }
   }
 
@@ -100,7 +100,7 @@ class BDDTestReporter {
       _reportBuffer!.writeln('\tScenario: ${scenario.name}');
       for (var step in scenario.steps.values) {
         _reportBuffer!.writeln(
-            '\t\t${step.status ? green : red}${step.name}: ${step.status ? '✓' : '✗'}${reset}');
+            '\t\t${step.status ? green : red}${step.name}: ${step.status ? '✓' : '✗'}$reset');
       }
     }
     final errorSteps = _scenarios
