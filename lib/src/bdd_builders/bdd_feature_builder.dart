@@ -1,4 +1,3 @@
-import 'package:bdd_flutter/src/domain/decorator_enum.dart';
 import 'package:build/build.dart';
 
 import '../domain/decorator.dart';
@@ -165,7 +164,7 @@ class BDDFeatureBuilder {
     // then remove the @widgetTest from the scenario decorators
     if (featureDecorators.hasWidgetTest && decorators.hasUnitTest) {
       return {...featureDecorators, ...decorators}
-        ..remove(BDDDecorator.widgetTest);
+        ..removeWhere((e) => e.isWidgetTest);
     }
     return {...featureDecorators, ...decorators};
   }
