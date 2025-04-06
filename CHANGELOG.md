@@ -1,3 +1,10 @@
+## 0.1.2
+
+- add `@disableReporter` and `@enableReporter` decorators
+- fix build_runner error
+- improve documentation
+- update readme
+
 ## 0.1.1
 
 - add `@className` decorator

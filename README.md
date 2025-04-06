@@ -67,7 +67,15 @@ targets:
           enable_reporter: true
 ```
 
-by default, the builder will generate widget tests. By setting `generate_widget_tests` to `false`, the builder will generate unit tests instead.
+- `generate_widget_tests`: default is true
+
+  - if true, generate widget tests
+  - if false, generate unit tests
+
+- `enable_reporter`: default is false
+
+  - if true, enable the reporter for the tests in test file
+  - if false, disable the reporter for the tests in test file
 
 ## Decorators
 
@@ -85,6 +93,9 @@ You can use the following decorators to control the test generation:
   - example: `@className("CustomName")`
 - `@enableReporter`:
   - Enable the reporter for the tests in the feature
+  - apply to feature
+- `@disableReporter`:
+  - Disable the reporter for the tests in the feature
   - apply to feature
 
 decorators can be used at the feature, scenario level. The lower the level, the more specific the decorator and it will override the upper level decorator.

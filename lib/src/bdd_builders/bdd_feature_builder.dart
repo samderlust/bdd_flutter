@@ -16,7 +16,6 @@ class BDDFeatureBuilder {
   Future<Feature> build(BuildStep buildStep) async {
     final inputId = buildStep.inputId;
     final featureContent = await buildStep.readAsString(inputId);
-    print("start parsing feature : ${inputId}");
     return parseFeature(featureContent);
   }
 
@@ -148,7 +147,6 @@ class BDDFeatureBuilder {
     // scenarioDecoratorsMap.clear();
     // currentScenarioDecorators.clear();
     // featureDecorators.clear();
-    print("end parsing feature : ${feature.name}");
     return feature;
   }
 
