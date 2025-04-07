@@ -1,4 +1,4 @@
-import 'package:bdd_flutter/src/domain/bdd_options.dart';
+import 'package:bdd_flutter/src/feature/builder/domain/bdd_options.dart';
 
 import '../decorator.dart';
 

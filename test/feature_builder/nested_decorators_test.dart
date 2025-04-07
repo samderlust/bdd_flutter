@@ -1,6 +1,6 @@
-import 'package:bdd_flutter/src/bdd_builders/bdd_feature_builder.dart';
-import 'package:bdd_flutter/src/domain/bdd_options.dart';
-import 'package:bdd_flutter/src/domain/decorator.dart';
+import 'package:bdd_flutter/src/feature/builder/bdd_builders/bdd_feature_builder.dart';
+import 'package:bdd_flutter/src/feature/builder/domain/bdd_options.dart';
+import 'package:bdd_flutter/src/feature/builder/domain/decorator.dart';
 import 'package:test/test.dart';
 
 void main() {

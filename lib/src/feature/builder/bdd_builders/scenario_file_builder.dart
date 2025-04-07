@@ -1,7 +1,7 @@
 import 'package:build/build.dart';
 
 import '../domain/scenario.dart';
-import '../extensions/string_x.dart';
+import '../../../extensions/string_x.dart';
 
 import '../domain/feature.dart';
 

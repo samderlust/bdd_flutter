@@ -1,10 +1,10 @@
-import 'package:bdd_flutter/src/domain/decorator.dart';
+import 'package:bdd_flutter/src/feature/builder/domain/decorator.dart';
 import 'package:build/build.dart';
 
 import '../domain/feature.dart';
 import '../domain/scenario.dart';
 import '../domain/step.dart';
-import '../extensions/string_x.dart';
+import '../../../extensions/string_x.dart';
 
 class BDDTestFileBuilder {
   Future<void> build(BuildStep buildStep, Feature feature) async {
@@ -65,80 +65,38 @@ class BDDTestFileBuilder {
       }
 
       if (scenario.examples != null && scenario.examples!.isNotEmpty) {
-        // First, call all setup steps (Given steps) once
-        for (var step in scenario.steps) {
-          if (step.keyword == 'Given') {
-            buffer.writeln(_generateTestFunction(
-              buffer,
-              testFunction,
-              scenario.name,
-              className,
-              step,
-              feature.decorators.hasEnableReporter,
-              isUnitTest,
-              [],
-            ));
-            // final methodName = step.text.toMethodName;
-            // if (isUnitTest) {
-            //   buffer.writeln("      await $className.$methodName();");
-            // } else {
-            //   buffer.writeln("      await $className.$methodName(tester);");
-            // }
-          }
-        }
-
-        // Then for each example, call the non-setup steps with the example values
+        // For each example, call all steps with the example values
         for (var example in scenario.examples!) {
           buffer.writeln(
             "      // Example with values: ${example.values.join(', ')}",
           );
           for (var step in scenario.steps) {
-            if (step.keyword != 'Given') {
-              // Skip Given steps as they're already called
-              final params = <String>[];
+            final params = <String>[];
 
-              // Extract parameters from the example values
-              example.forEach((key, value) {
-                if (step.text.contains('<$key>')) {
-                  params.add("'${value.snakeCaseToCamelCase}'");
-                }
-              });
+            // Extract parameters from the example values
+            example.forEach((key, value) {
+              if (step.text.contains('<$key>')) {
+                params.add("'${value.snakeCaseToCamelCase}'");
+              }
+            });
 
-              buffer.writeln(
-                _generateTestFunction(
-                  buffer,
-                  testFunction,
-                  scenario.name,
-                  className,
-                  step,
-                  feature.decorators.hasEnableReporter,
-                  isUnitTest,
-                  params,
-                ),
-              );
-
-              // if (!isUnitTest) {
-              //   buffer.writeln(
-              //     "      await $className.$methodName(tester${params.isNotEmpty ? ', ${params.join(', ')}' : ''});",
-              //   );
-              // } else {
-              //   buffer.writeln(
-              //     "      await $className.$methodName(${params.isNotEmpty ? params.join(', ') : ''});",
-              //   );
-              // }
-            }
+            buffer.writeln(
+              _generateTestFunction(
+                buffer,
+                testFunction,
+                scenario.name,
+                className,
+                step,
+                feature.decorators.hasEnableReporter,
+                isUnitTest,
+                params,
+              ),
+            );
           }
         }
       } else {
         // For scenarios without examples, just call all steps once
         for (var step in scenario.steps) {
-          // final methodName = step.text.toMethodName;
-          // if (!isUnitTest) {
-          //   buffer.writeln("      await $className.$methodName(tester);");
-          // } else {
-          //   buffer.writeln("      await $className.$methodName();");
-          // }
-
           buffer.writeln(_generateTestFunction(
             buffer,
             testFunction,

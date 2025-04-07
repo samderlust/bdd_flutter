@@ -1,10 +1,10 @@
 // lib/builder.dart
 import 'dart:async';
 
-import 'package:bdd_flutter/src/domain/bdd_options.dart';
+import 'package:bdd_flutter/src/feature/builder/domain/bdd_options.dart';
 import 'package:build/build.dart';
 
-import 'bdd_builders/bdd_factory.dart';
+import 'feature/builder/bdd_builders/bdd_factory.dart';
 
 /// A builder that generates test files from feature files
 class BDDTestBuilder implements Builder {
