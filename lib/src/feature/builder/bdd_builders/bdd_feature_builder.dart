@@ -13,13 +13,13 @@ class BDDFeatureBuilder {
   BDDFeatureBuilder({required this.options});
 
   /// Parse a feature file and return a Feature object
-  Future<Feature> build(BuildStep buildStep) async {
+  Future<Feature?> build(BuildStep buildStep) async {
     final inputId = buildStep.inputId;
     final featureContent = await buildStep.readAsString(inputId);
     return parseFeature(featureContent);
   }
 
-  Feature parseFeature(String featureContent) {
+  Feature? parseFeature(String featureContent) {
     final lines =
         featureContent.split('\n').map((line) => line.trim()).toList();
     String? featureName;
@@ -44,6 +44,10 @@ class BDDFeatureBuilder {
           currentScenarioDecorators.add(BDDDecorator.fromString(line));
         }
       } else if (line.startsWith('Scenario:')) {
+        if (featureDecorators.hasIgnore) {
+          return null;
+        }
+
         // Store decorators for the current scenario before adding it
         if (currentScenarioName != null && currentSteps.isNotEmpty) {
           Set<BDDDecorator> tempDecorators = {};

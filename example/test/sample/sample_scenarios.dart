@@ -12,7 +12,6 @@ class SampleScenario {
   static Future<void> iShouldSeeTheSampleFeature(WidgetTester tester) async {
     // TODO: Implement Then I should see the sample feature
   }
-
 }
 
 class CounterCustomName {
@@ -24,10 +23,11 @@ class CounterCustomName {
     // TODO: Implement When I increment the counter
   }
 
-  static Future<void> iShouldSeeTheCounterIncremented(WidgetTester tester) async {
+  static Future<void> iShouldSeeTheCounterIncremented(
+    WidgetTester tester,
+  ) async {
     // TODO: Implement Then I should see the counter incremented
   }
-
 }
 
 class CounterWithExamplesScenario {
@@ -35,14 +35,13 @@ class CounterWithExamplesScenario {
     // TODO: Implement Given I have a counter
   }
 
-  static Future<void> iIncrementThe(dynamic counter) async {
+  static Future<void> iIncrementThe(String counter) async {
     // TODO: Implement When I increment the <counter>
   }
 
   static Future<void> iShouldSeeTheCounterIncremented() async {
     // TODO: Implement Then I should see the counter incremented
   }
-
 }
 
 class CounterWithParametersScenario {
@@ -50,13 +49,11 @@ class CounterWithParametersScenario {
     // TODO: Implement Given I have a counter
   }
 
-  static Future<void> iIncrementTheCounter(dynamic counter) async {
+  static Future<void> iIncrementTheCounter(String counter) async {
     // TODO: Implement When I increment the counter <counter>
   }
 
-  static Future<void> iShouldSeeTheResult(dynamic result) async {
+  static Future<void> iShouldSeeTheResult(String result) async {
     // TODO: Implement Then I should see the result <result>
   }
-
 }
-

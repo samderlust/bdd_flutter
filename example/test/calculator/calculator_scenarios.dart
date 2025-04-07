@@ -15,7 +15,7 @@ class AddTwoNumbersScenario {
 
 }
 
-class SubtractTwoNumbersScenario {
+class Subtract {
   static Future<void> iHaveTheNumber5(WidgetTester tester) async {
     // TODO: Implement Given I have the number 5
   }
@@ -46,7 +46,7 @@ class MultiplyTwoNumbersScenario {
 }
 
 class DivideTwoNumbersScenario {
-  static Future<void> iHaveTheNumber(WidgetTester tester, dynamic number1) async {
+  static Future<void> iHaveTheNumber(WidgetTester tester, String number1) async {
     // TODO: Implement Given I have the number <number1>
   }
 
@@ -54,7 +54,7 @@ class DivideTwoNumbersScenario {
     // TODO: Implement When I divide them
   }
 
-  static Future<void> theResultShouldBe(WidgetTester tester, dynamic result) async {
+  static Future<void> theResultShouldBe(WidgetTester tester, String result) async {
     // TODO: Implement Then the result should be <result>
   }
 

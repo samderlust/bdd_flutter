@@ -1,3 +1,8 @@
+## 0.1.4
+
+- fix builder with examples
+- add ignore decorator on feature
+
 ## 0.1.3
 
 - fix builder issue with examples

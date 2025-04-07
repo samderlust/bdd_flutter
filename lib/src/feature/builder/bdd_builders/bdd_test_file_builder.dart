@@ -6,6 +6,8 @@ import '../domain/scenario.dart';
 import '../domain/step.dart';
 import '../../../extensions/string_x.dart';
 
+final spaceStep = '  ';
+
 class BDDTestFileBuilder {
   Future<void> build(BuildStep buildStep, Feature feature) async {
     final inputId = buildStep.inputId;
@@ -23,7 +25,7 @@ class BDDTestFileBuilder {
       buffer.writeln("import 'package:bdd_flutter/bdd_flutter.dart';");
     }
 
-    buffer.writeln("import  '${feature.name.toLowerCase()}_scenarios.dart';");
+    buffer.writeln("import '${feature.name.toLowerCase()}_scenarios.dart';");
     buffer.writeln();
 
     buffer.writeln("void main() {");
@@ -46,9 +48,7 @@ class BDDTestFileBuilder {
 
     for (var scenario in feature.scenarios) {
       final className = scenario.className;
-
       final isUnitTest = scenario.isUnitTest;
-
       final testFunction = isUnitTest ? 'test' : 'testWidgets';
 
       // Generate one test case per scenario
@@ -59,9 +59,11 @@ class BDDTestFileBuilder {
             .writeln("    $testFunction('${scenario.name}', (tester) async {");
       }
 
+      buffer.writeln("      //Scenario: ${scenario.name}");
+
       //add start scenario if needed
       if (feature.decorators.hasEnableReporter) {
-        buffer.writeln("\t\t\t reporter.startScenario('${scenario.name}');");
+        buffer.writeln("      reporter.startScenario('${scenario.name}');");
       }
 
       if (scenario.examples != null && scenario.examples!.isNotEmpty) {
@@ -139,10 +141,14 @@ String _generateTestFunction(
 ) {
   final methodName = step.text.toMethodName;
   if (withReporter) {
-    return ('''        await reporter.guard(() => 
-    $className.$methodName(${isUnitTest ? '' : 'tester,'}${params.isNotEmpty ? params.join(', ') : ''}), 
-    '${step.message}',);''');
+    return '''
+      await reporter.guard(
+        () => $className.$methodName(${isUnitTest ? '' : 'tester'}${params.isNotEmpty ? "${isUnitTest ? '' : ','}  ${params.join(', ')}" : ''}), 
+        '${step.message}',
+      );''';
   } else {
-    return ("        await $className.$methodName(${isUnitTest ? '' : 'tester,'}${params.isNotEmpty ? params.join(', ') : ''});");
+    return '''
+      // ${step.message}
+      await $className.$methodName(${isUnitTest ? '' : 'tester'}${params.isNotEmpty ? "${isUnitTest ? '' : ','} ${params.join(', ')}" : ''});''';
   }
 }

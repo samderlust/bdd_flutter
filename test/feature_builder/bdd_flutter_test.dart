@@ -20,7 +20,7 @@ Feature: Comms Permissions
             | true           | shows the create new DM chat button |
             | false          | hides the create new DM chat button |
     ''';
-      final feature = featureBuilder.parseFeature(featureContent);
+      final feature = featureBuilder.parseFeature(featureContent)!;
       expect(feature.name, 'Comms Permissions');
       expect(feature.scenarios.length, 1);
       final scenario = feature.scenarios.first;
@@ -39,7 +39,7 @@ Feature: Comms Permissions
         When user attempts to create a direct channel
         Then <expected_result>
     ''';
-      final feature = featureBuilder.parseFeature(featureContent);
+      final feature = featureBuilder.parseFeature(featureContent)!;
       expect(feature.name, 'Comms Permissions');
       expect(feature.scenarios.length, 1);
       expect(feature.decorators, contains(BDDDecorator.unitTest()));
@@ -56,7 +56,7 @@ Feature: Comms Permissions
         When user attempts to create a direct channel
         Then <expected_result>
     ''';
-      final feature = featureBuilder.parseFeature(featureContent);
+      final feature = featureBuilder.parseFeature(featureContent)!;
       expect(feature.name, 'Comms Permissions');
       expect(feature.scenarios.length, 1);
       expect(feature.decorators, contains(BDDDecorator.unitTest()));

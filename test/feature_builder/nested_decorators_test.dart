@@ -32,8 +32,8 @@ Feature: Feature 2
     final featureBuilder = BDDFeatureBuilder(
       options: BDDOptions(generateWidgetTests: true),
     );
-    final feature1 = featureBuilder.parseFeature(feature1Text);
-    final feature2 = featureBuilder.parseFeature(feature2Text);
+    final feature1 = featureBuilder.parseFeature(feature1Text)!;
+    final feature2 = featureBuilder.parseFeature(feature2Text)!;
     expect(feature1.name, 'Feature 1');
     expect(feature1.scenarios.length, 2);
     expect(feature1.decorators.hasEnableReporter, false);
@@ -73,8 +73,8 @@ Feature: Feature 2
         enableReporter: true,
       ),
     );
-    final feature1 = featureBuilder.parseFeature(feature1Text);
-    final feature2 = featureBuilder.parseFeature(feature2Text);
+    final feature1 = featureBuilder.parseFeature(feature1Text)!;
+    final feature2 = featureBuilder.parseFeature(feature2Text)!;
     expect(feature1.name, 'Feature 1');
     expect(feature1.scenarios.length, 2);
     expect(feature1.decorators.hasEnableReporter, true);

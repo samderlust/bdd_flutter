@@ -22,6 +22,9 @@ class BDDTestBuilder implements Builder {
     final factory = BDDFactory.create(options);
 
     final feature = await factory.featureBuilder.build(buildStep);
+    if (feature == null) {
+      return;
+    }
 
     await factory.scenarioBuilder.build(buildStep, feature);
     await factory.testFileBuilder.build(buildStep, feature);

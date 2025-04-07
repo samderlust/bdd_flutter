@@ -1,9 +1,8 @@
 import 'package:build/build.dart';
 
+import '../domain/feature.dart';
 import '../domain/scenario.dart';
 import '../../../extensions/string_x.dart';
-
-import '../domain/feature.dart';
 
 class ScenariosFileBuilder {
   Future<void> build(BuildStep buildStep, Feature feature) async {
@@ -48,7 +47,6 @@ class ScenariosFileBuilder {
       buffer.writeln();
     }
 
-    // await buildStep.writeAsString(outputId, buffer.toString());
     return buffer.toString();
   }
 
@@ -59,7 +57,7 @@ class ScenariosFileBuilder {
 
     for (var match in matches) {
       final paramName = match.group(1)!;
-      params.add('dynamic ${paramName.snakeCaseToCamelCase}');
+      params.add('String ${paramName.snakeCaseToCamelCase}');
     }
 
     return params.join(', ');

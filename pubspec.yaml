@@ -1,6 +1,6 @@
 name: bdd_flutter
 description: "A powerful Flutter package that simplifies Behavior Driven Development (BDD) by automatically generating test files from Gherkin feature files"
-version: 0.1.3
+version: 0.1.4
 homepage: https://github.com/samderlust/bdd_flutter
 
 environment:
