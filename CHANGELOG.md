@@ -1,3 +1,8 @@
+## 0.1.3
+
+- fix builder issue with examples
+- restructure code
+
 ## 0.1.2
 
 - add `@disableReporter` and `@enableReporter` decorators
