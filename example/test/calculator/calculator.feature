@@ -21,9 +21,17 @@ Feature: Calculator
     Then the result should be 6
     
   Scenario: Divide two numbers
-    Given I have the number 10
-    And I have the number 2
+    Given I have the number <number1>
+    And I have the number <number2>
     When I divide them
-    Then the result should be 5
+    Then the result should be <result>
+
+    Examples:
+      | number1 | number2 | result |
+      | 10      | 2       | 5      |
+      | 10      | 1       | 10     |
+      | 10      | 10      | 1      |
+
+    
     
     

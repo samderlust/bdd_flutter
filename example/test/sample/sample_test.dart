@@ -39,10 +39,10 @@ void main() {
     });
     test('Counter with examples', () async {
 			 reporter.startScenario('Counter with examples');
+      // Example with values: 1
 	await reporter.guard(() => 
     CounterWithExamplesScenario.iHaveACounter(), 
     'Given I have a counter',);
-      // Example with values: 1
 	await reporter.guard(() => 
     CounterWithExamplesScenario.iIncrementThe('1'), 
     'When I increment the <counter>',);
@@ -51,12 +51,18 @@ void main() {
     'Then I should see the counter incremented',);
       // Example with values: 2
 	await reporter.guard(() => 
+    CounterWithExamplesScenario.iHaveACounter(), 
+    'Given I have a counter',);
+	await reporter.guard(() => 
     CounterWithExamplesScenario.iIncrementThe('2'), 
     'When I increment the <counter>',);
 	await reporter.guard(() => 
     CounterWithExamplesScenario.iShouldSeeTheCounterIncremented(), 
     'Then I should see the counter incremented',);
       // Example with values: 3
+	await reporter.guard(() => 
+    CounterWithExamplesScenario.iHaveACounter(), 
+    'Given I have a counter',);
 	await reporter.guard(() => 
     CounterWithExamplesScenario.iIncrementThe('3'), 
     'When I increment the <counter>',);
@@ -66,10 +72,10 @@ void main() {
     });
     test('Counter with parameters', () async {
 			 reporter.startScenario('Counter with parameters');
+      // Example with values: 1, 2
 	await reporter.guard(() => 
     CounterWithParametersScenario.iHaveACounter(), 
     'Given I have a counter',);
-      // Example with values: 1, 2
 	await reporter.guard(() => 
     CounterWithParametersScenario.iIncrementTheCounter('1'), 
     'When I increment the counter <counter>',);
@@ -78,12 +84,18 @@ void main() {
     'Then I should see the result <result>',);
       // Example with values: 2, 3
 	await reporter.guard(() => 
+    CounterWithParametersScenario.iHaveACounter(), 
+    'Given I have a counter',);
+	await reporter.guard(() => 
     CounterWithParametersScenario.iIncrementTheCounter('2'), 
     'When I increment the counter <counter>',);
 	await reporter.guard(() => 
     CounterWithParametersScenario.iShouldSeeTheResult('3'), 
     'Then I should see the result <result>',);
       // Example with values: 3, 4
+	await reporter.guard(() => 
+    CounterWithParametersScenario.iHaveACounter(), 
+    'Given I have a counter',);
 	await reporter.guard(() => 
     CounterWithParametersScenario.iIncrementTheCounter('3'), 
     'When I increment the counter <counter>',);

@@ -19,9 +19,18 @@ void main() {
 	await MultiplyTwoNumbersScenario.theResultShouldBe6(tester,);
     });
     testWidgets('Divide two numbers', (tester) async {
-	await DivideTwoNumbersScenario.iHaveTheNumber10(tester,);
+      // Example with values: 10, 2, 5
+	await DivideTwoNumbersScenario.iHaveTheNumber(tester,'10');
 	await DivideTwoNumbersScenario.iDivideThem(tester,);
-	await DivideTwoNumbersScenario.theResultShouldBe5(tester,);
+	await DivideTwoNumbersScenario.theResultShouldBe(tester,'5');
+      // Example with values: 10, 1, 10
+	await DivideTwoNumbersScenario.iHaveTheNumber(tester,'10');
+	await DivideTwoNumbersScenario.iDivideThem(tester,);
+	await DivideTwoNumbersScenario.theResultShouldBe(tester,'10');
+      // Example with values: 10, 10, 1
+	await DivideTwoNumbersScenario.iHaveTheNumber(tester,'10');
+	await DivideTwoNumbersScenario.iDivideThem(tester,);
+	await DivideTwoNumbersScenario.theResultShouldBe(tester,'1');
     });
   });
 }

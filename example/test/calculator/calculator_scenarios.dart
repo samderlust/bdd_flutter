@@ -46,16 +46,16 @@ class MultiplyTwoNumbersScenario {
 }
 
 class DivideTwoNumbersScenario {
-  static Future<void> iHaveTheNumber10(WidgetTester tester) async {
-    // TODO: Implement Given I have the number 10
+  static Future<void> iHaveTheNumber(WidgetTester tester, dynamic number1) async {
+    // TODO: Implement Given I have the number <number1>
   }
 
   static Future<void> iDivideThem(WidgetTester tester) async {
     // TODO: Implement When I divide them
   }
 
-  static Future<void> theResultShouldBe5(WidgetTester tester) async {
-    // TODO: Implement Then the result should be 5
+  static Future<void> theResultShouldBe(WidgetTester tester, dynamic result) async {
+    // TODO: Implement Then the result should be <result>
   }
 
 }
