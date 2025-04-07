@@ -65,35 +65,43 @@ class BDDTestFileBuilder {
       }
 
       if (scenario.examples != null && scenario.examples!.isNotEmpty) {
-        // For each example, call all steps with the example values
+        buffer.writeln("      final examples = [");
+
         for (var example in scenario.examples!) {
-          buffer.writeln(
-            "      // Example with values: ${example.values.join(', ')}",
-          );
-          for (var step in scenario.steps) {
-            final params = <String>[];
-
-            // Extract parameters from the example values
-            example.forEach((key, value) {
-              if (step.text.contains('<$key>')) {
-                params.add("'${value.snakeCaseToCamelCase}'");
-              }
-            });
-
-            buffer.writeln(
-              _generateTestFunction(
-                buffer,
-                testFunction,
-                scenario.name,
-                className,
-                step,
-                feature.decorators.hasEnableReporter,
-                isUnitTest,
-                params,
-              ),
-            );
+          buffer.write("        {");
+          for (var entry in example.entries) {
+            buffer.write(
+                "'${entry.key.snakeCaseToCamelCase}': '${entry.value}',");
           }
+          buffer.write("},");
+          buffer.writeln();
         }
+        buffer.writeln("      ];");
+
+        // Get the keys from the first example for parameter generation
+        final exampleKeys = scenario.examples!.first.keys.toList();
+        buffer.writeln("      for (var example in examples) {");
+
+        for (var step in scenario.steps) {
+          final params = <String>[];
+          for (var key in exampleKeys) {
+            if (step.text.contains('<$key>')) {
+              params.add("example['$key']!");
+            }
+          }
+
+          buffer.writeln(_generateTestFunction(
+            buffer,
+            testFunction,
+            scenario.name,
+            className,
+            step,
+            feature.decorators.hasEnableReporter,
+            isUnitTest,
+            params,
+          ));
+        }
+        buffer.writeln("      }");
       } else {
         // For scenarios without examples, just call all steps once
         for (var step in scenario.steps) {
@@ -131,10 +139,10 @@ String _generateTestFunction(
 ) {
   final methodName = step.text.toMethodName;
   if (withReporter) {
-    return ('''\tawait reporter.guard(() => 
+    return ('''        await reporter.guard(() => 
     $className.$methodName(${isUnitTest ? '' : 'tester,'}${params.isNotEmpty ? params.join(', ') : ''}), 
     '${step.message}',);''');
   } else {
-    return ("\tawait $className.$methodName(${isUnitTest ? '' : 'tester,'}${params.isNotEmpty ? params.join(', ') : ''});");
+    return ("        await $className.$methodName(${isUnitTest ? '' : 'tester,'}${params.isNotEmpty ? params.join(', ') : ''});");
   }
 }
