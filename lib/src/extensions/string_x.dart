@@ -29,4 +29,8 @@ extension StringX on String {
         .map((word) => word[0].toLowerCase() + word.substring(1).toLowerCase())
         .join('');
   }
+
+  String get toSnakeCase {
+    return split(' ').map((word) => word.toLowerCase()).join('_');
+  }
 }

@@ -25,7 +25,7 @@ class BDDTestFileBuilder {
       buffer.writeln("import 'package:bdd_flutter/bdd_flutter.dart';");
     }
 
-    buffer.writeln("import '${feature.name.toLowerCase()}_scenarios.dart';");
+    buffer.writeln("import '${feature.name.toSnakeCase()}_scenarios.dart';");
     buffer.writeln();
 
     buffer.writeln("void main() {");
