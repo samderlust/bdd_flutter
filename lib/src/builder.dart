@@ -2,7 +2,6 @@
 import 'dart:async';
 
 import 'package:bdd_flutter/src/feature/builder/domain/bdd_options.dart';
-import 'package:bdd_flutter/src/feature/builder/domain/decorator.dart';
 import 'package:build/build.dart';
 
 import 'feature/builder/bdd_builders/bdd_factory.dart';
@@ -15,7 +14,7 @@ class BDDTestBuilder implements Builder {
 
   @override
   final buildExtensions = const {
-    r'.feature': ['.bdd.dart', '.bdd_scenarios.dart', '.bdd_test.dart'],
+    r'.feature': ['.bdd_scenarios.dart', '.bdd_test.dart'],
   };
 
   @override
@@ -23,9 +22,6 @@ class BDDTestBuilder implements Builder {
     final factory = BDDFactory.create(options);
 
     final feature = await factory.featureBuilder.build(buildStep);
-    if (feature == null) {
-      return;
-    }
 
     await factory.scenarioBuilder.build(buildStep, feature);
     await factory.testFileBuilder.build(buildStep, feature);
@@ -36,6 +32,7 @@ Builder bddTestBuilder(BuilderOptions options) {
   final config = options.config;
   final generateWidgetTests = config['generate_widget_tests'] as bool? ?? true;
   final enableReporter = config['enable_reporter'] as bool? ?? false;
+
   final bddOptions = BDDOptions(
     generateWidgetTests: generateWidgetTests,
     enableReporter: enableReporter,
