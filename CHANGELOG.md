@@ -1,3 +1,8 @@
+## 0.2.0
+
+- remove `@ignore` decorator
+- change output files extension to `.bdd_scenarios.dart` and `.bdd_test.dart`
+
 ## 0.1.5
 
 - fix import file name
