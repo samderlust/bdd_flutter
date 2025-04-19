@@ -2,6 +2,7 @@
 import 'dart:async';
 
 import 'package:bdd_flutter/src/feature/builder/domain/bdd_options.dart';
+import 'package:bdd_flutter/src/feature/builder/domain/decorator.dart';
 import 'package:build/build.dart';
 
 import 'feature/builder/bdd_builders/bdd_factory.dart';
@@ -14,7 +15,7 @@ class BDDTestBuilder implements Builder {
 
   @override
   final buildExtensions = const {
-    r'.feature': ['.bdd.dart', '_scenarios.dart', '_test.dart'],
+    r'.feature': ['.bdd.dart', '.bdd_scenarios.dart', '.bdd_test.dart'],
   };
 
   @override

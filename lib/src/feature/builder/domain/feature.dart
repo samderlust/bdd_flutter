@@ -1,3 +1,4 @@
+import 'background.dart';
 import 'decorator.dart';
 import 'scenario.dart';
 
@@ -12,5 +13,13 @@ class Feature {
   /// The decorators of the feature
   final Set<BDDDecorator> decorators;
 
-  Feature(this.name, this.scenarios, {this.decorators = const {}});
+  /// The background of the feature
+  final Background? background;
+
+  Feature(
+    this.name,
+    this.scenarios, {
+    this.decorators = const {},
+    this.background,
+  });
 }

@@ -20,7 +20,7 @@ extension StringX on String {
         .join('');
   }
 
-  String get toClassName {
+  String get toScenarioClassName {
     return "${name}Scenario";
   }
 

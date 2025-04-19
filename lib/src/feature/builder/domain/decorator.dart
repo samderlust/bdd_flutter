@@ -12,7 +12,6 @@ class BDDDecorator {
       BDDDecorator(DecoratorType.disableReporter, null);
   factory BDDDecorator.className(String name) =>
       BDDDecorator(DecoratorType.className, name);
-  factory BDDDecorator.ignore() => BDDDecorator(DecoratorType.ignore, null);
   static BDDDecorator fromString(String text) {
     return switch (text) {
       '@unitTest' => BDDDecorator(DecoratorType.unitTest, null),
@@ -21,7 +20,6 @@ class BDDDecorator {
       '@disableReporter' => BDDDecorator(DecoratorType.disableReporter, null),
       var t when t.contains("@className") =>
         BDDDecorator(DecoratorType.className, _extractClassNameValue(t)),
-      '@ignore' => BDDDecorator(DecoratorType.ignore, null),
       _ => BDDDecorator(DecoratorType.unknown, null)
     };
   }
@@ -49,7 +47,6 @@ enum DecoratorType {
   className,
   enableReporter,
   disableReporter,
-  ignore,
   unknown,
 }
 
@@ -59,7 +56,6 @@ extension BDDDecoratorX on BDDDecorator {
   bool get isClassName => type == DecoratorType.className;
   bool get isEnableReporter => type == DecoratorType.enableReporter;
   bool get isDisableReporter => type == DecoratorType.disableReporter;
-  bool get isIgnore => type == DecoratorType.ignore;
 }
 
 extension BDDDecoratorSetX on Set<BDDDecorator> {
@@ -68,7 +64,6 @@ extension BDDDecoratorSetX on Set<BDDDecorator> {
   bool get hasClassName => any((e) => e.isClassName);
   bool get hasEnableReporter => any((e) => e.isEnableReporter);
   bool get hasDisableReporter => any((e) => e.isDisableReporter);
-  bool get hasIgnore => any((e) => e.isIgnore);
 }
 
 String? _extractClassNameValue(String text) {

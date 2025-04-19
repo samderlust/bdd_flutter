@@ -4,4 +4,4 @@ targets:
       bdd_flutter|bdd_test_builder:
         options:
           # generate_widget_tests:
-          enable_reporter: true
+          # enable_reporter: true

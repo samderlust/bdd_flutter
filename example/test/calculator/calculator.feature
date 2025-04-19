@@ -1,4 +1,4 @@
-@disableReporter
+@ignore
 Feature: Calculator
 
   Scenario: Add two numbers

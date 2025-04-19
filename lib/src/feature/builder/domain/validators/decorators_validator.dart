@@ -8,7 +8,6 @@ class DecoratorsValidator {
     DecoratorType.disableReporter,
     DecoratorType.unitTest,
     DecoratorType.widgetTest,
-    DecoratorType.ignore,
   ];
 
   static final _validScenarioDecoratorTypes = [

@@ -33,6 +33,6 @@ extension ScenarioX on Scenario {
     if (decorators.hasClassName) {
       return decorators.firstWhere((e) => e.isClassName).value!;
     }
-    return name.toClassName;
+    return name.toScenarioClassName;
   }
 }

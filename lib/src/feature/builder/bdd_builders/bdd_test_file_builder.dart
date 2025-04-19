@@ -11,7 +11,7 @@ final spaceStep = '  ';
 class BDDTestFileBuilder {
   Future<void> build(BuildStep buildStep, Feature feature) async {
     final inputId = buildStep.inputId;
-    final testOutputId = inputId.changeExtension('_test.dart');
+    final testOutputId = inputId.changeExtension('.bdd_test.dart');
 
     final testContent = await buildTestFile(feature);
     await buildStep.writeAsString(testOutputId, testContent);
@@ -25,7 +25,7 @@ class BDDTestFileBuilder {
       buffer.writeln("import 'package:bdd_flutter/bdd_flutter.dart';");
     }
 
-    buffer.writeln("import '${feature.name.toSnakeCase}_scenarios.dart';");
+    buffer.writeln("import '${feature.name.toSnakeCase}.bdd_scenarios.dart';");
     buffer.writeln();
 
     buffer.writeln("void main() {");
@@ -45,6 +45,14 @@ class BDDTestFileBuilder {
     }
 
     buffer.writeln("  group('${feature.name}', () {");
+
+    if (feature.background != null) {
+      buffer.writeln("    //Background: ${feature.background!.description}");
+      for (var step in feature.background!.steps) {
+        final methodName = step.text.toMethodName;
+        buffer.writeln("    ${feature.name}Background.$methodName();");
+      }
+    }
 
     for (var scenario in feature.scenarios) {
       final className = scenario.className;

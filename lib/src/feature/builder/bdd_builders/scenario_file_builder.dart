@@ -7,7 +7,7 @@ import '../../../extensions/string_x.dart';
 class ScenariosFileBuilder {
   Future<void> build(BuildStep buildStep, Feature feature) async {
     final inputId = buildStep.inputId;
-    final scenarioOutputId = inputId.changeExtension('_scenarios.dart');
+    final scenarioOutputId = inputId.changeExtension('.bdd_scenarios.dart');
 
     final scenarioContent = await buildScenarioFile(feature);
     await buildStep.writeAsString(scenarioOutputId, scenarioContent);
@@ -18,6 +18,21 @@ class ScenariosFileBuilder {
     buffer.writeln("import 'package:flutter_test/flutter_test.dart';");
     buffer.writeln();
 
+    if (feature.background != null) {
+      buffer.writeln("class ${feature.name}Background {");
+      for (var step in feature.background!.steps) {
+        final methodName = step.text.toMethodName;
+        final params = _extractMethodParams(step.text);
+        buffer.writeln(
+          "  static Future<void> $methodName(${params.isNotEmpty ? params : ''}) async {",
+        );
+        buffer.writeln("    // TODO: Implement ${step.keyword} ${step.text}");
+        buffer.writeln("  }");
+        buffer.writeln();
+      }
+      buffer.writeln("}");
+      buffer.writeln();
+    }
     // Create a class for each scenario
     for (var scenario in feature.scenarios) {
       final isUnitTest = scenario.isUnitTest;

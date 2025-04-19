@@ -97,9 +97,6 @@ You can use the following decorators to control the test generation:
 - `@disableReporter`:
   - Disable the reporter for the tests in the feature
   - apply to feature
-- `@ignore`:
-  - Ignore the feature from code generator
-  - apply to feature
 
 decorators can be used at the feature, scenario level. The lower the level, the more specific the decorator and it will override the upper level decorator.
 

@@ -1,5 +1,6 @@
 import 'package:build/build.dart';
 
+import '../domain/background.dart';
 import '../domain/bdd_options.dart';
 import '../domain/decorator.dart';
 import '../domain/feature.dart';
@@ -13,13 +14,13 @@ class BDDFeatureBuilder {
   BDDFeatureBuilder({required this.options});
 
   /// Parse a feature file and return a Feature object
-  Future<Feature?> build(BuildStep buildStep) async {
+  Future<Feature> build(BuildStep buildStep) async {
     final inputId = buildStep.inputId;
     final featureContent = await buildStep.readAsString(inputId);
     return parseFeature(featureContent);
   }
 
-  Feature? parseFeature(String featureContent) {
+  Feature parseFeature(String featureContent) {
     final lines =
         featureContent.split('\n').map((line) => line.trim()).toList();
     String? featureName;
@@ -30,13 +31,36 @@ class BDDFeatureBuilder {
     List<String>? exampleHeaders;
     Set<BDDDecorator> featureDecorators = {};
     Set<BDDDecorator> currentScenarioDecorators = {};
-
+    Background? background;
     Map<int, Set<BDDDecorator>> scenarioDecoratorsMap = {};
 
     for (var i = 0; i < lines.length; i++) {
       final line = lines[i];
+
       if (line.startsWith('Feature:')) {
         featureName = line.substring('Feature:'.length).trim();
+      } else if (line.startsWith('Background:')) {
+        background = Background(
+          description: line.substring('Background:'.length).trim(),
+          steps: [],
+        );
+        i++;
+        if (i < lines.length) {
+          final backgroundLine = lines[i];
+          if (backgroundLine.startsWith('Given') ||
+              backgroundLine.startsWith('When') ||
+              backgroundLine.startsWith('Then')) {
+            background.steps.add(
+              Step(
+                backgroundLine.split(' ')[0],
+                backgroundLine
+                    .substring(backgroundLine.split(' ')[0].length)
+                    .trim(),
+              ),
+            );
+          }
+        }
+      } else if (line.startsWith('@')) {
       } else if (line.startsWith('@')) {
         if (featureName == null) {
           featureDecorators.add(BDDDecorator.fromString(line));
@@ -44,10 +68,6 @@ class BDDFeatureBuilder {
           currentScenarioDecorators.add(BDDDecorator.fromString(line));
         }
       } else if (line.startsWith('Scenario:')) {
-        if (featureDecorators.hasIgnore) {
-          return null;
-        }
-
         // Store decorators for the current scenario before adding it
         if (currentScenarioName != null && currentSteps.isNotEmpty) {
           Set<BDDDecorator> tempDecorators = {};
@@ -146,6 +166,7 @@ class BDDFeatureBuilder {
     final feature = Feature(
       featureName,
       scenarios,
+      background: background,
       decorators: featureDecorators,
     );
     // scenarioDecoratorsMap.clear();
