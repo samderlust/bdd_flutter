@@ -1,0 +1,30 @@
+name: Flutter Test and Format
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  test_and_format:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.x"
+          channel: "stable"
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Run tests
+        run: flutter test
+
+      - name: Format code
+        run: flutter format . --line-length 200
+
+      - name: Check formatting
+        run: flutter format --set-exit-if-changed . --line-length 200 --exclude "example/pubspec.lock"
