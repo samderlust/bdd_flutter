@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:path/path.dart' as path;
 import 'package:yaml/yaml.dart';
 
 class BDDIgnore {
@@ -22,6 +21,6 @@ class BDDIgnore {
   }
 
   static bool shouldIgnore(String filePath) {
-    return _ignoredFiles.any((ignoredPath) => path.normalize(filePath) == path.normalize(ignoredPath));
+    return _ignoredFiles.contains(filePath);
   }
 }
