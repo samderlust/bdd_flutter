@@ -21,7 +21,7 @@ jobs:
         run: flutter pub get
 
       - name: Run tests
-        run: flutter test
+        run: flutter test ./test
 
       - name: Format code
         run: |
