@@ -12,7 +12,6 @@ class SampleScenario {
   static Future<void> iShouldSeeTheSampleFeature(WidgetTester tester) async {
     // TODO: Implement Then I should see the sample feature
   }
-
 }
 
 class CounterScenario {
@@ -27,7 +26,6 @@ class CounterScenario {
   static Future<void> iShouldSeeTheCounterIncremented(WidgetTester tester) async {
     // TODO: Implement Then I should see the counter incremented
   }
-
 }
 
 class CounterWithExamplesScenario {
@@ -42,7 +40,6 @@ class CounterWithExamplesScenario {
   static Future<void> iShouldSeeTheCounterIncremented(WidgetTester tester) async {
     // TODO: Implement Then I should see the counter incremented
   }
-
 }
 
 class CounterWithParametersScenario {
@@ -57,6 +54,4 @@ class CounterWithParametersScenario {
   static Future<void> iShouldSeeTheResult(WidgetTester tester, String result) async {
     // TODO: Implement Then I should see the result <result>
   }
-
 }
-
