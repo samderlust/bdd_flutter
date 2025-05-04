@@ -4,22 +4,17 @@ class BDDDecorator {
 
   BDDDecorator(this.type, this.value);
   factory BDDDecorator.unitTest() => BDDDecorator(DecoratorType.unitTest, null);
-  factory BDDDecorator.widgetTest() =>
-      BDDDecorator(DecoratorType.widgetTest, null);
-  factory BDDDecorator.enableReporter() =>
-      BDDDecorator(DecoratorType.enableReporter, null);
-  factory BDDDecorator.disableReporter() =>
-      BDDDecorator(DecoratorType.disableReporter, null);
-  factory BDDDecorator.className(String name) =>
-      BDDDecorator(DecoratorType.className, name);
+  factory BDDDecorator.widgetTest() => BDDDecorator(DecoratorType.widgetTest, null);
+  factory BDDDecorator.enableReporter() => BDDDecorator(DecoratorType.enableReporter, null);
+  factory BDDDecorator.disableReporter() => BDDDecorator(DecoratorType.disableReporter, null);
+  factory BDDDecorator.className(String name) => BDDDecorator(DecoratorType.className, name);
   static BDDDecorator fromString(String text) {
     return switch (text) {
       '@unitTest' => BDDDecorator(DecoratorType.unitTest, null),
       '@widgetTest' => BDDDecorator(DecoratorType.widgetTest, null),
       '@enableReporter' => BDDDecorator(DecoratorType.enableReporter, null),
       '@disableReporter' => BDDDecorator(DecoratorType.disableReporter, null),
-      var t when t.contains("@className") =>
-        BDDDecorator(DecoratorType.className, _extractClassNameValue(t)),
+      var t when t.contains("@className") => BDDDecorator(DecoratorType.className, _extractClassNameValue(t)),
       _ => BDDDecorator(DecoratorType.unknown, null)
     };
   }

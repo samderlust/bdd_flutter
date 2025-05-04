@@ -43,8 +43,7 @@ Feature: Comms Permissions
       expect(feature.name, 'Comms Permissions');
       expect(feature.scenarios.length, 1);
       expect(feature.decorators, contains(BDDDecorator.unitTest()));
-      expect(
-          feature.scenarios[0].decorators, contains(BDDDecorator.unitTest()));
+      expect(feature.scenarios[0].decorators, contains(BDDDecorator.unitTest()));
     });
     test('scenario decorator override feature decorator', () {
       const featureContent = '''

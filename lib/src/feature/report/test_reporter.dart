@@ -64,16 +64,9 @@ class BDDTestReporter {
     _overview = FeatureTestOverview(
       featureName: featureName,
       totalScenarios: _scenarios.length,
-      totalSteps:
-          _scenarios.fold(0, (sum, scenario) => sum + scenario.steps.length),
-      totalPassed: _scenarios.fold(
-          0,
-          (sum, scenario) =>
-              sum + scenario.steps.values.where((step) => step.status).length),
-      totalFailed: _scenarios.fold(
-          0,
-          (sum, scenario) =>
-              sum + scenario.steps.values.where((step) => !step.status).length),
+      totalSteps: _scenarios.fold(0, (sum, scenario) => sum + scenario.steps.length),
+      totalPassed: _scenarios.fold(0, (sum, scenario) => sum + scenario.steps.values.where((step) => step.status).length),
+      totalFailed: _scenarios.fold(0, (sum, scenario) => sum + scenario.steps.values.where((step) => !step.status).length),
       totalTime: totalTime,
     );
     _generateReport();
@@ -99,15 +92,10 @@ class BDDTestReporter {
     for (var scenario in _scenarios) {
       _reportBuffer!.writeln('\tScenario: ${scenario.name}');
       for (var step in scenario.steps.values) {
-        _reportBuffer!.writeln(
-            '\t\t${step.status ? green : red}${step.name}: ${step.status ? '✓' : '✗'}$reset');
+        _reportBuffer!.writeln('\t\t${step.status ? green : red}${step.name}: ${step.status ? '✓' : '✗'}$reset');
       }
     }
-    final errorSteps = _scenarios
-        .expand((scenario) => scenario.steps.values
-            .where((step) => step.error != null)
-            .map((step) => step))
-        .toList();
+    final errorSteps = _scenarios.expand((scenario) => scenario.steps.values.where((step) => step.error != null).map((step) => step)).toList();
     if (errorSteps.isNotEmpty) {
       _reportBuffer!.writeln('--------------------------------');
       _reportBuffer!.writeln('ERROR:');
@@ -123,8 +111,7 @@ class BDDTestReporter {
       return;
     }
 
-    final fileName =
-        '${featureName}_report_${DateTime.now().toIso8601String()}.txt';
+    final fileName = '${featureName}_report_${DateTime.now().toIso8601String()}.txt';
     final filePath = '$dir/$fileName';
     final file = File(filePath);
     file.writeAsStringSync(_reportBuffer?.toString() ?? '');
