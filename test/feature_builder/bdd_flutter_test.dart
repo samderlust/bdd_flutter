@@ -1,6 +1,7 @@
 import 'package:bdd_flutter/src/feature/builder/bdd_builders/bdd_feature_builder.dart';
 import 'package:bdd_flutter/src/feature/builder/domain/bdd_options.dart';
 import 'package:bdd_flutter/src/feature/builder/domain/decorator.dart';
+import 'package:bdd_flutter/src/feature/builder/domain/scenario.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -20,14 +21,14 @@ Feature: Comms Permissions
             | true           | shows the create new DM chat button |
             | false          | hides the create new DM chat button |
     ''';
-      final feature = featureBuilder.parseFeature(featureContent)!;
-      expect(feature.name, 'Comms Permissions');
-      expect(feature.scenarios.length, 1);
+      final feature = featureBuilder.parseFeature(featureContent);
+      expect(feature.name, equals('Comms Permissions'));
+      expect(feature.scenarios.length, equals(1));
       final scenario = feature.scenarios.first;
-      expect(scenario.decorators, contains(BDDDecorator.widgetTest()));
+      expect(scenario.isWidgetTest, isTrue);
 
-      expect(scenario.steps.length, 3);
-      expect(scenario.examples?.length, 2);
+      expect(scenario.steps.length, equals(3));
+      expect(scenario.examples?.length, equals(2));
     });
 
     test('feature decorator override default', () {
@@ -39,9 +40,9 @@ Feature: Comms Permissions
         When user attempts to create a direct channel
         Then <expected_result>
     ''';
-      final feature = featureBuilder.parseFeature(featureContent)!;
-      expect(feature.name, 'Comms Permissions');
-      expect(feature.scenarios.length, 1);
+      final feature = featureBuilder.parseFeature(featureContent);
+      expect(feature.name, equals('Comms Permissions'));
+      expect(feature.scenarios.length, equals(1));
       expect(feature.decorators, contains(BDDDecorator.unitTest()));
       expect(feature.scenarios[0].decorators, contains(BDDDecorator.unitTest()));
     });
@@ -55,9 +56,9 @@ Feature: Comms Permissions
         When user attempts to create a direct channel
         Then <expected_result>
     ''';
-      final feature = featureBuilder.parseFeature(featureContent)!;
-      expect(feature.name, 'Comms Permissions');
-      expect(feature.scenarios.length, 1);
+      final feature = featureBuilder.parseFeature(featureContent);
+      expect(feature.name, equals('Comms Permissions'));
+      expect(feature.scenarios.length, equals(1));
       expect(feature.decorators, contains(BDDDecorator.unitTest()));
       expect(
         feature.scenarios.first.decorators,

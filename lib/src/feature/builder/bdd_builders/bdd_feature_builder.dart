@@ -59,7 +59,6 @@ class BDDFeatureBuilder {
           }
         }
       } else if (line.startsWith('@')) {
-      } else if (line.startsWith('@')) {
         if (featureName == null) {
           featureDecorators.add(BDDDecorator.fromString(line));
         } else {
@@ -167,6 +166,15 @@ class BDDFeatureBuilder {
     Set<BDDDecorator> featureDecorators,
   ) {
     DecoratorsValidator.validateScenarioDecorators(decorators);
+
+    // If no decorators are specified, use the default from options
+    if (!decorators.hasUnitTest && !decorators.hasWidgetTest) {
+      if (!featureDecorators.hasUnitTest && !featureDecorators.hasWidgetTest) {
+        return options.generateWidgetTests ? {...decorators, BDDDecorator.widgetTest()} : {...decorators, BDDDecorator.unitTest()};
+      }
+      return {...decorators, ...featureDecorators};
+    }
+
     // if the feature has @unitTest and the scenario has @widgetTest,
     // then remove the @unitTest from the scenario decorators
     if (featureDecorators.hasUnitTest && decorators.hasWidgetTest) {
