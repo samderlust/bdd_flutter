@@ -22,6 +22,11 @@ class BDDTestBuilder implements Builder {
   Future<void> build(BuildStep buildStep) async {
     await BDDIgnore.initialize();
 
+    // Check if the feature file should be ignored
+    if (options.ignoreFeatures.contains(buildStep.inputId.path)) {
+      return;
+    }
+
     final factory = BDDFactory.create(options);
     final feature = await factory.featureBuilder.build(buildStep);
 
@@ -46,10 +51,12 @@ Builder bddTestBuilder(BuilderOptions options) {
   final config = options.config;
   final generateWidgetTests = config['generate_widget_tests'] as bool? ?? true;
   final enableReporter = config['enable_reporter'] as bool? ?? false;
+  final ignoreFeatures = (config['ignore_features'] as List<dynamic>?)?.cast<String>() ?? [];
 
   final bddOptions = BDDOptions(
     generateWidgetTests: generateWidgetTests,
     enableReporter: enableReporter,
+    ignoreFeatures: ignoreFeatures,
   );
   return BDDTestBuilder(options: bddOptions);
 }

@@ -8,15 +8,15 @@ void main() {
     testWidgets('Increment', (tester) async {
       //Scenario: Increment
       final examples = [
-        {'value': '1', 'expectedvalue': '1'},
-        {'value': '2', 'expectedvalue': '2'},
-        {'value': '3', 'expectedvalue': '3'},
+        {'value': '1','expectedvalue': '1',},
+        {'value': '2','expectedvalue': '2',},
+        {'value': '3','expectedvalue': '3',},
       ];
       for (var example in examples) {
-        // When I increment the counter by <value>
-        await IncrementScenario.iIncrementTheCounterBy(tester, example['value']!);
-        // Then the counter should have value <expected_value>
-        await IncrementScenario.theCounterShouldHaveValue(tester, example['expected_value']!);
+      // When I increment the counter by <value>
+      await IncrementScenario.iIncrementTheCounterBy(tester, example['value']!);
+      // Then the counter should have value <expected_value>
+      await IncrementScenario.theCounterShouldHaveValue(tester, example['expected_value']!);
       }
     });
   });

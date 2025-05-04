@@ -5,3 +5,5 @@ targets:
         options:
           # generate_widget_tests:
           # enable_reporter: true
+          ignore_features:
+            - "test/calculator/calculator.feature"
