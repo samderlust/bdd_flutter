@@ -12,6 +12,7 @@ export 'src/builder.dart' show bddTestBuilder;
 /// * Generate test files automatically
 /// * Support for both widget and non-widget tests
 /// * Customizable test generation options
+/// * Ignore specific generated files using bdd_ignore.yaml
 ///
 /// ## Getting Started
 ///
@@ -51,6 +52,18 @@ export 'src/builder.dart' show bddTestBuilder;
 ///         options:
 ///           generate_widget_tests: true
 /// ```
+///
+/// ## Ignoring Generated Files
+///
+/// If you need to modify a generated test file, you can prevent it from being
+/// overwritten by adding it to `bdd_ignore.yaml`:
+/// ```yaml
+/// ignore_files:
+///   - test/features/login_test.dart
+///   - test/features/registration_test.dart
+/// ```
+///
+/// Files listed in `bdd_ignore.yaml` will be skipped during build_runner execution.
 ///
 /// ## Additional Information
 ///

@@ -11,7 +11,7 @@ final spaceStep = '  ';
 class BDDTestFileBuilder {
   Future<void> build(BuildStep buildStep, Feature feature) async {
     final inputId = buildStep.inputId;
-    final testOutputId = inputId.changeExtension('.bdd_test.dart');
+    final testOutputId = inputId.changeExtension('.bdd_test.g.dart');
 
     final testContent = await buildTestFile(feature);
     await buildStep.writeAsString(testOutputId, testContent);
@@ -25,22 +25,20 @@ class BDDTestFileBuilder {
       buffer.writeln("import 'package:bdd_flutter/bdd_flutter.dart';");
     }
 
-    buffer.writeln("import '${feature.name.toSnakeCase}.bdd_scenarios.dart';");
+    buffer.writeln("import '${feature.name.toSnakeCase}.bdd_scenarios.g.dart';");
     buffer.writeln();
 
     buffer.writeln("void main() {");
     //add reporter initialization if needed
     if (feature.decorators.hasEnableReporter) {
-      buffer.writeln(
-          "  final reporter = BDDTestReporter(featureName: '${feature.name}');");
+      buffer.writeln("  final reporter = BDDTestReporter(featureName: '${feature.name}');");
       buffer.writeln("  setUpAll(() {");
       buffer.writeln("    reporter.testStarted(); // start recording");
       buffer.writeln("  });");
       buffer.writeln("  tearDownAll(() {");
       buffer.writeln("    reporter.testFinished(); // stop recording");
       buffer.writeln("    reporter.printReport(); // print report");
-      buffer.writeln(
-          "    //reporter.saveReportToFile(); //uncomment to save report to file");
+      buffer.writeln("    //reporter.saveReportToFile(); //uncomment to save report to file");
       buffer.writeln("  });");
     }
 
@@ -63,8 +61,7 @@ class BDDTestFileBuilder {
       if (isUnitTest) {
         buffer.writeln("    $testFunction('${scenario.name}', () async {");
       } else {
-        buffer
-            .writeln("    $testFunction('${scenario.name}', (tester) async {");
+        buffer.writeln("    $testFunction('${scenario.name}', (tester) async {");
       }
 
       buffer.writeln("      //Scenario: ${scenario.name}");
@@ -80,8 +77,7 @@ class BDDTestFileBuilder {
         for (var example in scenario.examples!) {
           buffer.write("        {");
           for (var entry in example.entries) {
-            buffer.write(
-                "'${entry.key.snakeCaseToCamelCase}': '${entry.value}',");
+            buffer.write("'${entry.key.snakeCaseToCamelCase}': '${entry.value}',");
           }
           buffer.write("},");
           buffer.writeln();

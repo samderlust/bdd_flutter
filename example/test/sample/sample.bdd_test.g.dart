@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'sample.bdd_scenarios.dart';
+import 'sample.bdd_scenarios.g.dart';
 
 void main() {
   group('Sample', () {
@@ -15,13 +15,13 @@ void main() {
     testWidgets('Counter', (tester) async {
       //Scenario: Counter
       // Given I have a counter
-      await CounterScenario.iHaveACounter(tester);
+      await CounterCustomName.iHaveACounter(tester);
       // When I increment the counter
-      await CounterScenario.iIncrementTheCounter(tester);
+      await CounterCustomName.iIncrementTheCounter(tester);
       // Then I should see the counter incremented
-      await CounterScenario.iShouldSeeTheCounterIncremented(tester);
+      await CounterCustomName.iShouldSeeTheCounterIncremented(tester);
     });
-    testWidgets('Counter with examples', (tester) async {
+    test('Counter with examples', () async {
       //Scenario: Counter with examples
       final examples = [
         {'counter': '1',},
@@ -30,14 +30,14 @@ void main() {
       ];
       for (var example in examples) {
       // Given I have a counter
-      await CounterWithExamplesScenario.iHaveACounter(tester);
+      await CounterWithExamplesScenario.iHaveACounter();
       // When I increment the <counter>
-      await CounterWithExamplesScenario.iIncrementThe(tester, example['counter']!);
+      await CounterWithExamplesScenario.iIncrementThe( example['counter']!);
       // Then I should see the counter incremented
-      await CounterWithExamplesScenario.iShouldSeeTheCounterIncremented(tester);
+      await CounterWithExamplesScenario.iShouldSeeTheCounterIncremented();
       }
     });
-    testWidgets('Counter with parameters', (tester) async {
+    test('Counter with parameters', () async {
       //Scenario: Counter with parameters
       final examples = [
         {'counter': '1','result': '2',},
@@ -46,11 +46,11 @@ void main() {
       ];
       for (var example in examples) {
       // Given I have a counter
-      await CounterWithParametersScenario.iHaveACounter(tester);
+      await CounterWithParametersScenario.iHaveACounter();
       // When I increment the counter <counter>
-      await CounterWithParametersScenario.iIncrementTheCounter(tester, example['counter']!);
+      await CounterWithParametersScenario.iIncrementTheCounter( example['counter']!);
       // Then I should see the result <result>
-      await CounterWithParametersScenario.iShouldSeeTheResult(tester, example['result']!);
+      await CounterWithParametersScenario.iShouldSeeTheResult( example['result']!);
       }
     });
   });

@@ -2,6 +2,7 @@ builders:
   bdd_flutter|bdd_test_builder:
     import: "package:bdd_flutter/bdd_flutter.dart"
     builder_factories: ["bddTestBuilder"]
-    build_extensions: { ".feature": [".bdd_scenarios.dart", ".bdd_test.dart"] }
+    build_extensions:
+      { ".feature": [".bdd_scenarios.g.dart", ".bdd_test.g.dart"] }
     auto_apply: dependents
     build_to: source

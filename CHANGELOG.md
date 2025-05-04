@@ -1,7 +1,10 @@
 ## 0.2.0
 
-- remove `@ignore` decorator
-- change output files extension to `.bdd_scenarios.dart` and `.bdd_test.dart`
+- change output files extension to `.bdd_scenarios.g.dart` and `.bdd_test.g.dart`
+- add `ignore_features` option to `build.yaml`
+- fix example
+- fix import file name
+- update readme
 
 ## 0.1.5
 

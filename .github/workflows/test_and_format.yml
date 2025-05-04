@@ -1,0 +1,32 @@
+name: Flutter Test and Format
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  test_and_format:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.x"
+          channel: "stable"
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Run tests
+        run: flutter test ./test
+
+      - name: Format code
+        run: |
+          dart format . --line-length 200 --output=none $(find . -name "*.dart" ! -name "*.g.dart")
+
+      - name: Check for changes
+        run: |
+          git diff --exit-code -- . ':!example/pubspec.lock' || (echo "::error::Code formatting issues found. Run 'dart format --line-length 200 lib/ test/ example/' to fix." && exit 1)

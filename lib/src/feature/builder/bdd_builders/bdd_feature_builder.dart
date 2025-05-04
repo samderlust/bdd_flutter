@@ -21,8 +21,7 @@ class BDDFeatureBuilder {
   }
 
   Feature parseFeature(String featureContent) {
-    final lines =
-        featureContent.split('\n').map((line) => line.trim()).toList();
+    final lines = featureContent.split('\n').map((line) => line.trim()).toList();
     String? featureName;
     List<Scenario> scenarios = [];
     List<Step> currentSteps = [];
@@ -39,6 +38,9 @@ class BDDFeatureBuilder {
 
       if (line.startsWith('Feature:')) {
         featureName = line.substring('Feature:'.length).trim();
+      } else if (line.startsWith('@ignore')) {
+        // If @ignore is found, return an empty feature to skip generation
+        return Feature('', []);
       } else if (line.startsWith('Background:')) {
         background = Background(
           description: line.substring('Background:'.length).trim(),
@@ -47,20 +49,15 @@ class BDDFeatureBuilder {
         i++;
         if (i < lines.length) {
           final backgroundLine = lines[i];
-          if (backgroundLine.startsWith('Given') ||
-              backgroundLine.startsWith('When') ||
-              backgroundLine.startsWith('Then')) {
+          if (backgroundLine.startsWith('Given') || backgroundLine.startsWith('When') || backgroundLine.startsWith('Then')) {
             background.steps.add(
               Step(
                 backgroundLine.split(' ')[0],
-                backgroundLine
-                    .substring(backgroundLine.split(' ')[0].length)
-                    .trim(),
+                backgroundLine.substring(backgroundLine.split(' ')[0].length).trim(),
               ),
             );
           }
         }
-      } else if (line.startsWith('@')) {
       } else if (line.startsWith('@')) {
         if (featureName == null) {
           featureDecorators.add(BDDDecorator.fromString(line));
@@ -91,9 +88,7 @@ class BDDFeatureBuilder {
         }
 
         // Store decorators for the new scenario
-        scenarioDecoratorsMap[scenarios.length] = {
-          ...currentScenarioDecorators
-        };
+        scenarioDecoratorsMap[scenarios.length] = {...currentScenarioDecorators};
         currentScenarioDecorators.clear();
 
         // if scenarios.isEmpty, which means the first scenario
@@ -107,9 +102,7 @@ class BDDFeatureBuilder {
         currentScenarioName = line.substring('Scenario:'.length).trim();
         currentExamples = null;
         exampleHeaders = null;
-      } else if (line.startsWith('Given') ||
-          line.startsWith('When') ||
-          line.startsWith('Then')) {
+      } else if (line.startsWith('Given') || line.startsWith('When') || line.startsWith('Then')) {
         final keyword = line.split(' ')[0];
         final text = line.substring(keyword.length).trim();
         currentSteps.add(Step(keyword, text));
@@ -121,21 +114,11 @@ class BDDFeatureBuilder {
         if (i < lines.length) {
           final headerLine = lines[i];
           if (headerLine.startsWith('|')) {
-            exampleHeaders = headerLine
-                .split('|')
-                .map((cell) => cell.trim())
-                .where((cell) => cell.isNotEmpty)
-                .toList();
+            exampleHeaders = headerLine.split('|').map((cell) => cell.trim()).where((cell) => cell.isNotEmpty).toList();
           }
         }
-      } else if (line.startsWith('|') &&
-          currentExamples != null &&
-          exampleHeaders != null) {
-        final cells = line
-            .split('|')
-            .map((cell) => cell.trim())
-            .where((cell) => cell.isNotEmpty)
-            .toList();
+      } else if (line.startsWith('|') && currentExamples != null && exampleHeaders != null) {
+        final cells = line.split('|').map((cell) => cell.trim()).where((cell) => cell.isNotEmpty).toList();
 
         if (cells.length == exampleHeaders.length) {
           currentExamples.add(Map.fromIterables(exampleHeaders, cells));
@@ -183,17 +166,24 @@ class BDDFeatureBuilder {
     Set<BDDDecorator> featureDecorators,
   ) {
     DecoratorsValidator.validateScenarioDecorators(decorators);
+
+    // If no decorators are specified, use the default from options
+    if (!decorators.hasUnitTest && !decorators.hasWidgetTest) {
+      if (!featureDecorators.hasUnitTest && !featureDecorators.hasWidgetTest) {
+        return options.generateWidgetTests ? {...decorators, BDDDecorator.widgetTest()} : {...decorators, BDDDecorator.unitTest()};
+      }
+      return {...decorators, ...featureDecorators};
+    }
+
     // if the feature has @unitTest and the scenario has @widgetTest,
     // then remove the @unitTest from the scenario decorators
     if (featureDecorators.hasUnitTest && decorators.hasWidgetTest) {
-      return {...featureDecorators, ...decorators}
-        ..removeWhere((e) => e.isUnitTest);
+      return {...featureDecorators, ...decorators}..removeWhere((e) => e.isUnitTest);
     }
     // if the feature has @widgetTest and the scenario has @unitTest,
     // then remove the @widgetTest from the scenario decorators
     if (featureDecorators.hasWidgetTest && decorators.hasUnitTest) {
-      return {...featureDecorators, ...decorators}
-        ..removeWhere((e) => e.isWidgetTest);
+      return {...featureDecorators, ...decorators}..removeWhere((e) => e.isWidgetTest);
     }
     return {...featureDecorators, ...decorators};
   }
