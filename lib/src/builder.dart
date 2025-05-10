@@ -1,7 +1,6 @@
 // lib/builder.dart
 import 'dart:async';
 
-import 'package:bdd_flutter/src/feature/builder/domain/bdd_ignore.dart';
 import 'package:bdd_flutter/src/feature/builder/domain/bdd_options.dart';
 import 'package:build/build.dart';
 
@@ -20,8 +19,6 @@ class BDDTestBuilder implements Builder {
 
   @override
   Future<void> build(BuildStep buildStep) async {
-    await BDDIgnore.initialize();
-
     // Check if the feature file should be ignored
     if (options.ignoreFeatures.contains(buildStep.inputId.path)) {
       return;
@@ -29,13 +26,6 @@ class BDDTestBuilder implements Builder {
 
     final factory = BDDFactory.create(options);
     final feature = await factory.featureBuilder.build(buildStep);
-
-    // Check if we should ignore the generated files
-    final outputId = buildStep.inputId.changeExtension('.bdd_test.g.dart');
-
-    if (BDDIgnore.shouldIgnore(outputId.path)) {
-      return;
-    }
 
     // Skip generation if feature is empty (due to @ignore)
     if (feature.name.isEmpty) {

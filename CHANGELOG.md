@@ -1,3 +1,9 @@
+## 0.3.0
+
+- add custom CLI
+- `dart run bdd remane` to remove `.g` from generated files extension
+- `dart run bdd build` to generate files from feature files
+
 ## 0.2.0
 
 - change output files extension to `.bdd_scenarios.g.dart` and `.bdd_test.g.dart`
