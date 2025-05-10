@@ -1,10 +1,8 @@
-import 'dart:convert';
+import 'dart:developer' as dev;
 import 'dart:io';
 
-import 'package:bdd_flutter/bdd_flutter.dart';
 import 'package:bdd_flutter/src/feature/builder/bdd_builders/bdd_factory.dart';
 import 'package:bdd_flutter/src/feature/builder/domain/bdd_options.dart';
-import 'package:build/build.dart';
 import 'package:yaml/yaml.dart';
 
 void main(List<String> arguments) async {
@@ -20,14 +18,9 @@ Future<void> build(List<String> arguments) async {
   final features = Directory('test/').listSync(recursive: true).where((file) => file.path.endsWith('.feature')).toList();
 
   final ignoredFiles = getIgnoredFiles();
-  print(ignoredFiles);
 
-  for (final feature in features) {
-    print(feature.path);
-  }
-
-  final options = BuilderOptions({'generate_widget_tests': true});
-  final factory = BDDFactory.create(BDDOptions());
+  final options = getBDDOptions();
+  final factory = BDDFactory.create(options);
 
   for (final feature in features) {
     final featureFile = File(feature.path);
@@ -79,4 +72,31 @@ List<String> getIgnoredFiles() {
   if (ignoreFeatures == null) return [];
 
   return List<String>.from(ignoreFeatures);
+}
+
+BDDOptions getBDDOptions() {
+  final buildYaml = File('build.yaml');
+  final yaml = loadYaml(buildYaml.readAsStringSync());
+  if (yaml == null) return BDDOptions();
+
+  final targets = yaml['targets'];
+  if (targets == null) return BDDOptions();
+
+  final defaultTarget = targets['\$default'];
+  if (defaultTarget == null) return BDDOptions();
+
+  final builders = defaultTarget['builders'];
+  if (builders == null) return BDDOptions();
+
+  final bddBuilder = builders['bdd_flutter|bdd_test_builder'];
+  if (bddBuilder == null) return BDDOptions();
+
+  final options = bddBuilder['options'];
+  if (options == null) return BDDOptions();
+
+  return BDDOptions(
+    generateWidgetTests: options['generate_widget_tests'] as bool? ?? true,
+    enableReporter: options['enable_reporter'] as bool? ?? false,
+    ignoreFeatures: (options['ignore_features'] as YamlList?)?.cast<String>() ?? [],
+  );
 }
