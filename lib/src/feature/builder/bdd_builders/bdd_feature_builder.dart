@@ -1,5 +1,3 @@
-import 'package:build/build.dart';
-
 import '../domain/background.dart';
 import '../domain/bdd_options.dart';
 import '../domain/decorator.dart';
@@ -12,13 +10,6 @@ class BDDFeatureBuilder {
   final BDDOptions options;
 
   BDDFeatureBuilder({required this.options});
-
-  /// Parse a feature file and return a Feature object
-  Future<Feature> build(BuildStep buildStep) async {
-    final inputId = buildStep.inputId;
-    final featureContent = await buildStep.readAsString(inputId);
-    return parseFeature(featureContent);
-  }
 
   Feature parseFeature(String featureContent) {
     final lines = featureContent.split('\n').map((line) => line.trim()).toList();

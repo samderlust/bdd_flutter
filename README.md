@@ -13,6 +13,7 @@ A powerful Flutter package that simplifies Behavior Driven Development (BDD) by 
 - ⚡ Generate boilerplate test files automatically
 - 🧪 Support for both widget tests and unit tests
 - ⚙️ Configurable test generation
+- 📄 Ignore specific generated files using `.bdd_config.yaml`
 
 ## 📦 Installation
 
@@ -21,7 +22,6 @@ Add the following dependencies to your package's `pubspec.yaml` file:
 ```yaml
 dev_dependencies:
   bdd_flutter: any
-  build_runner: any
 ```
 
 ## 🚀 Quick Start
@@ -41,10 +41,10 @@ Feature: Counter
       | 3     | 3              |
 ```
 
-2. Generate test files:
+2. Run the generator to create test files:
 
 ```bash
-flutter pub run build_runner build
+dart run bdd_flutter build
 ```
 
 3. Run your tests:
@@ -78,21 +78,22 @@ This approach ensures that:
 - Generated files are properly ignored in version control
 - You maintain a clean project structure
 
-## ⚙️ Configuration
+## 🚀 Configuration
 
-Configure test generation in your `build.yaml`:
+You can configure the generator in `.bdd_config.yaml`:
 
 ```yaml
-targets:
-  $default:
-    builders:
-      bdd_flutter|bdd_test_builder:
-        options:
-          generate_widget_tests: false # Default: true
-          enable_reporter: true # Default: false
-          ignore_features:
-            - "test/features/ignored.feature"
-            - "test/features/another_ignored.feature"
+generate_widget_tests: true
+enable_reporter: false
+ignore_features:
+  - test/features/login.feature
+  - test/features/registration.feature
+```
+
+Or use command-line arguments:
+
+```bash
+dart run bdd_flutter build --no-widget-tests --enable-reporter --ignore login.feature
 ```
 
 ### Configuration Options
@@ -191,3 +192,7 @@ We welcome contributions! Please feel free to:
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Additional Information
+
+For more information, visit the [documentation](https://example.com/bdd_flutter).

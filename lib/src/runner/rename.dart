@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import '../constraints/file_extenstion.dart';
+
 /// this will remove `.g` from the file name
 ///
 /// suggested to run after writing test, this will prevent the file from being overwritten
@@ -20,7 +22,11 @@ void rename(List<String> arguments) {
     return;
   }
 
-  final files = testDir.listSync(recursive: true).where((file) => file.path.endsWith('.g.dart')).map((file) => File(file.path)).where((file) {
+  final files = testDir
+      .listSync(recursive: true)
+      .where((file) => file.path.endsWith(FileExtension.generatedTest) || file.path.endsWith(FileExtension.generatedScenarios))
+      .map((file) => File(file.path))
+      .where((file) {
     if (arguments.isEmpty) return true;
     final featureName = file.path.split('/').last.split('.').first;
     return arguments.any((arg) => featureName.contains(arg));
@@ -32,12 +38,12 @@ void rename(List<String> arguments) {
   }
 
   for (final file in files) {
-    final newName = file.path.replaceAll('.g.dart', '.dart');
+    final newName = file.path.replaceAll('.bdd.', '.bdd_');
     print('Renaming ${file.path} to $newName');
 
     // Update import statements in the file
     final content = file.readAsStringSync();
-    final updatedContent = content.replaceAll('.g.dart', '.dart');
+    final updatedContent = content.replaceAll('.bdd.', '.bdd_');
     file.writeAsStringSync(updatedContent);
 
     // Rename the file

@@ -15,11 +15,11 @@ void main() {
     testWidgets('Subtract two numbers', (tester) async {
       //Scenario: Subtract two numbers
       // Given I have the number 5
-      await SubtractTwoNumbersScenario.iHaveTheNumber5(tester);
+      await Subtract.iHaveTheNumber5(tester);
       // When I subtract them
-      await SubtractTwoNumbersScenario.iSubtractThem(tester);
+      await Subtract.iSubtractThem(tester);
       // Then the result should be 2
-      await SubtractTwoNumbersScenario.theResultShouldBe2(tester);
+      await Subtract.theResultShouldBe2(tester);
     });
     testWidgets('Multiply two numbers', (tester) async {
       //Scenario: Multiply two numbers
@@ -33,17 +33,17 @@ void main() {
     testWidgets('Divide two numbers', (tester) async {
       //Scenario: Divide two numbers
       final examples = [
-        {'number1': '10', 'number2': '2', 'result': '5'},
-        {'number1': '10', 'number2': '1', 'result': '10'},
-        {'number1': '10', 'number2': '10', 'result': '1'},
+        {'number1': '10','number2': '2','result': '5',},
+        {'number1': '10','number2': '1','result': '10',},
+        {'number1': '10','number2': '10','result': '1',},
       ];
       for (var example in examples) {
-        // Given I have the number <number1>
-        await DivideTwoNumbersScenario.iHaveTheNumber(tester, example['number1']!);
-        // When I divide them
-        await DivideTwoNumbersScenario.iDivideThem(tester);
-        // Then the result should be <result>
-        await DivideTwoNumbersScenario.theResultShouldBe(tester, example['result']!);
+      // Given I have the number <number1>
+      await DivideTwoNumbersScenario.iHaveTheNumber(tester, example['number1']!);
+      // When I divide them
+      await DivideTwoNumbersScenario.iDivideThem(tester);
+      // Then the result should be <result>
+      await DivideTwoNumbersScenario.theResultShouldBe(tester, example['result']!);
       }
     });
   });

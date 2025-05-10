@@ -1,18 +1,8 @@
-import 'package:build/build.dart';
-
 import '../domain/feature.dart';
 import '../domain/scenario.dart';
 import '../../../extensions/string_x.dart';
 
 class ScenariosFileBuilder {
-  Future<void> build(BuildStep buildStep, Feature feature) async {
-    final inputId = buildStep.inputId;
-    final scenarioOutputId = inputId.changeExtension('.bdd_scenarios.g.dart');
-
-    final scenarioContent = await buildScenarioFile(feature);
-    await buildStep.writeAsString(scenarioOutputId, scenarioContent);
-  }
-
   Future<String> buildScenarioFile(Feature feature) async {
     final buffer = StringBuffer();
     buffer.writeln("import 'package:flutter_test/flutter_test.dart';");

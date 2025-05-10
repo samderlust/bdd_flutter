@@ -1,5 +1,6 @@
+library bdd_flutter;
+
 export 'src/feature/report/test_reporter.dart' show BDDTestReporter;
-export 'src/builder.dart' show bddTestBuilder;
 
 /// A Flutter package for Behavior-Driven Development (BDD) testing.
 ///
@@ -12,7 +13,7 @@ export 'src/builder.dart' show bddTestBuilder;
 /// * Generate test files automatically
 /// * Support for both widget and non-widget tests
 /// * Customizable test generation options
-/// * Ignore specific generated files using bdd_ignore.yaml
+/// * Ignore specific generated files using .bdd_config.yaml
 ///
 /// ## Getting Started
 ///
@@ -36,34 +37,26 @@ export 'src/builder.dart' show bddTestBuilder;
 ///     Then I should see the home screen
 /// ```
 ///
-/// 3. Run the build_runner to generate test files:
+/// 3. Run the generator to create test files:
 /// ```bash
-/// flutter pub run build_runner build
+/// dart run bdd_flutter build
 /// ```
 ///
 /// ## Configuration
 ///
-/// You can configure the builder in your `build.yaml`:
+/// You can configure the generator in `.bdd_config.yaml`:
 /// ```yaml
-/// targets:
-///   $default:
-///     builders:
-///       bdd_flutter|bdd_test_builder:
-///         options:
-///           generate_widget_tests: true
+/// generate_widget_tests: true
+/// enable_reporter: false
+/// ignore_features:
+///   - test/features/login.feature
+///   - test/features/registration.feature
 /// ```
 ///
-/// ## Ignoring Generated Files
-///
-/// If you need to modify a generated test file, you can prevent it from being
-/// overwritten by adding it to `bdd_ignore.yaml`:
-/// ```yaml
-/// ignore_files:
-///   - test/features/login_test.dart
-///   - test/features/registration_test.dart
+/// Or use command-line arguments:
+/// ```bash
+/// dart run bdd_flutter build --no-widget-tests --enable-reporter --ignore login.feature
 /// ```
-///
-/// Files listed in `bdd_ignore.yaml` will be skipped during build_runner execution.
 ///
 /// ## Additional Information
 ///

@@ -1,22 +1,13 @@
-import 'package:bdd_flutter/src/feature/builder/domain/decorator.dart';
-import 'package:build/build.dart';
-
+import '../../../constraints/file_extenstion.dart';
+import '../../../extensions/string_x.dart';
+import '../domain/decorator.dart';
 import '../domain/feature.dart';
 import '../domain/scenario.dart';
 import '../domain/step.dart';
-import '../../../extensions/string_x.dart';
 
 final spaceStep = '  ';
 
 class BDDTestFileBuilder {
-  Future<void> build(BuildStep buildStep, Feature feature) async {
-    final inputId = buildStep.inputId;
-    final testOutputId = inputId.changeExtension('.bdd_test.g.dart');
-
-    final testContent = await buildTestFile(feature);
-    await buildStep.writeAsString(testOutputId, testContent);
-  }
-
   Future<String> buildTestFile(Feature feature) async {
     final buffer = StringBuffer();
     buffer.writeln("import 'package:flutter_test/flutter_test.dart';");
@@ -25,7 +16,7 @@ class BDDTestFileBuilder {
       buffer.writeln("import 'package:bdd_flutter/bdd_flutter.dart';");
     }
 
-    buffer.writeln("import '${feature.name.toSnakeCase}.bdd_scenarios.g.dart';");
+    buffer.writeln("import '${feature.name.toSnakeCase}${FileExtension.generatedScenarios}';");
     buffer.writeln();
 
     buffer.writeln("void main() {");
