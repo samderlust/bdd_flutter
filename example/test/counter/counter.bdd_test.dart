@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'counter.bdd_scenarios.g.dart';
+import 'counter.bdd_scenarios.dart';
 
 void main() {
   group('Counter', () {

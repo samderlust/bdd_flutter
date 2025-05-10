@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'sample.bdd_scenarios.g.dart';
+import 'sample.bdd_scenarios.dart';
 
 void main() {
   group('Sample', () {

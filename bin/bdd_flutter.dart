@@ -4,12 +4,14 @@ import 'dart:io';
 import 'package:bdd_flutter/src/feature/builder/bdd_builders/bdd_factory.dart';
 import 'package:bdd_flutter/src/feature/builder/domain/bdd_options.dart';
 import 'package:yaml/yaml.dart';
+import 'src/rename.dart';
 
 void main(List<String> arguments) async {
-  if (arguments.contains('build')) {
+  if (arguments.isEmpty) {
     await build(arguments);
-  } else if (arguments.contains('rename')) {
-    rename();
+  } else if (arguments.first == 'rename') {
+    print('rename');
+    rename(arguments.skip(1).toList());
   }
 }
 
@@ -17,10 +19,10 @@ Future<void> build(List<String> arguments) async {
   // loop through all the .feature files in the test/features directory
   final features = Directory('test/').listSync(recursive: true).where((file) => file.path.endsWith('.feature')).toList();
 
-  final ignoredFiles = getIgnoredFiles();
-
   final options = getBDDOptions();
   final factory = BDDFactory.create(options);
+
+  final ignoredFiles = options.ignoreFeatures;
 
   for (final feature in features) {
     final featureFile = File(feature.path);
@@ -43,35 +45,6 @@ Future<void> build(List<String> arguments) async {
     final testFile = File('${feature.path.replaceAll('.feature', '')}.bdd_test.g.dart');
     testFile.writeAsStringSync(testCases);
   }
-}
-
-void rename() {}
-
-List<String> getIgnoredFiles() {
-  // parse build.yaml file, get the ignore_features property
-  final buildYaml = File('build.yaml');
-  final yaml = loadYaml(buildYaml.readAsStringSync());
-  if (yaml == null) return [];
-
-  final targets = yaml['targets'];
-  if (targets == null) return [];
-
-  final defaultTarget = targets['\$default'];
-  if (defaultTarget == null) return [];
-
-  final builders = defaultTarget['builders'];
-  if (builders == null) return [];
-
-  final bddBuilder = builders['bdd_flutter|bdd_test_builder'];
-  if (bddBuilder == null) return [];
-
-  final options = bddBuilder['options'];
-  if (options == null) return [];
-
-  final ignoreFeatures = options['ignore_features'];
-  if (ignoreFeatures == null) return [];
-
-  return List<String>.from(ignoreFeatures);
 }
 
 BDDOptions getBDDOptions() {
