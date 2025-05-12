@@ -60,3 +60,18 @@ class CounterWithParametersScenario {
 
 }
 
+class CounterWithWidgetTestScenario {
+  static Future<void> iHaveACounter(WidgetTester tester) async {
+    // TODO: Implement Given I have a counter
+  }
+
+  static Future<void> iIncrementTheCounter(WidgetTester tester) async {
+    // TODO: Implement When I increment the counter
+  }
+
+  static Future<void> iShouldSeeTheCounterIncremented(WidgetTester tester) async {
+    // TODO: Implement Then I should see the counter incremented
+  }
+
+}
+

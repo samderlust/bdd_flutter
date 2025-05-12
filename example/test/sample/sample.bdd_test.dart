@@ -53,5 +53,14 @@ void main() {
       await CounterWithParametersScenario.iShouldSeeTheResult( example['result']!);
       }
     });
+    testWidgets('Counter with widget test', (tester) async {
+      //Scenario: Counter with widget test
+      // Given I have a counter
+      await CounterWithWidgetTestScenario.iHaveACounter(tester);
+      // When I increment the counter
+      await CounterWithWidgetTestScenario.iIncrementTheCounter(tester);
+      // Then I should see the counter incremented
+      await CounterWithWidgetTestScenario.iShouldSeeTheCounterIncremented(tester);
+    });
   });
 }
