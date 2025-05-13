@@ -7,6 +7,18 @@
 
 A powerful Flutter package that simplifies Behavior Driven Development (BDD) by automatically generating test files from Gherkin feature files. Write expressive tests in plain English using Given/When/Then scenarios and let BDD Flutter handle the boilerplate code generation.
 
+## 🚨 Breaking Changes in v1.0.0
+
+- The package no longer uses `build_runner`. Instead, it now uses a simpler CLI approach:
+  1. Remove `build_runner` from your dev_dependencies if you added it previously
+  2. Use `dart run bdd_flutter build` to generate test files
+  3. Generated files will use the `.bdd.dart` extension for better clarity
+
+To migrate:
+
+1. Remove build_runner if present in your dev_dependencies
+2. If you want to keep current test files, consider add `.feature` file paths into `bdd_config.yaml` under `ignore_features` section (see [Configuration](#-configuration) for more details)
+
 ## ✨ Features
 
 - 📝 Parse `.feature` files written in Gherkin syntax
@@ -14,6 +26,9 @@ A powerful Flutter package that simplifies Behavior Driven Development (BDD) by 
 - 🧪 Support for both widget tests and unit tests
 - ⚙️ Configurable test generation
 - 📄 Ignore specific generated files using `.bdd_config.yaml`
+- 📄 Incremental generation to preserve user-written code
+- 📄 Configuration in `.bdd_flutter/config.yaml`
+- 📄 Manifest tracking in `.bdd_flutter/manifest.yaml`
 
 ## 📦 Installation
 
@@ -21,7 +36,7 @@ Add the following dependencies to your package's `pubspec.yaml` file:
 
 ```yaml
 dev_dependencies:
-  bdd_flutter: any
+  bdd_flutter: ^1.0.0
 ```
 
 ## 🚀 Quick Start
@@ -59,9 +74,10 @@ When working with generated test files, follow these best practices:
 
 1. **Generated Files**:
 
-   - Generated files will have the `.g.dart` extension (e.g., `counter_test.bdd_test.g.dart` or `counter_scenarios.g.dart`)
+   - Generated files will have the `.bdd.*.dart` extension (e.g., `counter_test.bdd.test.dart` or `counter_scenarios.bdd.scenarios.dart`)
    - After implementing your tests, it's recommended to:
-     - Remove the `.g` extension from the file name
+     - Remove the `.bdd.*` extension from the file name
+     - or you can run `dart run bdd_flutter rename` to rename the files
      - Add an ignore decorator to your feature file (@ignore)
    - This will prevent the generated files from being overwritten by subsequent builds
 
@@ -80,7 +96,7 @@ This approach ensures that:
 
 ## 🚀 Configuration
 
-You can configure the generator in `.bdd_config.yaml`:
+You can configure the generator in `bdd_config.yaml`:
 
 ```yaml
 generate_widget_tests: true
@@ -196,3 +212,71 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Additional Information
 
 For more information, visit the [documentation](https://example.com/bdd_flutter).
+
+## Project Structure
+
+```
+your_project/
+├── .bdd_flutter/
+│   ├── config.yaml     # Configuration settings
+│   └── manifest.yaml   # Generation state tracking
+├── test/
+│   ├── features/
+│   │   └── login.feature
+│   └── features_test/
+│       ├── login_test.dart
+│       └── login_scenarios.dart
+└── pubspec.yaml
+```
+
+## Generation Modes
+
+The package supports three generation modes:
+
+### 1. Incremental Update (Default)
+
+```bash
+dart run bdd_flutter build
+```
+
+- Processes new and modified scenarios
+- Preserves user-written code
+- Tracks changes in `.bdd_flutter/manifest.yaml`
+
+### 2. Force Regenerate
+
+```bash
+dart run bdd_flutter build --force
+```
+
+- Regenerates all test files
+- Overwrites existing files
+- Use with caution
+
+### 3. New Files Only
+
+```bash
+dart run bdd_flutter build --new-only
+```
+
+- Only processes new feature files
+- Skips existing files
+- Useful for initial setup
+
+## Best Practices
+
+1. **Version Control**
+
+   - Add `.bdd_flutter/manifest.yaml` to `.gitignore`
+   - Keep `.bdd_flutter/config.yaml` in version control
+
+2. **Feature Files**
+
+   - Keep feature files in `test/features/`
+   - Use descriptive names for scenarios
+   - Follow Gherkin syntax guidelines
+
+3. **Test Files**
+   - Don't modify generated test files directly
+   - Add your implementation in the provided methods
+   - Use the incremental update mode to preserve changes
