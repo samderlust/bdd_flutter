@@ -16,7 +16,7 @@ class BDDTestFileBuilder {
       buffer.writeln("import 'package:bdd_flutter/bdd_flutter.dart';");
     }
 
-    buffer.writeln("import '${feature.name.toSnakeCase}${FileExtension.generatedScenarios}';");
+    buffer.writeln("import '${feature.fileName}${FileExtension.generatedScenarios}';");
     buffer.writeln();
 
     buffer.writeln("void main() {");

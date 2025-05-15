@@ -11,7 +11,7 @@ class BDDFeatureBuilder {
 
   BDDFeatureBuilder({required this.options});
 
-  Feature parseFeature(String featureContent) {
+  Feature parseFeature(String featureContent, String fileName) {
     final lines = featureContent.split('\n').map((line) => line.trim()).toList();
     String? featureName;
     List<Scenario> scenarios = [];
@@ -31,7 +31,7 @@ class BDDFeatureBuilder {
         featureName = line.substring('Feature:'.length).trim();
       } else if (line.startsWith('@ignore')) {
         // If @ignore is found, return an empty feature to skip generation
-        return Feature('', []);
+        return Feature('', [], fileName: fileName);
       } else if (line.startsWith('Background:')) {
         background = Background(
           description: line.substring('Background:'.length).trim(),
@@ -140,6 +140,7 @@ class BDDFeatureBuilder {
     final feature = Feature(
       featureName,
       scenarios,
+      fileName: fileName,
       background: background,
       decorators: featureDecorators,
     );

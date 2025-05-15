@@ -1,9 +1,9 @@
 ## 0.3.0
 
+- remove `build_runner` dependency
 - add custom CLI
 - `dart run bdd remane` to remove `.g` from generated files extension
 - `dart run bdd build` to generate files from feature files
-- [] separete command option and config options
 
 ## 0.2.0
 

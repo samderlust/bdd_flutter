@@ -7,6 +7,7 @@ class BDDOptions {
   final List<String> ignoreFeatures;
   final bool force;
   final bool newOnly;
+  final List<String> only;
 
   BDDOptions({
     required this.generateWidgetTests,
@@ -14,6 +15,7 @@ class BDDOptions {
     required this.ignoreFeatures,
     this.force = false,
     this.newOnly = false,
+    this.only = const [],
   });
 
   BDDOptions copyWith({
@@ -22,6 +24,7 @@ class BDDOptions {
     List<String>? ignoreFeatures,
     bool? force,
     bool? newOnly,
+    List<String>? only,
   }) {
     return BDDOptions(
       generateWidgetTests: generateWidgetTests ?? this.generateWidgetTests,
@@ -29,6 +32,7 @@ class BDDOptions {
       ignoreFeatures: ignoreFeatures ?? this.ignoreFeatures,
       force: force ?? this.force,
       newOnly: newOnly ?? this.newOnly,
+      only: only ?? this.only,
     );
   }
 

@@ -3,6 +3,9 @@ enum LogLevel {
   info,
   warning,
   error,
+  debug,
+  verbose,
+  lean,
 }
 
 /// A class to handle logging to the terminal
@@ -15,6 +18,10 @@ class CLILogger {
   void log(String message, {LogLevel level = LogLevel.info}) {
     final prefix = _getPrefix(level);
     print('$prefix $message');
+  }
+
+  void logLean(String message) {
+    log(message, level: LogLevel.lean);
   }
 
   /// Log a message about skipping a file
@@ -47,6 +54,12 @@ class CLILogger {
         return '⚠️';
       case LogLevel.error:
         return '❌';
+      case LogLevel.debug:
+        return '🐛';
+      case LogLevel.verbose:
+        return '🔍';
+      case LogLevel.lean:
+        return '';
     }
   }
 }

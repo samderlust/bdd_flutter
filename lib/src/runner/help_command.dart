@@ -1,15 +1,23 @@
 import '../feature/logger/logger.dart';
 
-void help() {
-  final logger = CLILogger();
-  logger.log('''
-Usage: bdd_flutter <command> [options]
+void help(CLILogger logger) {
+  logger.logLean('''
+Usage: dart run bdd_flutter [options]
 
-Commands:
-  build: Build the test files
-  clean: Clean the test files
-  rename: Rename the test files
-  help: Show the help
-  version: Show the version
+Options:
+  --help    Show this help message
+  --force   Force regenerate all feature files
+  --new     Only generate new feature files
+  --widget  Generate widget tests (default: false)
+  --reporter Enable test reporter (default: false)
+
+Examples:
+  dart run bdd_flutter
+  dart run bdd_flutter --force
+  dart run bdd_flutter --new
+  dart run bdd_flutter --widget
+  dart run bdd_flutter --reporter
+
+For more information, visit: [GitHub repository URL]
 ''');
 }

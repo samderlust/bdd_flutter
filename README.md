@@ -17,16 +17,16 @@ A powerful Flutter package that simplifies Behavior Driven Development (BDD) by 
 To migrate:
 
 1. Remove build_runner if present in your dev_dependencies
-2. If you want to keep current test files, consider add `.feature` file paths into `bdd_config.yaml` under `ignore_features` section (see [Configuration](#-configuration) for more details)
+2. If you want to keep current test files, consider add `.feature` file paths into `.bdd_flutter/config.yaml` under `ignore_features` section (see [Configuration](#-configuration) for more details)
 
 ## ✨ Features
 
 - 📝 Parse `.feature` files written in Gherkin syntax
 - ⚡ Generate boilerplate test files automatically
 - 🧪 Support for both widget tests and unit tests
-- ⚙️ Configurable test generation
-- 📄 Ignore specific generated files using `.bdd_config.yaml`
 - 📄 Incremental generation to preserve user-written code
+- ⚙️ Configurable test generation
+- 📄 Ignore specific generated files using `.bdd_flutter/config.yaml`
 - 📄 Configuration in `.bdd_flutter/config.yaml`
 - 📄 Manifest tracking in `.bdd_flutter/manifest.yaml`
 
@@ -36,12 +36,12 @@ Add the following dependencies to your package's `pubspec.yaml` file:
 
 ```yaml
 dev_dependencies:
-  bdd_flutter: ^1.0.0
+  bdd_flutter: latest
 ```
 
 ## 🚀 Quick Start
 
-1. Create a `.feature` file in your project:
+1. Create a `.feature` file in your project test folder:
 
 ```gherkin
 Feature: Counter

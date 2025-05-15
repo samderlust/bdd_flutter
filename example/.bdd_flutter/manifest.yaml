@@ -1,5 +1,5 @@
 version: "1.0"
-last_generated: "2025-05-11T22:00:04.872951"
+last_generated: "2025-05-14T20:00:52.946692"
 features:
   - path: "test/calculator/calculator.feature"
     last_modified: "2025-05-11T21:39:21.000"
@@ -63,3 +63,21 @@ features:
         line_start: 1
         line_end: 1
         test_method: "testIncrement"
+  - path: "test/features/feature2.feature"
+    last_modified: "2025-05-14T19:40:21.000"
+    test_file: "test/features/feature2.bdd_test.dart"
+    scenarios:
+      - name: "Scenario 2"
+        hash: "d3ee4877a2639700318fa5b1a03d6db6"
+        line_start: 1
+        line_end: 1
+        test_method: "testScenario2"
+  - path: "test/features/feature1.feature"
+    last_modified: "2025-05-14T19:42:37.000"
+    test_file: "test/features/feature1.bdd_test.dart"
+    scenarios:
+      - name: "Scenario 1"
+        hash: "6ef26f58bf820d71a2955a1e96358e04"
+        line_start: 1
+        line_end: 1
+        test_method: "testScenario1"
