@@ -5,6 +5,7 @@ import 'package:bdd_flutter/src/feature/builder/domain/feature.dart';
 import 'package:bdd_flutter/src/feature/builder/domain/manifest.dart';
 import 'package:crypto/crypto.dart';
 import 'dart:convert';
+import 'package:yaml/yaml.dart';
 
 import '../constraints/file_extenstion.dart';
 import '../extensions/string_x.dart';
@@ -23,8 +24,8 @@ class BuildCommand {
         _manifestManager = manifestManager ?? ManifestManager();
 
   /// Executes the build command to generate test files from feature files
-  Future<void> generate(List<String> arguments) async {
-    final options = await _parseGeneratorOption(arguments);
+  Future<void> generate(List<CmdFlag> flags) async {
+    final options = await _parseGeneratorOption(flags);
     final factory = BDDFactory.create(options);
     final manifest = await _manifestManager.readManifest();
 
@@ -313,20 +314,16 @@ class BuildCommand {
     _logger.log('Updated test file: $testFilePath');
   }
 
-  Future<BDDOptions> _parseGeneratorOption(List<String> arguments) async {
-    // Start with default values from config file
+  Future<BDDOptions> _parseGeneratorOption(List<CmdFlag> flags) async {
     var options = await BDDOptions.fromConfig();
-    // get all flags from arguments
-    final flags = arguments.map((e) => CmdFlag.fromString(e)).where((e) => e != CmdFlag.invalid).toList();
 
-    // Override with command line arguments
     for (final flag in flags) {
       switch (flag) {
-        case CmdFlag.widgetTests:
-          options = options.copyWith(generateWidgetTests: flag.value == 'true');
+        case CmdFlag.unitTest:
+          options = options.copyWith(generateWidgetTests: false);
           break;
         case CmdFlag.reporter:
-          options = options.copyWith(enableReporter: flag.value == 'true');
+          options = options.copyWith(enableReporter: true);
           break;
         case CmdFlag.force:
           options = options.copyWith(force: true);
@@ -335,7 +332,7 @@ class BuildCommand {
           options = options.copyWith(newOnly: true);
           break;
         default:
-          _logger.error('Invalid flag: ${flag.text}');
+          _logger.error('Invalid flag: ${flag.longForm}');
           break;
       }
     }

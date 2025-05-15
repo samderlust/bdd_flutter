@@ -1,5 +1,5 @@
 version: "1.0"
-last_generated: "2025-05-14T20:00:52.946692"
+last_generated: "2025-05-14T21:05:50.868129"
 features:
   - path: "test/calculator/calculator.feature"
     last_modified: "2025-05-11T21:39:21.000"
@@ -81,3 +81,12 @@ features:
         line_start: 1
         line_end: 1
         test_method: "testScenario1"
+  - path: "test/features/feature3.feature"
+    last_modified: "2025-05-14T21:04:20.000"
+    test_file: "test/features/feature3.bdd_test.dart"
+    scenarios:
+      - name: "Scenario 3"
+        hash: "8c18f46a7758127ba8c8cb90ab8839d0"
+        line_start: 1
+        line_end: 1
+        test_method: "testScenario3"

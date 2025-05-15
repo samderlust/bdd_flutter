@@ -18,6 +18,8 @@ class BDDOptions {
     this.only = const [],
   });
 
+  factory BDDOptions.defaultOptions() => BDDOptions(enableReporter: false, generateWidgetTests: true, ignoreFeatures: []);
+
   BDDOptions copyWith({
     bool? generateWidgetTests,
     bool? enableReporter,
@@ -39,16 +41,18 @@ class BDDOptions {
   static const String bddDir = '.bdd_flutter';
   static const String configPath = '$bddDir/config.yaml';
 
-  static Future<void> ensureBDDDirectory() async {
-    final dir = Directory(bddDir);
-    if (!await dir.exists()) {
-      await dir.create();
-    }
-  }
+  // static Future<void> ensureBDDDirectory() async {
+  //   final dir = Directory(bddDir);
+  //   if (!await dir.exists()) {
+  //     await dir.create();
+  //   }
+  // }
 
   static Future<BDDOptions> fromConfig() async {
-    await ensureBDDDirectory();
     final configFile = File(configPath);
+    if (!await configFile.exists()) {
+      return BDDOptions.defaultOptions();
+    }
 
     // Start with default values
     bool generateWidgetTests = true;
@@ -75,16 +79,16 @@ class BDDOptions {
     );
   }
 
-  static Future<void> writeConfig(BDDOptions options) async {
-    await ensureBDDDirectory();
-    final configFile = File(configPath);
+  // static Future<void> writeConfig(BDDOptions options) async {
+  //   await ensureBDDDirectory();
+  //   final configFile = File(configPath);
 
-    final config = {
-      'generate_widget_tests': options.generateWidgetTests,
-      'enable_reporter': options.enableReporter,
-      'ignore_features': options.ignoreFeatures,
-    };
+  //   final config = {
+  //     'generate_widget_tests': options.generateWidgetTests,
+  //     'enable_reporter': options.enableReporter,
+  //     'ignore_features': options.ignoreFeatures,
+  //   };
 
-    await configFile.writeAsString(config.toString());
-  }
+  //   await configFile.writeAsString(config.toString());
+  // }
 }

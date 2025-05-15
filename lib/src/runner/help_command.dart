@@ -5,19 +5,19 @@ void help(CLILogger logger) {
 Usage: dart run bdd_flutter [options]
 
 Options:
-  --help    Show this help message
-  --force   Force regenerate all feature files
-  --new     Only generate new feature files
-  --widget  Generate widget tests (default: false)
-  --reporter Enable test reporter (default: false)
+  --help, -h    Show this help message
+  --force, -f   Force regenerate all feature files
+  --new, -n     Only generate new feature files
+  --unit-test, -u Generate unit tests (default: false)
+  --reporter, -r Enable test reporter (default: false)
 
 Examples:
   dart run bdd_flutter
   dart run bdd_flutter --force
   dart run bdd_flutter --new
-  dart run bdd_flutter --widget
+  dart run bdd_flutter --unit-test
   dart run bdd_flutter --reporter
 
-For more information, visit: [GitHub repository URL]
+For more information, visit: https://github.com/samderlust/bdd_flutter
 ''');
 }
