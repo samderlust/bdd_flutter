@@ -1,6 +1,6 @@
 extension StringX on String {
   String get toMethodName {
-    final words = replaceAll(RegExp(r'<[^>]+>'), '').split(' ');
+    final words = replaceAll(RegExp(r'[^a-zA-Z0-9\s]'), '').split(' ');
     if (words.isEmpty) return '';
 
     return words[0].toLowerCase() +

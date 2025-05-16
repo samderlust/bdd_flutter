@@ -1,11 +1,11 @@
+import 'dart:convert';
 import 'dart:io';
+
 import 'package:bdd_flutter/src/feature/builder/bdd_builders/bdd_factory.dart';
 import 'package:bdd_flutter/src/feature/builder/domain/bdd_options.dart';
 import 'package:bdd_flutter/src/feature/builder/domain/feature.dart';
 import 'package:bdd_flutter/src/feature/builder/domain/manifest.dart';
 import 'package:crypto/crypto.dart';
-import 'dart:convert';
-import 'package:yaml/yaml.dart';
 
 import '../constraints/file_extenstion.dart';
 import '../extensions/string_x.dart';
@@ -58,7 +58,9 @@ class BuildCommand {
     final featureFileName = featurePath.split('/').last.replaceAll('.feature', '');
 
     final featureContent = featureFile.readAsStringSync();
-    final parsedFeature = factory.featureBuilder.parseFeature(featureContent, featureFileName);
+    final parsedFeature = await factory.featureBuilder.parseFeature(featureContent)
+      ..setFileName(featureFileName);
+
     final lastModified = featureFile.lastModifiedSync();
 
     // Get paths for generated files

@@ -8,11 +8,11 @@ class CounterBackground {
 }
 
 class IncrementScenario {
-  static Future<void> iIncrementTheCounterBy(WidgetTester tester, String value) async {
+  static Future<void> iIncrementTheCounterByValue(WidgetTester tester, String value) async {
     // TODO: Implement When I increment the counter by <value>
   }
 
-  static Future<void> theCounterShouldHaveValue(WidgetTester tester, String expectedvalue) async {
+  static Future<void> theCounterShouldHaveValueExpectedvalue(WidgetTester tester, String expectedvalue) async {
     // TODO: Implement Then the counter should have value <expected_value>
   }
 

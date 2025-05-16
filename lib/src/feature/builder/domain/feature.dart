@@ -15,13 +15,16 @@ class Feature {
 
   /// The background of the feature
   final Background? background;
-  final String fileName;
+  String? fileName;
 
   Feature(
     this.name,
     this.scenarios, {
-    required this.fileName,
+    this.fileName,
     this.decorators = const {},
     this.background,
   });
+  void setFileName(String value) {
+    this.fileName = value;
+  }
 }

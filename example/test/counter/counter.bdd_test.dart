@@ -14,9 +14,9 @@ void main() {
       ];
       for (var example in examples) {
       // When I increment the counter by <value>
-      await IncrementScenario.iIncrementTheCounterBy(tester, example['value']!);
+      await IncrementScenario.iIncrementTheCounterByValue(tester, example['value']!);
       // Then the counter should have value <expected_value>
-      await IncrementScenario.theCounterShouldHaveValue(tester, example['expected_value']!);
+      await IncrementScenario.theCounterShouldHaveValueExpectedvalue(tester, example['expectedvalue']!);
       }
     });
   });

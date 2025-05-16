@@ -7,6 +7,8 @@ void main() {
       //Scenario: Add two numbers
       // Given I have the number 1
       await AddTwoNumbersScenario.iHaveTheNumber1(tester);
+      // And I have the number 2
+      await AddTwoNumbersScenario.iHaveTheNumber2(tester);
       // When I add them together
       await AddTwoNumbersScenario.iAddThemTogether(tester);
       // Then the result should be 3
@@ -16,6 +18,8 @@ void main() {
       //Scenario: Subtract two numbers
       // Given I have the number 5
       await Subtract.iHaveTheNumber5(tester);
+      // And I have the number 3
+      await Subtract.iHaveTheNumber3(tester);
       // When I subtract them
       await Subtract.iSubtractThem(tester);
       // Then the result should be 2
@@ -25,6 +29,8 @@ void main() {
       //Scenario: Multiply two numbers
       // Given I have the number 2
       await MultiplyTwoNumbersScenario.iHaveTheNumber2(tester);
+      // And I have the number 3
+      await MultiplyTwoNumbersScenario.iHaveTheNumber3(tester);
       // When I multiply them
       await MultiplyTwoNumbersScenario.iMultiplyThem(tester);
       // Then the result should be 6
@@ -39,11 +45,13 @@ void main() {
       ];
       for (var example in examples) {
       // Given I have the number <number1>
-      await DivideTwoNumbersScenario.iHaveTheNumber(tester, example['number1']!);
+      await DivideTwoNumbersScenario.iHaveTheNumberNumber1(tester, example['number1']!);
+      // And I have the number <number2>
+      await DivideTwoNumbersScenario.iHaveTheNumberNumber2(tester, example['number2']!);
       // When I divide them
       await DivideTwoNumbersScenario.iDivideThem(tester);
       // Then the result should be <result>
-      await DivideTwoNumbersScenario.theResultShouldBe(tester, example['result']!);
+      await DivideTwoNumbersScenario.theResultShouldBeResult(tester, example['result']!);
       }
     });
   });

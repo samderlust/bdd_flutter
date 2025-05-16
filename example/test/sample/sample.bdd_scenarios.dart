@@ -35,7 +35,7 @@ class CounterWithExamplesScenario {
     // TODO: Implement Given I have a counter
   }
 
-  static Future<void> iIncrementThe(String counter) async {
+  static Future<void> iIncrementTheCounter(String counter) async {
     // TODO: Implement When I increment the <counter>
   }
 
@@ -50,11 +50,11 @@ class CounterWithParametersScenario {
     // TODO: Implement Given I have a counter
   }
 
-  static Future<void> iIncrementTheCounter(String counter) async {
+  static Future<void> iIncrementTheCounterCounter(String counter) async {
     // TODO: Implement When I increment the counter <counter>
   }
 
-  static Future<void> iShouldSeeTheResult(String result) async {
+  static Future<void> iShouldSeeTheResultResult(String result) async {
     // TODO: Implement Then I should see the result <result>
   }
 

@@ -5,6 +5,10 @@ class AddTwoNumbersScenario {
     // TODO: Implement Given I have the number 1
   }
 
+  static Future<void> iHaveTheNumber2(WidgetTester tester) async {
+    // TODO: Implement And I have the number 2
+  }
+
   static Future<void> iAddThemTogether(WidgetTester tester) async {
     // TODO: Implement When I add them together
   }
@@ -12,12 +16,15 @@ class AddTwoNumbersScenario {
   static Future<void> theResultShouldBe3(WidgetTester tester) async {
     // TODO: Implement Then the result should be 3
   }
-
 }
 
 class Subtract {
   static Future<void> iHaveTheNumber5(WidgetTester tester) async {
     // TODO: Implement Given I have the number 5
+  }
+
+  static Future<void> iHaveTheNumber3(WidgetTester tester) async {
+    // TODO: Implement And I have the number 3
   }
 
   static Future<void> iSubtractThem(WidgetTester tester) async {
@@ -27,12 +34,15 @@ class Subtract {
   static Future<void> theResultShouldBe2(WidgetTester tester) async {
     // TODO: Implement Then the result should be 2
   }
-
 }
 
 class MultiplyTwoNumbersScenario {
   static Future<void> iHaveTheNumber2(WidgetTester tester) async {
     // TODO: Implement Given I have the number 2
+  }
+
+  static Future<void> iHaveTheNumber3(WidgetTester tester) async {
+    // TODO: Implement And I have the number 3
   }
 
   static Future<void> iMultiplyThem(WidgetTester tester) async {
@@ -42,21 +52,22 @@ class MultiplyTwoNumbersScenario {
   static Future<void> theResultShouldBe6(WidgetTester tester) async {
     // TODO: Implement Then the result should be 6
   }
-
 }
 
 class DivideTwoNumbersScenario {
-  static Future<void> iHaveTheNumber(WidgetTester tester, String number1) async {
+  static Future<void> iHaveTheNumberNumber1(WidgetTester tester, String number1) async {
     // TODO: Implement Given I have the number <number1>
+  }
+
+  static Future<void> iHaveTheNumberNumber2(WidgetTester tester, String number2) async {
+    // TODO: Implement And I have the number <number2>
   }
 
   static Future<void> iDivideThem(WidgetTester tester) async {
     // TODO: Implement When I divide them
   }
 
-  static Future<void> theResultShouldBe(WidgetTester tester, String result) async {
+  static Future<void> theResultShouldBeResult(WidgetTester tester, String result) async {
     // TODO: Implement Then the result should be <result>
   }
-
 }
-

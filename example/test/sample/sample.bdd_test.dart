@@ -32,7 +32,7 @@ void main() {
       // Given I have a counter
       await CounterWithExamplesScenario.iHaveACounter();
       // When I increment the <counter>
-      await CounterWithExamplesScenario.iIncrementThe( example['counter']!);
+      await CounterWithExamplesScenario.iIncrementTheCounter( example['counter']!);
       // Then I should see the counter incremented
       await CounterWithExamplesScenario.iShouldSeeTheCounterIncremented();
       }
@@ -48,9 +48,9 @@ void main() {
       // Given I have a counter
       await CounterWithParametersScenario.iHaveACounter();
       // When I increment the counter <counter>
-      await CounterWithParametersScenario.iIncrementTheCounter( example['counter']!);
+      await CounterWithParametersScenario.iIncrementTheCounterCounter( example['counter']!);
       // Then I should see the result <result>
-      await CounterWithParametersScenario.iShouldSeeTheResult( example['result']!);
+      await CounterWithParametersScenario.iShouldSeeTheResultResult( example['result']!);
       }
     });
     testWidgets('Counter with widget test', (tester) async {
