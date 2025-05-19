@@ -13,6 +13,12 @@ Feature: Calculator
     When I subtract them
     Then the result should be 2
 
+  Scenario: Subtract two numbers2
+    Given I have the number 6
+    And I have the number 8
+    When I subtract them
+    Then the result should be -2
+
   Scenario: Multiply two numbers
     Given I have the number 2
     And I have the number 3
@@ -23,6 +29,17 @@ Feature: Calculator
     Given I have the number <number1>
     And I have the number <number2>
     When I divide them
+    Then the result should be <result>
+
+    Examples:
+      | number1 | number2 | result |
+      | 10      | 2       | 5      |
+      | 10      | 1       | 10     |
+      | 10      | 10      | 1      |
+
+  Scenario: Divide two numbers2
+    Given I have <number1> and <number2>
+    When I divide them to each other
     Then the result should be <result>
 
     Examples:

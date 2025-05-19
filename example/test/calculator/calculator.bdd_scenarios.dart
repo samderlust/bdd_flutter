@@ -16,6 +16,7 @@ class AddTwoNumbersScenario {
   static Future<void> theResultShouldBe3(WidgetTester tester) async {
     // TODO: Implement Then the result should be 3
   }
+
 }
 
 class Subtract {
@@ -34,6 +35,26 @@ class Subtract {
   static Future<void> theResultShouldBe2(WidgetTester tester) async {
     // TODO: Implement Then the result should be 2
   }
+
+}
+
+class SubtractTwoNumbers2Scenario {
+  static Future<void> iHaveTheNumber6(WidgetTester tester) async {
+    // TODO: Implement Given I have the number 6
+  }
+
+  static Future<void> iHaveTheNumber8(WidgetTester tester) async {
+    // TODO: Implement And I have the number 8
+  }
+
+  static Future<void> iSubtractThem(WidgetTester tester) async {
+    // TODO: Implement When I subtract them
+  }
+
+  static Future<void> theResultShouldBe2(WidgetTester tester) async {
+    // TODO: Implement Then the result should be -2
+  }
+
 }
 
 class MultiplyTwoNumbersScenario {
@@ -52,6 +73,7 @@ class MultiplyTwoNumbersScenario {
   static Future<void> theResultShouldBe6(WidgetTester tester) async {
     // TODO: Implement Then the result should be 6
   }
+
 }
 
 class DivideTwoNumbersScenario {
@@ -70,4 +92,21 @@ class DivideTwoNumbersScenario {
   static Future<void> theResultShouldBeResult(WidgetTester tester, String result) async {
     // TODO: Implement Then the result should be <result>
   }
+
 }
+
+class DivideTwoNumbers2Scenario {
+  static Future<void> iHaveNumber1AndNumber2(WidgetTester tester, String number1, String number2) async {
+    // TODO: Implement Given I have <number1> and <number2>
+  }
+
+  static Future<void> iDivideThemToEachOther(WidgetTester tester) async {
+    // TODO: Implement When I divide them to each other
+  }
+
+  static Future<void> theResultShouldBeResult(WidgetTester tester, String result) async {
+    // TODO: Implement Then the result should be <result>
+  }
+
+}
+

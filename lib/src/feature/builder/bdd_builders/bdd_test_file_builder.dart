@@ -38,7 +38,7 @@ class BDDTestFileBuilder {
     if (feature.background != null) {
       buffer.writeln("    //Background: ${feature.background!.description}");
       for (var step in feature.background!.steps) {
-        final methodName = step.text.toMethodName;
+        final methodName = step.methodName;
         buffer.writeln("    ${feature.name}Background.$methodName();");
       }
     }
@@ -134,7 +134,7 @@ String _generateTestFunction(
   bool isUnitTest,
   List<String> params,
 ) {
-  final methodName = step.text.toMethodName;
+  final methodName = step.methodName;
   if (withReporter) {
     return '''
       await reporter.guard(

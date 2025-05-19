@@ -12,7 +12,7 @@ class IncrementScenario {
     // TODO: Implement When I increment the counter by <value>
   }
 
-  static Future<void> theCounterShouldHaveValueExpectedvalue(WidgetTester tester, String expectedvalue) async {
+  static Future<void> theCounterShouldHaveValueExpectedValue(WidgetTester tester, String expectedvalue) async {
     // TODO: Implement Then the counter should have value <expected_value>
   }
 

@@ -98,6 +98,22 @@ class ScenarioEntry {
     required this.testMethod,
   });
 
+  ScenarioEntry copyWith({
+    String? name,
+    String? hash,
+    int? lineStart,
+    int? lineEnd,
+    String? testMethod,
+  }) {
+    return ScenarioEntry(
+      name: name ?? this.name,
+      hash: hash ?? this.hash,
+      lineStart: lineStart ?? this.lineStart,
+      lineEnd: lineEnd ?? this.lineEnd,
+      testMethod: testMethod ?? this.testMethod,
+    );
+  }
+
   Map<String, dynamic> toYaml() {
     return {
       'name': name,

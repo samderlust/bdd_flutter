@@ -1,92 +1,77 @@
 version: "1.0"
-last_generated: "2025-05-15T22:06:39.936688"
+last_generated: "2025-05-19T16:18:21.590816"
 features:
   - path: "test/calculator/calculator.feature"
-    last_modified: "2025-05-11T21:39:21.000"
+    last_modified: "2025-05-16T22:11:21.000"
     test_file: "test/calculator/calculator.bdd_test.dart"
     scenarios:
       - name: "Add two numbers"
-        hash: "0e3d2533780a57a166a592e39877ec38"
-        line_start: 1
-        line_end: 1
+        hash: "0a0e99eea6929a8ae27c1d95a88b293d"
+        line_start: 2
+        line_end: 8
         test_method: "testAddtwonumbers"
       - name: "Subtract two numbers"
-        hash: "89507263e188decdf877f5c18a9b0e00"
-        line_start: 2
-        line_end: 2
+        hash: "ccc195782104eafe6ae0987cb7435146"
+        line_start: 9
+        line_end: 14
         test_method: "testSubtracttwonumbers"
+      - name: "Subtract two numbers2"
+        hash: "58ce85c7cb7cc7c2453e862ebb12e20b"
+        line_start: 15
+        line_end: 20
+        test_method: "testSubtracttwonumbers2"
       - name: "Multiply two numbers"
-        hash: "886e5f97f76b21df777b4dd82a31e340"
-        line_start: 3
-        line_end: 3
+        hash: "560cbb5eedd961771237ba5d9ae3e7a3"
+        line_start: 21
+        line_end: 26
         test_method: "testMultiplytwonumbers"
       - name: "Divide two numbers"
-        hash: "01e179c7dc6a9dc309976f05d3e9cde0"
-        line_start: 4
-        line_end: 4
+        hash: "e85196f20fc91d407521ee37fcad2320"
+        line_start: 27
+        line_end: 38
         test_method: "testDividetwonumbers"
+  - path: "test/features/feature2.feature"
+    last_modified: "2025-05-19T14:28:03.000"
+    test_file: "test/features/feature2.bdd_test.dart"
+    scenarios:
+      - name: "Scenario 2"
+        hash: "5084b8f7e6886a111ed0bbc7e953f6fa"
+        line_start: 2
+        line_end: 6
+        test_method: "testScenario2"
+  - path: "test/features/feature3.feature"
+    last_modified: "2025-05-14T21:04:20.000"
+    test_file: "test/features/feature3.bdd_test.dart"
+    scenarios:
+  - path: "test/features/feature1.feature"
+    last_modified: "2025-05-15T21:50:07.000"
+    test_file: "test/features/feature1.bdd_test.dart"
+    scenarios:
   - path: "test/sample/sample.feature"
     last_modified: "2025-05-11T21:52:29.000"
     test_file: "test/sample/sample.bdd_test.dart"
     scenarios:
       - name: "Sample"
-        hash: "fa45830159f6abbf09247347da169137"
+        hash: "56586753878cd78f2da7966b21643465"
         line_start: 1
-        line_end: 1
+        line_end: 6
         test_method: "testSample"
       - name: "Counter"
-        hash: "d90c903ae242400fad736462bcadb23e"
-        line_start: 2
-        line_end: 2
+        hash: "c5ecf1c5f3ca86df90f11ed5108056d6"
+        line_start: 7
+        line_end: 12
         test_method: "testCounter"
       - name: "Counter with examples"
-        hash: "1a64a7fa506fc48ca40b619a629baea2"
-        line_start: 3
-        line_end: 3
+        hash: "cce46f3313000a10062f248e0bf771e3"
+        line_start: 13
+        line_end: 23
         test_method: "testCounterwithexamples"
       - name: "Counter with parameters"
-        hash: "ecfa8df8c75b022f1d8802511b2ab8ff"
-        line_start: 4
-        line_end: 4
+        hash: "3bb4729b114ac6188f9f3993f4049793"
+        line_start: 24
+        line_end: 33
         test_method: "testCounterwithparameters"
-      - name: "Counter with widget test"
-        hash: "b04f089730bac2859f0c344456448471"
-        line_start: 5
-        line_end: 5
-        test_method: "testCounterwithwidgettest"
   - path: "test/counter/counter.feature"
     last_modified: "2025-05-04T10:27:15.000"
     test_file: "test/counter/counter.bdd_test.dart"
     scenarios:
-      - name: "Increment"
-        hash: "f71a054d6eca6e81f1147356ab2a7ea8"
-        line_start: 1
-        line_end: 1
-        test_method: "testIncrement"
-  - path: "test/features/feature2.feature"
-    last_modified: "2025-05-14T19:40:21.000"
-    test_file: "test/features/feature2.bdd_test.dart"
-    scenarios:
-      - name: "Scenario 2"
-        hash: "d3ee4877a2639700318fa5b1a03d6db6"
-        line_start: 1
-        line_end: 1
-        test_method: "testScenario2"
-  - path: "test/features/feature1.feature"
-    last_modified: "2025-05-15T21:50:07.000"
-    test_file: "test/features/feature1.bdd_test.dart"
-    scenarios:
-      - name: "Scenario 1"
-        hash: "6ef26f58bf820d71a2955a1e96358e04"
-        line_start: 1
-        line_end: 1
-        test_method: "testScenario1"
-  - path: "test/features/feature3.feature"
-    last_modified: "2025-05-14T21:04:20.000"
-    test_file: "test/features/feature3.bdd_test.dart"
-    scenarios:
-      - name: "Scenario 3"
-        hash: "8c18f46a7758127ba8c8cb90ab8839d0"
-        line_start: 1
-        line_end: 1
-        test_method: "testScenario3"

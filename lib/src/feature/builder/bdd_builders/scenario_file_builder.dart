@@ -1,3 +1,5 @@
+import '../domain/step.dart';
+
 import '../domain/feature.dart';
 import '../domain/scenario.dart';
 import '../../../extensions/string_x.dart';
@@ -11,7 +13,7 @@ class ScenariosFileBuilder {
     if (feature.background != null) {
       buffer.writeln("class ${feature.name}Background {");
       for (var step in feature.background!.steps) {
-        final methodName = step.text.toMethodName;
+        final methodName = step.methodName;
         final params = _extractMethodParams(step.text);
         buffer.writeln(
           "  static Future<void> $methodName(${params.isNotEmpty ? params : ''}) async {",
@@ -31,7 +33,7 @@ class ScenariosFileBuilder {
 
       // Create static methods for each step in the scenario
       for (var step in scenario.steps) {
-        final methodName = step.text.toMethodName;
+        final methodName = step.methodName;
         final params = _extractMethodParams(step.text);
 
         if (!isUnitTest) {

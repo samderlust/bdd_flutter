@@ -25,6 +25,17 @@ void main() {
       // Then the result should be 2
       await Subtract.theResultShouldBe2(tester);
     });
+    testWidgets('Subtract two numbers2', (tester) async {
+      //Scenario: Subtract two numbers2
+      // Given I have the number 6
+      await SubtractTwoNumbers2Scenario.iHaveTheNumber6(tester);
+      // And I have the number 8
+      await SubtractTwoNumbers2Scenario.iHaveTheNumber8(tester);
+      // When I subtract them
+      await SubtractTwoNumbers2Scenario.iSubtractThem(tester);
+      // Then the result should be -2
+      await SubtractTwoNumbers2Scenario.theResultShouldBe2(tester);
+    });
     testWidgets('Multiply two numbers', (tester) async {
       //Scenario: Multiply two numbers
       // Given I have the number 2
@@ -52,6 +63,22 @@ void main() {
       await DivideTwoNumbersScenario.iDivideThem(tester);
       // Then the result should be <result>
       await DivideTwoNumbersScenario.theResultShouldBeResult(tester, example['result']!);
+      }
+    });
+    testWidgets('Divide two numbers2', (tester) async {
+      //Scenario: Divide two numbers2
+      final examples = [
+        {'number1': '10','number2': '2','result': '5',},
+        {'number1': '10','number2': '1','result': '10',},
+        {'number1': '10','number2': '10','result': '1',},
+      ];
+      for (var example in examples) {
+      // Given I have <number1> and <number2>
+      await DivideTwoNumbers2Scenario.iHaveNumber1AndNumber2(tester, example['number1']!, example['number2']!);
+      // When I divide them to each other
+      await DivideTwoNumbers2Scenario.iDivideThemToEachOther(tester);
+      // Then the result should be <result>
+      await DivideTwoNumbers2Scenario.theResultShouldBeResult(tester, example['result']!);
       }
     });
   });

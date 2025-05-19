@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:bdd_flutter/src/extensions/list_x.dart';
 import 'package:bdd_flutter/src/feature/builder/bdd_builders/bdd_factory.dart';
 import 'package:bdd_flutter/src/feature/builder/domain/bdd_options.dart';
 import 'package:bdd_flutter/src/feature/builder/domain/feature.dart';
@@ -126,7 +127,10 @@ class BuildCommand {
     DateTime lastModified,
     Feature parsedFeature,
   ) {
-    final scenarios = _parseScenarios(parsedFeature);
+    final scenarios = _parseManifestScenarios(
+      parsedFeature: parsedFeature,
+      featureFilePath: featurePath,
+    );
     final testFile = '${featurePath.replaceAll('.feature', '')}${FileExtension.generatedTest}';
 
     final featureEntry = FeatureEntry(
@@ -146,26 +150,81 @@ class BuildCommand {
     }
   }
 
-  List<ScenarioEntry> _parseScenarios(Feature parsedFeature) {
+  List<ScenarioEntry> _parseManifestScenarios({
+    required Feature parsedFeature,
+    required String featureFilePath,
+  }) {
     final scenarios = <ScenarioEntry>[];
-    var lineNumber = 1;
-    for (final scenario in parsedFeature.scenarios) {
-      final scenarioContent = scenario.toString();
-      final hash = md5.convert(utf8.encode(scenarioContent)).toString();
-      final startLine = lineNumber;
-      final endLine = startLine + scenarioContent.split('\n').length - 1;
-      final testMethod = 'test${scenario.name.replaceAll(' ', '')}';
+    final lines = File(featureFilePath).readAsStringSync().split('\n');
 
-      scenarios.add(ScenarioEntry(
-        name: scenario.name,
-        hash: hash,
-        lineStart: startLine,
-        lineEnd: endLine,
-        testMethod: testMethod,
-      ));
+    ScenarioEntry? tempScenario;
 
-      lineNumber = endLine + 1;
+    for (var i = 0; i < lines.length; i++) {
+      final line = lines[i].trim();
+      if (line.startsWith('Scenario:')) {
+        if (tempScenario != null) {
+          scenarios.add(tempScenario.copyWith(lineEnd: i - 1));
+          tempScenario = null;
+        }
+
+        final scenarioName = line.substring('Scenario:'.length).trim();
+        final parsedScenario = parsedFeature.scenarios.firstWhereOrNull((s) => s.name == scenarioName);
+        if (parsedScenario == null) {
+          _logger.error('Scenario not found: $scenarioName');
+          continue;
+        }
+
+        final hash = md5.convert(utf8.encode(parsedScenario.toString())).toString();
+        tempScenario = ScenarioEntry(
+          name: scenarioName,
+          hash: hash,
+          lineStart: i,
+          lineEnd: i,
+          testMethod: 'test${scenarioName.replaceAll(' ', '')}',
+        );
+      }
     }
+
+    return scenarios;
+
+    // ///
+    // var currentLine = 1;
+
+    // for (final scenario in parsedFeature.scenarios) {
+    //   final scenarioContent = scenario.toString();
+
+    //   final hash = md5.convert(utf8.encode(scenarioContent)).toString();
+
+    //   // // Find the start line of this scenario in the feature file
+    //   // while (currentLine <= lines.length && !lines[currentLine - 1].trim().startsWith('Scenario:')) {
+    //   //   currentLine++;
+    //   // }
+    //   final lineIndex = lines.indexWhere((line) => line.trim().startsWith('Scenario:') && line.trim().contains(scenario.name));
+
+    //   print('lineIndex: $lineIndex');
+    //   print('Scenario: ${scenario.name}');
+
+    //   final startLine = lineIndex;
+
+    //   // Count lines until we find the next scenario or end of file
+    //   var endLine = startLine;
+    //   while (endLine < lines.length && !lines[endLine].trim().startsWith('Scenario:') && !lines[endLine].trim().startsWith('Feature:')) {
+    //     endLine++;
+    //   }
+    //   endLine--; // Adjust to the last line of the current scenario
+
+    //   final testMethod = 'test${scenario.name.replaceAll(' ', '')}';
+
+    //   scenarios.add(ScenarioEntry(
+    //     name: scenario.name,
+    //     hash: hash,
+    //     lineStart: startLine,
+    //     lineEnd: endLine,
+    //     testMethod: testMethod,
+    //   ));
+
+    //   currentLine = endLine + 1;
+    // }
     return scenarios;
   }
 
@@ -179,43 +238,46 @@ class BuildCommand {
     final scenariosFilePath = '${featurePath.replaceAll('.feature', '')}${FileExtension.generatedScenarios}';
 
     // Get current scenarios and their hashes
-    final currentScenarios = _parseScenarios(parsedFeature);
-    final changedScenarios = <ScenarioEntry>[];
-    final newScenarios = <ScenarioEntry>[];
+    final currentScenarioEntries = _parseManifestScenarios(
+      parsedFeature: parsedFeature,
+      featureFilePath: featurePath,
+    );
+    final changedScenarioEntries = <ScenarioEntry>[];
+    final newScenarioEntries = <ScenarioEntry>[];
 
     if (existingScenarios != null) {
       // Find changed and new scenarios
-      for (final current in currentScenarios) {
+      for (final current in currentScenarioEntries) {
         final existing = existingScenarios.firstWhere(
           (s) => s.name == current.name,
           orElse: () => current,
         );
 
         if (existing.hash != current.hash) {
-          changedScenarios.add(current);
+          changedScenarioEntries.add(current);
           _logger.log('Scenario changed: ${current.name}');
         }
       }
 
       // Find new scenarios
-      for (final current in currentScenarios) {
+      for (final current in currentScenarioEntries) {
         if (!existingScenarios.any((s) => s.name == current.name)) {
-          newScenarios.add(current);
+          newScenarioEntries.add(current);
           _logger.log('New scenario: ${current.name}');
         }
       }
     } else {
       // If no existing scenarios, all are new
-      newScenarios.addAll(currentScenarios);
+      newScenarioEntries.addAll(currentScenarioEntries);
     }
 
-    if (changedScenarios.isEmpty && newScenarios.isEmpty) {
+    if (changedScenarioEntries.isEmpty && newScenarioEntries.isEmpty) {
       _logger.log('No changes detected in scenarios');
       return;
     }
 
-    await _updateScenariosFile(factory, parsedFeature, scenariosFilePath, existingScenarios, changedScenarios, newScenarios);
-    await _updateTestFile(factory, parsedFeature, testFilePath, existingScenarios, changedScenarios, newScenarios);
+    await _updateScenariosFile(factory, parsedFeature, scenariosFilePath, existingScenarios, changedScenarioEntries, newScenarioEntries);
+    await _updateTestFile(factory, parsedFeature, testFilePath, existingScenarios, changedScenarioEntries, newScenarioEntries);
   }
 
   Future<void> _updateScenariosFile(
@@ -237,9 +299,6 @@ class BuildCommand {
 
       // Update only changed scenarios
       for (final scenario in [...changedScenarios, ...newScenarios]) {
-        // final startLine = scenario.lineStart - 1;
-        // final endLine = scenario.lineEnd;
-
         // Find the scenario class in the existing content
         final scenarioClass = "class ${scenario.name.toScenarioClassName} {";
         final classStartIndex = lines.indexWhere((line) => line.contains(scenarioClass));

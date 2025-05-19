@@ -12,7 +12,6 @@ class CommandParser {
         _logger = logger ?? CLILogger();
 
   Future<void> parse(List<String> arguments) async {
-    print('arguments: $arguments');
     if (arguments.isEmpty) {
       // Default to build command if no arguments provided
       await _buildCommand.generate([]);
