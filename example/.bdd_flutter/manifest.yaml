@@ -1,5 +1,5 @@
 version: "1.0"
-last_generated: "2025-05-19T16:18:21.590816"
+last_generated: "2025-05-19T18:12:11.160212"
 features:
   - path: "test/calculator/calculator.feature"
     last_modified: "2025-05-16T22:11:21.000"
@@ -8,7 +8,7 @@ features:
       - name: "Add two numbers"
         hash: "0a0e99eea6929a8ae27c1d95a88b293d"
         line_start: 2
-        line_end: 8
+        line_end: 7
         test_method: "testAddtwonumbers"
       - name: "Subtract two numbers"
         hash: "ccc195782104eafe6ae0987cb7435146"
@@ -54,17 +54,17 @@ features:
       - name: "Sample"
         hash: "56586753878cd78f2da7966b21643465"
         line_start: 1
-        line_end: 6
+        line_end: 5
         test_method: "testSample"
       - name: "Counter"
         hash: "c5ecf1c5f3ca86df90f11ed5108056d6"
         line_start: 7
-        line_end: 12
+        line_end: 11
         test_method: "testCounter"
       - name: "Counter with examples"
         hash: "cce46f3313000a10062f248e0bf771e3"
         line_start: 13
-        line_end: 23
+        line_end: 22
         test_method: "testCounterwithexamples"
       - name: "Counter with parameters"
         hash: "3bb4729b114ac6188f9f3993f4049793"

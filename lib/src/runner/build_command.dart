@@ -82,13 +82,13 @@ class BuildCommand {
     if (options.force) {
       // Force regenerate everything
       _logger.logProcessing(featurePath, reason: 'force regenerate');
-      await _generateFeatureFiles(factory, parsedFeature, featurePath);
+      await _generateScenarioAndTestFile(factory, parsedFeature, featurePath);
       _updateManifestEntry(manifest, featurePath, lastModified, parsedFeature);
     } else if (options.newOnly) {
       // Only generate for new features
       if (existingFeature == null) {
         _logger.logProcessing(featurePath, reason: 'new feature');
-        await _generateFeatureFiles(factory, parsedFeature, featurePath);
+        await _generateScenarioAndTestFile(factory, parsedFeature, featurePath);
         _updateManifestEntry(manifest, featurePath, lastModified, parsedFeature);
       } else {
         _logger.logSkipping(featurePath, reason: 'existing feature');
@@ -98,17 +98,17 @@ class BuildCommand {
       if (!filesExist) {
         // Files don't exist, regenerate everything
         _logger.logProcessing(featurePath, reason: 'missing generated files');
-        await _generateFeatureFiles(factory, parsedFeature, featurePath);
+        await _generateScenarioAndTestFile(factory, parsedFeature, featurePath);
         _updateManifestEntry(manifest, featurePath, lastModified, parsedFeature);
       } else if (existingFeature == null) {
         // Feature not in manifest, regenerate everything
         _logger.logProcessing(featurePath, reason: 'not in manifest');
-        await _generateFeatureFiles(factory, parsedFeature, featurePath);
+        await _generateScenarioAndTestFile(factory, parsedFeature, featurePath);
         _updateManifestEntry(manifest, featurePath, lastModified, parsedFeature);
       } else if (lastModified.isAfter(existingFeature.lastModified)) {
         // Feature modified, check for scenario changes
         _logger.logProcessing(featurePath, reason: 'modified since last generation');
-        await _generateFeatureFiles(
+        await _generateScenarioAndTestFile(
           factory,
           parsedFeature,
           featurePath,
@@ -161,12 +161,17 @@ class BuildCommand {
 
     for (var i = 0; i < lines.length; i++) {
       final line = lines[i].trim();
-      if (line.startsWith('Scenario:')) {
+      // check for end of scenario
+      // if there is a temp scenario, add it to the list
+      // and reset the temp scenario
+      if (line.startsWith('Scenario:') || line.startsWith('@')) {
         if (tempScenario != null) {
           scenarios.add(tempScenario.copyWith(lineEnd: i - 1));
           tempScenario = null;
         }
+      }
 
+      if (line.startsWith('Scenario:')) {
         final scenarioName = line.substring('Scenario:'.length).trim();
         final parsedScenario = parsedFeature.scenarios.firstWhereOrNull((s) => s.name == scenarioName);
         if (parsedScenario == null) {
@@ -186,49 +191,13 @@ class BuildCommand {
     }
 
     return scenarios;
-
-    // ///
-    // var currentLine = 1;
-
-    // for (final scenario in parsedFeature.scenarios) {
-    //   final scenarioContent = scenario.toString();
-
-    //   final hash = md5.convert(utf8.encode(scenarioContent)).toString();
-
-    //   // // Find the start line of this scenario in the feature file
-    //   // while (currentLine <= lines.length && !lines[currentLine - 1].trim().startsWith('Scenario:')) {
-    //   //   currentLine++;
-    //   // }
-    //   final lineIndex = lines.indexWhere((line) => line.trim().startsWith('Scenario:') && line.trim().contains(scenario.name));
-
-    //   print('lineIndex: $lineIndex');
-    //   print('Scenario: ${scenario.name}');
-
-    //   final startLine = lineIndex;
-
-    //   // Count lines until we find the next scenario or end of file
-    //   var endLine = startLine;
-    //   while (endLine < lines.length && !lines[endLine].trim().startsWith('Scenario:') && !lines[endLine].trim().startsWith('Feature:')) {
-    //     endLine++;
-    //   }
-    //   endLine--; // Adjust to the last line of the current scenario
-
-    //   final testMethod = 'test${scenario.name.replaceAll(' ', '')}';
-
-    //   scenarios.add(ScenarioEntry(
-    //     name: scenario.name,
-    //     hash: hash,
-    //     lineStart: startLine,
-    //     lineEnd: endLine,
-    //     testMethod: testMethod,
-    //   ));
-
-    //   currentLine = endLine + 1;
-    // }
-    return scenarios;
   }
 
-  Future<void> _generateFeatureFiles(
+  /// Generates the scenario and test files for a feature
+  ///
+  /// If [existingScenarios] is provided, it will only generate the scenarios and test files for the scenarios that have changed
+  ///
+  Future<void> _generateScenarioAndTestFile(
     BDDFactory factory,
     Feature parsedFeature,
     String featurePath, {
@@ -242,18 +211,20 @@ class BuildCommand {
       parsedFeature: parsedFeature,
       featureFilePath: featurePath,
     );
+
     final changedScenarioEntries = <ScenarioEntry>[];
     final newScenarioEntries = <ScenarioEntry>[];
 
     if (existingScenarios != null) {
       // Find changed and new scenarios
       for (final current in currentScenarioEntries) {
-        final existing = existingScenarios.firstWhere(
-          (s) => s.name == current.name,
-          orElse: () => current,
-        );
+        final existing = existingScenarios.firstWhereOrNull((s) => s.name == current.name);
 
-        if (existing.hash != current.hash) {
+        if (existing == null) {
+          newScenarioEntries.add(current);
+          _logger.log('New scenario: ${current.name}');
+          continue;
+        } else if (existing.hash != current.hash) {
           changedScenarioEntries.add(current);
           _logger.log('Scenario changed: ${current.name}');
         }
@@ -284,21 +255,21 @@ class BuildCommand {
     BDDFactory factory,
     Feature parsedFeature,
     String scenariosFilePath,
-    List<ScenarioEntry>? existingScenarios,
-    List<ScenarioEntry> changedScenarios,
-    List<ScenarioEntry> newScenarios,
+    List<ScenarioEntry>? existingScenarioEntries,
+    List<ScenarioEntry> changedScenarioEntries,
+    List<ScenarioEntry> newScenarioEntries,
   ) async {
     // Build scenarios file
     final scenarios = await factory.scenarioBuilder.buildScenarioFile(parsedFeature);
     final scenariosFile = File(scenariosFilePath);
 
-    if (await scenariosFile.exists() && existingScenarios != null) {
+    if (await scenariosFile.exists() && existingScenarioEntries != null) {
       // Read existing file
       final existingContent = await scenariosFile.readAsString();
       final lines = existingContent.split('\n');
 
       // Update only changed scenarios
-      for (final scenario in [...changedScenarios, ...newScenarios]) {
+      for (final scenario in [...changedScenarioEntries, ...newScenarioEntries]) {
         // Find the scenario class in the existing content
         final scenarioClass = "class ${scenario.name.toScenarioClassName} {";
         final classStartIndex = lines.indexWhere((line) => line.contains(scenarioClass));
