@@ -43,7 +43,9 @@ void main() {
         scenarios: [
           Scenario('Add', [
             Step('Given', 'I have a calculator'),
-          ], decorators: {Decorator.unitTest}),
+          ], decorators: {
+            Decorator.unitTest
+          }),
         ],
         decorators: {},
       );
@@ -68,7 +70,10 @@ void main() {
 
       final result = await builder.buildScenarioFile(feature);
 
-      expect(result, contains('Future<void> iAddFirstNumberAndSecondNumber(WidgetTester tester, String firstNumber, String secondNumber) async {'));
+      expect(
+          result,
+          contains(
+              'Future<void> iAddFirstNumberAndSecondNumber(WidgetTester tester, String firstNumber, String secondNumber) async {'));
     });
 
     test('generates Background class with instance methods', () async {

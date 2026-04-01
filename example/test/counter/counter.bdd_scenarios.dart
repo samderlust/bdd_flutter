@@ -4,7 +4,6 @@ class CounterBackground {
   Future<void> iHaveACounterWithValue0() async {
     // TODO: Implement Given I have a counter with value 0
   }
-
 }
 
 class IncrementScenario {
@@ -15,7 +14,6 @@ class IncrementScenario {
   Future<void> theCounterShouldHaveValueExpectedValue(WidgetTester tester, String expectedValue) async {
     // TODO: Implement Then the counter should have value <expected_value>
   }
-
 }
 
 class DecrementScenario {
@@ -26,6 +24,4 @@ class DecrementScenario {
   Future<void> theCounterShouldHaveValue1(WidgetTester tester) async {
     // TODO: Implement Then the counter should have value -1
   }
-
 }
-

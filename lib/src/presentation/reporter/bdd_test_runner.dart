@@ -53,10 +53,7 @@ class BDDTestRunner {
     final errorMessages = <int, String>{};
 
     // Parse JSON events line by line
-    await process.stdout
-        .transform(utf8.decoder)
-        .transform(const LineSplitter())
-        .forEach((line) {
+    await process.stdout.transform(utf8.decoder).transform(const LineSplitter()).forEach((line) {
       _processJsonLine(
         line,
         testNames: testNames,
@@ -154,9 +151,7 @@ class BDDTestRunner {
           final fullName = testNames[testId] ?? '';
           final featureName = testGroups[testId] ?? '';
           final startTime = testStartTimes[testId];
-          final duration = startTime != null
-              ? DateTime.now().difference(startTime)
-              : null;
+          final duration = startTime != null ? DateTime.now().difference(startTime) : null;
 
           // Extract scenario name by removing the feature group prefix
           String scenarioName = fullName;

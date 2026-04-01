@@ -18,16 +18,14 @@ class SuccessfulLoginScenario {
   }
 
   Future<void> theMockReturnsASuccessfulLoginForTestTestCom(WidgetTester tester) async {
-    when(() => mockAuthRepo.login('test@test.com', 'password'))
-        .thenAnswer((_) async => User(name: 'Test User', email: 'test@test.com'));
+    when(
+      () => mockAuthRepo.login('test@test.com', 'password'),
+    ).thenAnswer((_) async => User(name: 'Test User', email: 'test@test.com'));
   }
 
   Future<void> iPumpTheLoginScreenWithProviders(WidgetTester tester) async {
     await tester.pumpWidget(
-      ChangeNotifierProvider<AuthProvider>.value(
-        value: authProvider,
-        child: const MaterialApp(home: LoginScreen()),
-      ),
+      ChangeNotifierProvider<AuthProvider>.value(value: authProvider, child: const MaterialApp(home: LoginScreen())),
     );
   }
 
@@ -59,16 +57,12 @@ class FailedLoginShowsErrorScenario {
   }
 
   Future<void> theMockThrowsAnErrorForLogin(WidgetTester tester) async {
-    when(() => mockAuthRepo.login(any(), any()))
-        .thenThrow(Exception('Invalid credentials'));
+    when(() => mockAuthRepo.login(any(), any())).thenThrow(Exception('Invalid credentials'));
   }
 
   Future<void> iPumpTheLoginScreenWithProviders(WidgetTester tester) async {
     await tester.pumpWidget(
-      ChangeNotifierProvider<AuthProvider>.value(
-        value: authProvider,
-        child: const MaterialApp(home: LoginScreen()),
-      ),
+      ChangeNotifierProvider<AuthProvider>.value(value: authProvider, child: const MaterialApp(home: LoginScreen())),
     );
   }
 
@@ -100,8 +94,9 @@ class LogoutAfterLoginScenario {
   }
 
   Future<void> theMockReturnsASuccessfulLoginForTestTestCom(WidgetTester tester) async {
-    when(() => mockAuthRepo.login('test@test.com', 'password'))
-        .thenAnswer((_) async => User(name: 'Test User', email: 'test@test.com'));
+    when(
+      () => mockAuthRepo.login('test@test.com', 'password'),
+    ).thenAnswer((_) async => User(name: 'Test User', email: 'test@test.com'));
   }
 
   Future<void> theMockAllowsLogout(WidgetTester tester) async {
@@ -110,10 +105,7 @@ class LogoutAfterLoginScenario {
 
   Future<void> iPumpTheLoginScreenWithProviders(WidgetTester tester) async {
     await tester.pumpWidget(
-      ChangeNotifierProvider<AuthProvider>.value(
-        value: authProvider,
-        child: const MaterialApp(home: LoginScreen()),
-      ),
+      ChangeNotifierProvider<AuthProvider>.value(value: authProvider, child: const MaterialApp(home: LoginScreen())),
     );
   }
 

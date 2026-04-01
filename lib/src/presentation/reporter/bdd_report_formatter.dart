@@ -44,9 +44,7 @@ class BDDReportFormatter {
 
   String formatReport() {
     final buffer = StringBuffer();
-    final totalDuration = _startTime != null
-        ? DateTime.now().difference(_startTime!)
-        : Duration.zero;
+    final totalDuration = _startTime != null ? DateTime.now().difference(_startTime!) : Duration.zero;
 
     buffer.writeln();
     buffer.writeln('${_cyan}BDD Test Report$_reset');
@@ -62,9 +60,7 @@ class BDDReportFormatter {
 
       for (final scenario in feature.scenarios) {
         totalScenarios++;
-        final durationStr = scenario.duration != null
-            ? ' $_dim(${scenario.duration!.inMilliseconds}ms)$_reset'
-            : '';
+        final durationStr = scenario.duration != null ? ' $_dim(${scenario.duration!.inMilliseconds}ms)$_reset' : '';
 
         if (scenario.passed) {
           totalPassed++;

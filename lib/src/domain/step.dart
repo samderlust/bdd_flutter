@@ -35,7 +35,8 @@ extension StepX on Step {
       processedText = processedText.replaceAll(match.group(0)!, paramName);
     }
 
-    final words = processedText.replaceAll(RegExp(r'[^a-zA-Z0-9\s]'), ' ').split(' ').where((word) => word.isNotEmpty).toList();
+    final words =
+        processedText.replaceAll(RegExp(r'[^a-zA-Z0-9\s]'), ' ').split(' ').where((word) => word.isNotEmpty).toList();
 
     if (words.isEmpty) return '';
 

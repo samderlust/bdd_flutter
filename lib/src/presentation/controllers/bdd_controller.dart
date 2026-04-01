@@ -50,9 +50,7 @@ class BDDController {
       return;
     }
 
-    final featureFiles = testDir
-        .listSync(recursive: true)
-        .where((file) => file.path.endsWith('.feature'));
+    final featureFiles = testDir.listSync(recursive: true).where((file) => file.path.endsWith('.feature'));
 
     if (featureFiles.isEmpty) {
       stdout.writeln('No .feature files found in "${config.testDir}".');

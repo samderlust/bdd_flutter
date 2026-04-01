@@ -4,7 +4,10 @@ extension StringX on String {
   ///
   /// Example: `"successful login"` -> `"SuccessfulLogin"`.
   String get name {
-    return split(' ').where((word) => word.isNotEmpty).map((word) => word[0].toUpperCase() + word.substring(1).toLowerCase()).join('');
+    return split(' ')
+        .where((word) => word.isNotEmpty)
+        .map((word) => word[0].toUpperCase() + word.substring(1).toLowerCase())
+        .join('');
   }
 
   /// Converts to a scenario class name with the default "Scenario" suffix.

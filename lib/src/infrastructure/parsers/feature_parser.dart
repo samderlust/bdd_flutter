@@ -14,7 +14,6 @@ import '../../domain/step.dart';
 class FeatureParser {
   /// Parses a `.feature` file at [filePath] and returns a [Feature] model.
   Future<Feature> parseFeature(String filePath) async {
-
     final file = File(filePath);
     final fileContent = await file.readAsString();
     final lines = fileContent.split('\n').map((line) => line.trim()).toList();
@@ -88,7 +87,10 @@ class FeatureParser {
         currentExampleContent = null;
       }
       // parsing steps
-      else if (line.startsWith('Given') || line.startsWith('When') || line.startsWith('Then') || line.startsWith('And')) {
+      else if (line.startsWith('Given') ||
+          line.startsWith('When') ||
+          line.startsWith('Then') ||
+          line.startsWith('And')) {
         // if lines start with Given, When, Then or And, it means it's a step
         final parts = line.split(' ');
         final stepType = parts[0];

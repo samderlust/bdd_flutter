@@ -34,10 +34,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 children: [
                   Text('Welcome, ${auth.user!.name}!'),
                   const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: auth.logout,
-                    child: const Text('Logout'),
-                  ),
+                  ElevatedButton(onPressed: auth.logout, child: const Text('Logout')),
                 ],
               ),
             );
@@ -48,12 +45,8 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                if (auth.error != null)
-                  Text(auth.error!, style: const TextStyle(color: Colors.red)),
-                TextField(
-                  controller: _emailController,
-                  decoration: const InputDecoration(labelText: 'Email'),
-                ),
+                if (auth.error != null) Text(auth.error!, style: const TextStyle(color: Colors.red)),
+                TextField(controller: _emailController, decoration: const InputDecoration(labelText: 'Email')),
                 TextField(
                   controller: _passwordController,
                   decoration: const InputDecoration(labelText: 'Password'),
@@ -64,10 +57,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   const CircularProgressIndicator()
                 else
                   ElevatedButton(
-                    onPressed: () => auth.login(
-                      _emailController.text,
-                      _passwordController.text,
-                    ),
+                    onPressed: () => auth.login(_emailController.text, _passwordController.text),
                     child: const Text('Login'),
                   ),
               ],

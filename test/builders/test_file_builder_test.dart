@@ -77,7 +77,9 @@ void main() {
         scenarios: [
           Scenario('Add', [
             Step('Given', 'I have a calculator'),
-          ], decorators: {Decorator.unitTest}),
+          ], decorators: {
+            Decorator.unitTest
+          }),
         ],
         decorators: {},
       );

@@ -10,15 +10,15 @@ void main() {
       await background.iHaveACounterWithValue0();
       //Scenario: Increment
       final examples = [
-        {'value': '1','expectedValue': '1',},
-        {'value': '2','expectedValue': '2',},
-        {'value': '3','expectedValue': '3',},
+        {'value': '1', 'expectedValue': '1'},
+        {'value': '2', 'expectedValue': '2'},
+        {'value': '3', 'expectedValue': '3'},
       ];
       for (var example in examples) {
-      // When I increment the counter by <value>
-      await scenario.iIncrementTheCounterByValue(tester, example['value']!);
-      // Then the counter should have value <expected_value>
-      await scenario.theCounterShouldHaveValueExpectedValue(tester, example['expectedValue']!);
+        // When I increment the counter by <value>
+        await scenario.iIncrementTheCounterByValue(tester, example['value']!);
+        // Then the counter should have value <expected_value>
+        await scenario.theCounterShouldHaveValueExpectedValue(tester, example['expectedValue']!);
       }
     });
     testWidgets('Decrement', (tester) async {
