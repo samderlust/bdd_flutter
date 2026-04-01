@@ -1,3 +1,0 @@
-ignore_files:
-  - test/sample/sample.bdd_scenarios.dart
-  - test/sample/sample.bdd_test.dart

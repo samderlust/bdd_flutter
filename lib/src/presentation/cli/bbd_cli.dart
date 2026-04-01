@@ -1,0 +1,62 @@
+import 'dart:io';
+
+import '../../domain/build_options.dart';
+import '../../infrastructure/parsers/config_parser.dart';
+import '../controllers/bdd_controller.dart';
+import '../reporter/bdd_test_runner.dart';
+
+/// CLI entry point for `dart run bdd_flutter`.
+///
+/// Supports commands:
+/// - `build` — generate test files from `.feature` files
+/// - `build --force` — force regenerate all files
+/// - `test` — run BDD tests with formatted report
+class BDDCLI {
+  final BDDController _bddController;
+  final ConfigParser _configParser;
+
+  BDDCLI({
+    BDDController? bddController,
+    ConfigParser? configParser,
+  })  : _bddController = bddController ?? BDDController(),
+        _configParser = configParser ?? ConfigParser();
+
+  /// Parses [arguments] and executes the corresponding command.
+  Future<void> run(List<String> arguments) async {
+    if (arguments.isEmpty) {
+      _printUsage();
+      return;
+    }
+
+    final command = arguments.first;
+    final flags = arguments.skip(1).toSet();
+
+    switch (command) {
+      case 'build':
+        final options = BuildOptions(
+          force: flags.contains('--force'),
+        );
+        await _bddController.generateFeatureTestCases(options: options);
+        break;
+      case 'test':
+        final config = await _configParser.loadConfig();
+        final runner = BDDTestRunner(testDir: config.testDir);
+        final exitCode = await runner.run();
+        exit(exitCode);
+      default:
+        stdout.writeln('Unknown command: $command');
+        _printUsage();
+    }
+  }
+
+  void _printUsage() {
+    stdout.writeln('Usage: dart run bdd_flutter <command> [flags]');
+    stdout.writeln('');
+    stdout.writeln('Available commands:');
+    stdout.writeln('  build    Generate test files from .feature files');
+    stdout.writeln('  test     Run BDD tests with formatted report');
+    stdout.writeln('');
+    stdout.writeln('Build flags:');
+    stdout.writeln('  --force  Force regenerate all files');
+  }
+}

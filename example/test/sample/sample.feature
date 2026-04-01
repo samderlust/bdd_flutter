@@ -31,3 +31,8 @@ Feature: Sample
       | 1       | 2      |
       | 2       | 3      |
       | 3       | 4      |
+
+  Scenario: Counter with widget test
+    Given I have a counter
+    When I increment the counter
+    Then I should see the counter incremented

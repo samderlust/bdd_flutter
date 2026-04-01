@@ -1,32 +1,34 @@
-# 🚀 BDD Flutter
+# BDD Flutter
 
 [![pub package](https://img.shields.io/pub/v/bdd_flutter.svg)](https://pub.dev/packages/bdd_flutter)
-[![style: very good analysis](https://img.shields.io/badge/style-very_good_analysis-B22C89.svg)](https://pub.dev/packages/very_good_analysis)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Buy Me A Coffee](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/samderlust)
 
-A powerful Flutter package that simplifies Behavior Driven Development (BDD) by automatically generating test files from Gherkin feature files. Write expressive tests in plain English using Given/When/Then scenarios and let BDD Flutter handle the boilerplate code generation.
+A Flutter package that simplifies Behavior Driven Development (BDD) by automatically generating test files from Gherkin feature files. Write expressive tests in plain English using Given/When/Then scenarios and let BDD Flutter handle the boilerplate code generation.
 
-## ✨ Features
+## Features
 
-- 📝 Parse `.feature` files written in Gherkin syntax
-- ⚡ Generate boilerplate test files automatically
-- 🧪 Support for both widget tests and unit tests
-- ⚙️ Configurable test generation
+- Parse `.feature` files written in Gherkin syntax (Given/When/Then/And)
+- Generate boilerplate test files automatically
+- Support for both widget tests and unit tests
+- Incremental generation — new scenarios are appended without overwriting existing implementations
+- Instance-based scenario classes for shared state between steps
+- Background support for shared setup steps
+- Examples tables for parameterized scenarios
+- Configurable via `.bdd_flutter/config.yaml`
+- Manifest tracking in `.bdd_flutter/manifest.yaml`
 
-## 📦 Installation
+## Installation
 
-Add the following dependencies to your package's `pubspec.yaml` file:
+Add to your `pubspec.yaml`:
 
 ```yaml
 dev_dependencies:
-  bdd_flutter: any
-  build_runner: any
+  bdd_flutter: latest
 ```
 
-## 🚀 Quick Start
+## Quick Start
 
-1. Create a `.feature` file in your project:
+1. Create a `.feature` file in your test folder:
 
 ```gherkin
 Feature: Counter
@@ -44,150 +46,192 @@ Feature: Counter
 2. Generate test files:
 
 ```bash
-flutter pub run build_runner build
+dart run bdd_flutter build
 ```
 
-3. Run your tests:
+3. Implement the generated step methods in `counter.bdd_scenarios.dart`
+
+4. Run your tests with BDD report:
 
 ```bash
-flutter test
+dart run bdd_flutter test
 ```
 
-## 💡 Recommendations
+Or run normally with `flutter test`.
 
-When working with generated test files, follow these best practices:
+## Generated Files
 
-1. **Generated Files**:
+The generator creates two files per `.feature` file:
 
-   - Generated files will have the `.g.dart` extension (e.g., `counter_test.bdd_test.g.dart` or `counter_scenarios.g.dart`)
-   - After implementing your tests, it's recommended to:
-     - Remove the `.g` extension from the file name
-     - Add an ignore decorator to your feature file (@ignore)
-   - This will prevent the generated files from being overwritten by subsequent builds
+- **`.bdd_scenarios.dart`** — Scenario classes with step method stubs (your implementation goes here)
+- **`.bdd_test.dart`** — Test orchestration file (auto-generated, do not edit)
 
-2. **Feature File Ignore**:
-   Add this comment at the top of your feature file:
-   ```gherkin
-   @ignore
-   Feature: Counter
-   ```
+### How It Works
 
-This approach ensures that:
+- Scenario classes use **instance methods**, so you can add `late` fields for shared state (mocks, widgets, etc.)
+- Each test instantiates a **fresh scenario** for proper test isolation
+- When you add a new scenario to a `.feature` file, only the new scenario class is **appended** — existing implementations are preserved
+- The test file is **always regenerated** (it contains no user code)
 
-- Your implemented tests won't be overwritten by subsequent builds
-- Generated files are properly ignored in version control
-- You maintain a clean project structure
+### Example Output
 
-## ⚙️ Configuration
-
-Configure test generation in your `build.yaml`:
-
-```yaml
-targets:
-  $default:
-    builders:
-      bdd_flutter|bdd_test_builder:
-        options:
-          generate_widget_tests: false # Default: true
-          enable_reporter: true # Default: false
-          ignore_features:
-            - "test/features/ignored.feature"
-            - "test/features/another_ignored.feature"
-```
-
-### Configuration Options
-
-| Option                  | Type | Default | Description                                            |
-| ----------------------- | ---- | ------- | ------------------------------------------------------ |
-| `generate_widget_tests` | bool | true    | Generate widget tests when true, unit tests when false |
-| `enable_reporter`       | bool | false   | Enable/disable test reporter                           |
-| `ignore_features`       | List | []      | List of feature file paths to ignore during generation |
-
-## 🏷️ Decorators
-
-Control test generation with decorators:
-
-| Decorator                  | Scope             | Description                             |
-| -------------------------- | ----------------- | --------------------------------------- |
-| `@unitTest`                | Feature, Scenario | Generate unit test (overrides config)   |
-| `@widgetTest`              | Feature, Scenario | Generate widget test (overrides config) |
-| `@className("CustomName")` | Scenario          | Generate custom class name              |
-| `@enableReporter`          | Feature           | Enable test reporter                    |
-| `@disableReporter`         | Feature           | Disable test reporter                   |
-
-> 💡 Decorators follow a hierarchy: Scenario-level decorators override Feature-level ones.
-
-## 📝 Complete Example
-
-### 1. Feature File (`counter.feature`)
-
-```gherkin
-Feature: Counter
-  Scenario: Increment
-    Given I have a counter with value 0
-    When I increment the counter by <value>
-    Then the counter should have value <expected_value>
-    Examples:
-      | value | expected_value |
-      | 1     | 1              |
-      | 2     | 2              |
-      | 3     | 3              |
-```
-
-### 2. Generated Files
-
-#### `counter_scenarios.dart`
+#### `counter.bdd_scenarios.dart`
 
 ```dart
 import 'package:flutter_test/flutter_test.dart';
 
 class IncrementScenario {
-  static Future<void> iHaveACounterWithValue0(WidgetTester tester) async {
+  Future<void> iHaveACounterWithValue0(WidgetTester tester) async {
     // TODO: Implement Given I have a counter with value 0
   }
 
-  static Future<void> iIncrementTheCounterBy(WidgetTester tester, dynamic value) async {
+  Future<void> iIncrementTheCounterByValue(WidgetTester tester, String value) async {
     // TODO: Implement When I increment the counter by <value>
   }
 
-  static Future<void> theCounterShouldHaveValue(WidgetTester tester, dynamic expected_value) async {
+  Future<void> theCounterShouldHaveValueExpectedValue(WidgetTester tester, String expectedValue) async {
     // TODO: Implement Then the counter should have value <expected_value>
   }
 }
 ```
 
-#### `counter_test.dart`
+#### `counter.bdd_test.dart`
 
 ```dart
 import 'package:flutter_test/flutter_test.dart';
-import 'counter_scenarios.dart';
+import 'counter.bdd_scenarios.dart';
 
 void main() {
   group('Counter', () {
     testWidgets('Increment', (tester) async {
-      await IncrementScenario.iHaveACounterWithValue0(tester);
-      // Example with values: 1, 1
-      await IncrementScenario.iIncrementTheCounterBy(tester, '1');
-      await IncrementScenario.theCounterShouldHaveValue(tester, '1');
-      // Example with values: 2, 2
-      await IncrementScenario.iIncrementTheCounterBy(tester, '2');
-      await IncrementScenario.theCounterShouldHaveValue(tester, '2');
-      // Example with values: 3, 3
-      await IncrementScenario.iIncrementTheCounterBy(tester, '3');
-      await IncrementScenario.theCounterShouldHaveValue(tester, '3');
+      final scenario = IncrementScenario();
+      final examples = [
+        {'value': '1', 'expectedValue': '1'},
+        {'value': '2', 'expectedValue': '2'},
+        {'value': '3', 'expectedValue': '3'},
+      ];
+      for (var example in examples) {
+        await scenario.iIncrementTheCounterByValue(tester, example['value']!);
+        await scenario.theCounterShouldHaveValueExpectedValue(tester, example['expectedValue']!);
+      }
     });
   });
 }
 ```
 
-## 🤝 Contributing
+## Configuration
 
-We welcome contributions! Please feel free to:
+Configure the generator in `.bdd_flutter/config.yaml`:
 
-- Open an issue
-- Submit a pull request
-- Share your feedback
+```yaml
+# Where to scan for .feature files
+test_dir: "test/"
 
-## 📄 License
+# Generate widget tests or unit tests
+generate_widget_tests: true
+
+# Feature files to skip during generation
+ignore_features:
+  - test/features/login.feature
+  - test/features/registration.feature
+
+# Imports added to every generated .bdd_scenarios.dart file
+additional_imports:
+  - "package:mocktail/mocktail.dart"
+  - "test/helpers/test_helpers.dart"
+
+# Suffix for generated scenario class names (default: "Scenario")
+# e.g., "Steps" → IncrementSteps instead of IncrementScenario
+scenario_suffix: "Scenario"
+```
+
+Or use `--force` to regenerate everything:
+
+```bash
+dart run bdd_flutter build --force
+```
+
+### Config Options
+
+| Option                  | Type   | Default      | Description                                              |
+| ----------------------- | ------ | ------------ | -------------------------------------------------------- |
+| `test_dir`              | String | `test/`      | Directory to scan for `.feature` files                   |
+| `generate_widget_tests` | bool   | true         | Generate widget tests when true, unit tests when false   |
+| `ignore_features`       | List   | []           | Feature file paths to skip during generation             |
+| `additional_imports`    | List   | []           | Imports added to every generated scenario file           |
+| `scenario_suffix`       | String | `Scenario`   | Class name suffix (e.g., `Steps` for `IncrementSteps`)  |
+
+### CLI Flags
+
+### Commands
+
+| Command         | Description                                          |
+| --------------- | ---------------------------------------------------- |
+| `build`         | Generate test files from `.feature` files            |
+| `build --force` | Force regenerate all files (overwrites existing)     |
+| `test`          | Run BDD tests with formatted Feature/Scenario report |
+
+## Decorators
+
+Control test type with standard Gherkin tags:
+
+| Decorator     | Scope             | Description                             |
+| ------------- | ----------------- | --------------------------------------- |
+| `@unitTest`   | Feature, Scenario | Generate unit test (overrides config)   |
+| `@widgetTest` | Feature, Scenario | Generate widget test (overrides config) |
+
+Scenario-level decorators override Feature-level ones.
+
+To skip generation for specific features, use `ignore_features` in config.
+
+## Generation Modes
+
+### Incremental (Default)
+
+```bash
+dart run bdd_flutter build
+```
+
+- Skips unchanged features (tracked via manifest)
+- New scenarios are **appended** to existing scenario files — implementations are preserved
+- Test files are regenerated to include all scenarios
+
+### Force Regenerate
+
+```bash
+dart run bdd_flutter build --force
+```
+
+- Regenerates all files from scratch
+- **Overwrites** existing scenario implementations — use with caution
+
+## Project Structure
+
+```
+your_project/
+├── .bdd_flutter/
+│   ├── config.yaml     # Configuration (commit to version control)
+│   └── manifest.yaml   # Generation tracking (commit to version control)
+├── test/
+│   └── login/
+│       ├── login.feature
+│       ├── login.bdd_scenarios.dart   # Your implementations
+│       └── login.bdd_test.dart        # Auto-generated orchestration
+└── pubspec.yaml
+```
+
+## Best Practices
+
+1. **Version Control** — Keep both `config.yaml` and `manifest.yaml` in version control. The manifest prevents incremental builds from overwriting implemented code on fresh clones.
+
+2. **Scenario Files** — Implement your test logic in `.bdd_scenarios.dart`. Use `late` fields for shared state between steps (mocks, providers, widgets).
+
+3. **Test Files** — Do not edit `.bdd_test.dart` files. They are regenerated automatically and contain no user code.
+
+4. **Adding Scenarios** — When you add new scenarios to a `.feature` file, run `build` — new scenario classes are appended without touching existing ones.
+
+5. **Feature Files** — Keep feature files clean. Only use `@unitTest`/`@widgetTest` decorators. All other configuration belongs in `.bdd_flutter/config.yaml`.
+
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
