@@ -167,9 +167,57 @@ dart run bdd_flutter build --force
 
 | Command         | Description                                          |
 | --------------- | ---------------------------------------------------- |
-| `build`         | Generate test files from `.feature` files            |
-| `build --force` | Force regenerate all files (overwrites existing)     |
-| `test`          | Run BDD tests with formatted Feature/Scenario report |
+| `build`         | Generate test files from `.feature` files                        |
+| `build --force` | Force regenerate all files (overwrites existing)                 |
+| `test`          | Run all tests with formatted BDD and non-BDD reports             |
+
+## Test Report
+
+Running `dart run bdd_flutter test` discovers all test files in your project and produces a formatted report with two sections:
+
+- **BDD Test Report** — `.bdd_test.dart` files grouped by Feature with Scenario pass/fail
+- **Non-BDD Test Report** — regular `_test.dart` files grouped by file name and test group
+
+### Example Output
+
+```
+Running 8 BDD + 1 regular test file(s)...
+
+BDD Test Report
+==================================================
+
+  Feature: Calculator
+    ✓ Add two numbers (170ms)
+    ✓ Subtract two numbers (7ms)
+    ✓ Multiply two numbers (4ms)
+    ✓ Divide two numbers (4ms)
+
+  Feature: Counter
+    ✓ Increment (152ms)
+    ✓ Decrement (6ms)
+
+  Feature: Login
+    ✓ Successful login (150ms)
+    ✓ Failed login shows error (8ms)
+    ✓ Logout after login (4ms)
+
+Non-BDD Test Report
+==================================================
+
+  Test File: string_utils_test.dart
+    capitalize
+      ✓ capitalizes first letter (19ms)
+      ✓ returns empty string for empty input (2ms)
+      ✓ handles single character (1ms)
+    add
+      ✓ adds two positive numbers (2ms)
+      ✓ adds negative numbers (3ms)
+      ✓ adds zero (2ms)
+
+──────────────────────────────────────────────────
+  15 tests: 15 passed, 0 failed
+  Time: 2781ms
+```
 
 ## Decorators
 

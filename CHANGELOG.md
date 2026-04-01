@@ -1,3 +1,15 @@
+## 1.1.1
+
+### Features
+
+- `dart run bdd_flutter test` now runs all test files (BDD and regular), not just `.bdd_test.dart`
+- Separate report sections: **BDD Test Report** (grouped by Feature/Scenario) and **Non-BDD Test Report** (grouped by test file and group name with indentation)
+- Combined summary at the bottom with total pass/fail counts
+
+### Tests
+
+- Add integration tests for `BDDController` incremental build (rename, remove, modify, delete, force, append scenarios)
+
 ## 1.1.0
 
 ### Bug Fixes

@@ -11,6 +11,7 @@ const String _reset = '\x1B[0m';
 /// Used by [BDDTestRunner] to display results from `flutter test --machine`.
 class BDDReportFormatter {
   final List<FeatureReport> features = [];
+  final List<TestFileReport> testFiles = [];
   DateTime? _startTime;
 
   void start() {
@@ -24,6 +25,15 @@ class BDDReportFormatter {
     final feature = FeatureReport(name: name);
     features.add(feature);
     return feature;
+  }
+
+  TestFileReport _getOrCreateTestFile(String fileName) {
+    for (final file in testFiles) {
+      if (file.fileName == fileName) return file;
+    }
+    final file = TestFileReport(fileName: fileName);
+    testFiles.add(file);
+    return file;
   }
 
   void addTestResult({
@@ -42,45 +52,102 @@ class BDDReportFormatter {
     ));
   }
 
+  void addRegularTestResult({
+    required String fileName,
+    required String groupName,
+    required String testName,
+    required bool passed,
+    String? error,
+    Duration? duration,
+  }) {
+    final file = _getOrCreateTestFile(fileName);
+    final group = file.getOrCreateGroup(groupName);
+    group.results.add(ScenarioResult(
+      name: testName,
+      passed: passed,
+      error: error,
+      duration: duration,
+    ));
+  }
+
   String formatReport() {
     final buffer = StringBuffer();
     final totalDuration = _startTime != null ? DateTime.now().difference(_startTime!) : Duration.zero;
 
-    buffer.writeln();
-    buffer.writeln('${_cyan}BDD Test Report$_reset');
-    buffer.writeln('$_dim${'=' * 50}$_reset');
-
-    int totalScenarios = 0;
+    int totalTests = 0;
     int totalPassed = 0;
     int totalFailed = 0;
 
-    for (final feature in features) {
+    // BDD Test Report
+    if (features.isNotEmpty) {
       buffer.writeln();
-      buffer.writeln('  ${_cyan}Feature: ${feature.name}$_reset');
+      buffer.writeln('${_cyan}BDD Test Report$_reset');
+      buffer.writeln('$_dim${'=' * 50}$_reset');
 
-      for (final scenario in feature.scenarios) {
-        totalScenarios++;
-        final durationStr = scenario.duration != null ? ' $_dim(${scenario.duration!.inMilliseconds}ms)$_reset' : '';
+      for (final feature in features) {
+        buffer.writeln();
+        buffer.writeln('  ${_cyan}Feature: ${feature.name}$_reset');
 
-        if (scenario.passed) {
-          totalPassed++;
-          buffer.writeln('    $_green✓$_reset ${scenario.name}$durationStr');
-        } else {
-          totalFailed++;
-          buffer.writeln('    $_red✗ ${scenario.name}$_reset$durationStr');
-          if (scenario.error != null) {
-            buffer.writeln('      $_red${scenario.error}$_reset');
+        for (final scenario in feature.scenarios) {
+          totalTests++;
+          final durationStr = scenario.duration != null ? ' $_dim(${scenario.duration!.inMilliseconds}ms)$_reset' : '';
+
+          if (scenario.passed) {
+            totalPassed++;
+            buffer.writeln('    $_green✓$_reset ${scenario.name}$durationStr');
+          } else {
+            totalFailed++;
+            buffer.writeln('    $_red✗ ${scenario.name}$_reset$durationStr');
+            if (scenario.error != null) {
+              buffer.writeln('      $_red${scenario.error}$_reset');
+            }
           }
         }
       }
     }
 
+    // Regular Test Report
+    if (testFiles.isNotEmpty) {
+      buffer.writeln();
+      buffer.writeln('${_cyan}Non-BDD Test Report$_reset');
+      buffer.writeln('$_dim${'=' * 50}$_reset');
+
+      for (final file in testFiles) {
+        buffer.writeln();
+        buffer.writeln('  ${_cyan}Test File: ${file.fileName}$_reset');
+
+        for (final group in file.groups) {
+          if (group.name.isNotEmpty) {
+            buffer.writeln('    ${_dim}${group.name}$_reset');
+          }
+          final indent = group.name.isNotEmpty ? '      ' : '    ';
+
+          for (final result in group.results) {
+            totalTests++;
+            final durationStr = result.duration != null ? ' $_dim(${result.duration!.inMilliseconds}ms)$_reset' : '';
+
+            if (result.passed) {
+              totalPassed++;
+              buffer.writeln('$indent$_green✓$_reset ${result.name}$durationStr');
+            } else {
+              totalFailed++;
+              buffer.writeln('$indent$_red✗ ${result.name}$_reset$durationStr');
+              if (result.error != null) {
+                buffer.writeln('$indent  $_red${result.error}$_reset');
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // Summary
     buffer.writeln();
     buffer.writeln('$_dim${'─' * 50}$_reset');
 
     final passedStr = totalPassed > 0 ? '$_green$totalPassed passed$_reset' : '0 passed';
     final failedStr = totalFailed > 0 ? '$_red$totalFailed failed$_reset' : '0 failed';
-    buffer.writeln('  $totalScenarios scenarios: $passedStr, $failedStr');
+    buffer.writeln('  $totalTests tests: $passedStr, $failedStr');
     buffer.writeln('  Time: ${totalDuration.inMilliseconds}ms');
     buffer.writeln();
 
@@ -98,6 +165,31 @@ class FeatureReport {
   final List<ScenarioResult> scenarios = [];
 
   FeatureReport({required this.name});
+}
+
+/// Aggregated test results for a single regular test file.
+class TestFileReport {
+  final String fileName;
+  final List<TestGroupReport> groups = [];
+
+  TestFileReport({required this.fileName});
+
+  TestGroupReport getOrCreateGroup(String name) {
+    for (final group in groups) {
+      if (group.name == name) return group;
+    }
+    final group = TestGroupReport(name: name);
+    groups.add(group);
+    return group;
+  }
+}
+
+/// Aggregated test results for a group within a test file.
+class TestGroupReport {
+  final String name;
+  final List<ScenarioResult> results = [];
+
+  TestGroupReport({required this.name});
 }
 
 /// The result of a single scenario test execution.

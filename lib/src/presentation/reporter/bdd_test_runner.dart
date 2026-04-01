@@ -17,31 +17,39 @@ class BDDTestRunner {
     this.testDir = 'test/',
   }) : _formatter = formatter ?? BDDReportFormatter();
 
-  /// Runs all `.bdd_test.dart` files and prints the BDD report.
+  /// Runs all test files and prints the BDD report.
   ///
+  /// Discovers both `.bdd_test.dart` and regular `_test.dart` files.
+  /// BDD tests are shown with the Feature/Scenario report format.
+  /// Regular tests are listed with pass/fail status.
   /// Returns the exit code from `flutter test` (0 = all passed).
   Future<int> run() async {
     _formatter.start();
 
-    // Find all .bdd_test.dart files
-    final testFiles = Directory(testDir)
+    final allFiles = Directory(testDir)
         .listSync(recursive: true)
-        .where((f) => f.path.endsWith('.bdd_test.dart'))
+        .where((f) => f.path.endsWith('_test.dart'))
         .map((f) => f.path)
         .toList();
 
-    if (testFiles.isEmpty) {
-      stdout.writeln('No .bdd_test.dart files found in "$testDir".');
+    if (allFiles.isEmpty) {
+      stdout.writeln('No test files found in "$testDir".');
       return 0;
     }
 
-    stdout.writeln('Running ${testFiles.length} BDD test file(s)...');
+    final bddFiles = allFiles.where((f) => f.endsWith('.bdd_test.dart')).toList();
+    final regularFiles = allFiles.where((f) => !f.endsWith('.bdd_test.dart')).toList();
+
+    final parts = <String>[];
+    if (bddFiles.isNotEmpty) parts.add('${bddFiles.length} BDD');
+    if (regularFiles.isNotEmpty) parts.add('${regularFiles.length} regular');
+    stdout.writeln('Running ${parts.join(' + ')} test file(s)...');
     stdout.writeln();
 
     // Run flutter test --machine with all test files
     final process = await Process.start(
       'flutter',
-      ['test', '--machine', ...testFiles],
+      ['test', '--machine', ...allFiles],
       mode: ProcessStartMode.normal,
     );
 
@@ -51,6 +59,8 @@ class BDDTestRunner {
     final testGroups = <int, String>{};
     final groupNames = <int, String>{};
     final errorMessages = <int, String>{};
+    final testSuiteFiles = <int, String>{};
+    final suiteFiles = <int, String>{};
 
     // Parse JSON events line by line
     await process.stdout.transform(utf8.decoder).transform(const LineSplitter()).forEach((line) {
@@ -61,6 +71,8 @@ class BDDTestRunner {
         testGroups: testGroups,
         groupNames: groupNames,
         errorMessages: errorMessages,
+        testSuiteFiles: testSuiteFiles,
+        suiteFiles: suiteFiles,
       );
     });
 
@@ -84,6 +96,8 @@ class BDDTestRunner {
     required Map<int, String> testGroups,
     required Map<int, String> groupNames,
     required Map<int, String> errorMessages,
+    required Map<int, String> testSuiteFiles,
+    required Map<int, String> suiteFiles,
   }) {
     if (line.trim().isEmpty) return;
 
@@ -99,6 +113,17 @@ class BDDTestRunner {
     final type = json['type'] as String?;
 
     switch (type) {
+      case 'suite':
+        final suite = json['suite'] as Map?;
+        if (suite != null) {
+          final suiteId = suite['id'] as int?;
+          final suitePath = suite['path'] as String?;
+          if (suiteId != null && suitePath != null) {
+            suiteFiles[suiteId] = suitePath;
+          }
+        }
+        break;
+
       case 'group':
         final group = json['group'] as Map?;
         if (group != null) {
@@ -115,6 +140,7 @@ class BDDTestRunner {
         if (test != null) {
           final testId = test['id'] as int?;
           final testName = test['name'] as String?;
+          final suiteId = test['suiteID'] as int?;
           final groupIds = (test['groupIDs'] as List?)?.cast<int>() ?? [];
 
           if (testId != null && testName != null) {
@@ -124,6 +150,11 @@ class BDDTestRunner {
 
             testNames[testId] = testName;
             testStartTimes[testId] = DateTime.now();
+
+            // Track which suite file this test belongs to
+            if (suiteId != null && suiteFiles.containsKey(suiteId)) {
+              testSuiteFiles[testId] = suiteFiles[suiteId]!;
+            }
 
             // Find the parent group (feature name)
             if (groupIds.length >= 2) {
@@ -152,17 +183,37 @@ class BDDTestRunner {
           final featureName = testGroups[testId] ?? '';
           final startTime = testStartTimes[testId];
           final duration = startTime != null ? DateTime.now().difference(startTime) : null;
+          final suiteFile = testSuiteFiles[testId] ?? '';
+          final isBddTest = suiteFile.endsWith('.bdd_test.dart');
 
-          // Extract scenario name by removing the feature group prefix
-          String scenarioName = fullName;
-          if (featureName.isNotEmpty && fullName.startsWith(featureName)) {
-            scenarioName = fullName.substring(featureName.length).trim();
-          }
+          if (isBddTest) {
+            // BDD test: show as Feature/Scenario
+            String scenarioName = fullName;
+            if (featureName.isNotEmpty && fullName.startsWith(featureName)) {
+              scenarioName = fullName.substring(featureName.length).trim();
+            }
 
-          if (scenarioName.isNotEmpty && featureName.isNotEmpty) {
-            _formatter.addTestResult(
-              featureName: featureName,
-              scenarioName: scenarioName,
+            if (scenarioName.isNotEmpty && featureName.isNotEmpty) {
+              _formatter.addTestResult(
+                featureName: featureName,
+                scenarioName: scenarioName,
+                passed: result == 'success',
+                error: errorMessages[testId],
+                duration: duration,
+              );
+            }
+          } else {
+            // Regular test: group by file name, extract group and test name
+            final fileName = suiteFile.split('/').last;
+            final groupName = featureName;
+            String testName = fullName;
+            if (groupName.isNotEmpty && fullName.startsWith(groupName)) {
+              testName = fullName.substring(groupName.length).trim();
+            }
+            _formatter.addRegularTestResult(
+              fileName: fileName,
+              groupName: groupName,
+              testName: testName,
               passed: result == 'success',
               error: errorMessages[testId],
               duration: duration,
