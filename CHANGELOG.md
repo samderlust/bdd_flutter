@@ -1,3 +1,31 @@
+## 1.0.0
+
+### BREAKING CHANGES
+
+- Removed `build_runner` dependency entirely — use `dart run bdd_flutter build` instead
+- Removed `--no-widget-test` and `--new-only` CLI flags
+- Configuration moved from `build.yaml` to `.bdd_flutter/config.yaml`
+- Generated file extensions changed from `.bdd_scenarios.g.dart` to `.bdd_scenarios.dart` and `.bdd_test.g.dart` to `.bdd_test.dart`
+
+### Features
+
+- New standalone CLI: `dart run bdd_flutter build` and `dart run bdd_flutter test`
+- Incremental test generation with manifest tracking (only regenerates changed scenarios)
+- `--force` flag to regenerate all files
+- `test` command with formatted Feature/Scenario report output
+- Custom test directory via `test_dir` config option
+- Custom scenario class suffix via `scenario_suffix` config option (e.g., `Steps` instead of `Scenario`)
+- Additional imports support via `additional_imports` config option
+- Background steps support
+- `@unitTest` / `@widgetTest` decorators at feature and scenario level
+- Scenario-level Examples tables for parameterized tests
+
+### Improvements
+
+- Clean Architecture restructure (domain, infrastructure, presentation layers)
+- Instance-based scenario classes (supports `late` fields for shared state)
+- Comprehensive documentation across all layers
+
 ## 0.3.0
 
 - remove `build_runner` dependency
