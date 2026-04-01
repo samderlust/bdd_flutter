@@ -27,9 +27,7 @@ class BDDCLI {
     switch (command) {
       case 'build':
         final options = BuildOptions(
-          widgetTest: !flags.contains('--no-widget-test'),
           force: flags.contains('--force'),
-          newOnly: flags.contains('--new-only'),
         );
         await _bddController.generateFeatureTestCases(options: options);
         break;
@@ -52,8 +50,6 @@ class BDDCLI {
     stdout.writeln('  test     Run BDD tests with formatted report');
     stdout.writeln('');
     stdout.writeln('Build flags:');
-    stdout.writeln('  --no-widget-test  Generate unit tests instead of widget tests');
-    stdout.writeln('  --force           Force regenerate all files');
-    stdout.writeln('  --new-only        Only generate for new feature files');
+    stdout.writeln('  --force  Force regenerate all files');
   }
 }

@@ -69,13 +69,6 @@ class BDDController {
       final scenarioPath = feature.path.replaceAll('.feature', '.bdd_scenarios.dart');
       final testPath = feature.path.replaceAll('.feature', '.bdd_test.dart');
 
-      if (options.newOnly && existingEntry != null) {
-        stdout.writeln('  Skipped (existing): ${featureFile.path}');
-        skipped++;
-        updatedFeatures.add(existingEntry);
-        continue;
-      }
-
       if (options.force || existingEntry == null) {
         await _generateFull(feature, scenarioPath, testPath, config);
         stdout.writeln('  Generated: $scenarioPath');

@@ -83,20 +83,19 @@ await scenario.iHaveACounter(tester);
 
 ### Generation Modes
 
-- **Incremental (default)** — compares file timestamps + scenario hashes against manifest, skips unchanged
+- **Incremental (default)** — compares scenario hashes against manifest, skips unchanged, appends new scenarios
 - **Force (`--force`)** — regenerates everything
-- **New-only (`--new-only`)** — only generates for features not in manifest
 
 ### Decorators
 
 - `@unitTest` / `@widgetTest` — on feature or scenario (scenario overrides feature)
 - Feature files only contain behavior-relevant tags; tooling config lives in `.bdd_flutter/config.yaml`
 
-### CLI Flags
+### CLI Commands
 
-- `--no-widget-test` — Generate unit tests instead of widget tests
-- `--force` — Regenerate all files regardless of changes
-- `--new-only` — Only generate for new feature files
+- `build` — Generate test files (incremental by default)
+- `build --force` — Regenerate all files regardless of changes
+- `test` — Run BDD tests with formatted Feature/Scenario report
 
 ### Config File
 

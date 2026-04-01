@@ -145,10 +145,10 @@ additional_imports:
 scenario_suffix: "Scenario"
 ```
 
-Or use CLI flags:
+Or use `--force` to regenerate everything:
 
 ```bash
-dart run bdd_flutter build --no-widget-test --force
+dart run bdd_flutter build --force
 ```
 
 ### Config Options
@@ -163,18 +163,13 @@ dart run bdd_flutter build --no-widget-test --force
 
 ### CLI Flags
 
-| Flag               | Command | Description                              |
-| ------------------ | ------- | ---------------------------------------- |
-| `--no-widget-test` | build   | Generate unit tests instead of widget tests |
-| `--force`          | build   | Force regenerate all files               |
-| `--new-only`       | build   | Only generate for new feature files      |
-
 ### Commands
 
-| Command | Description |
-| ------- | ----------- |
-| `build` | Generate test files from `.feature` files |
-| `test`  | Run BDD tests with formatted Feature/Scenario report |
+| Command         | Description                                          |
+| --------------- | ---------------------------------------------------- |
+| `build`         | Generate test files from `.feature` files            |
+| `build --force` | Force regenerate all files (overwrites existing)     |
+| `test`          | Run BDD tests with formatted Feature/Scenario report |
 
 ## Decorators
 
@@ -209,15 +204,6 @@ dart run bdd_flutter build --force
 
 - Regenerates all files from scratch
 - **Overwrites** existing scenario implementations — use with caution
-
-### New Files Only
-
-```bash
-dart run bdd_flutter build --new-only
-```
-
-- Only generates for feature files not yet in the manifest
-- Skips all existing features entirely
 
 ## Project Structure
 
