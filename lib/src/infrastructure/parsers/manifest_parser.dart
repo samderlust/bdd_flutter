@@ -5,8 +5,15 @@ import 'package:yaml/yaml.dart';
 import '../../domain/manifest.dart';
 
 class ManifestParser {
-  static const String manifestDir = '.bdd_flutter';
-  static const String manifestFile = '$manifestDir/manifest.yaml';
+  static const String defaultManifestDir = '.bdd_flutter';
+  static const String defaultManifestFile = '$defaultManifestDir/manifest.yaml';
+
+  final String manifestDir;
+  final String manifestFile;
+
+  ManifestParser({String? manifestDir, String? manifestFile})
+      : manifestDir = manifestDir ?? defaultManifestDir,
+        manifestFile = manifestFile ?? defaultManifestFile;
 
   Future<Manifest> loadManifest() async {
     final file = File(manifestFile);
@@ -84,7 +91,6 @@ class ManifestParser {
     await File(manifestFile).writeAsString(buffer.toString());
   }
 
-  /// Find a feature entry in the manifest by path
   ManifestFeature? findFeature(Manifest manifest, String path) {
     for (final feature in manifest.features) {
       if (feature.path == path) return feature;

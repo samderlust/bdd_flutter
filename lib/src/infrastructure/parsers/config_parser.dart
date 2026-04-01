@@ -5,8 +5,12 @@ import 'package:yaml/yaml.dart';
 import '../../domain/config.dart';
 
 class ConfigParser {
-  static const String configDir = '.bdd_flutter';
-  static const String configFile = '$configDir/config.yaml';
+  static const String defaultConfigDir = '.bdd_flutter';
+  static const String defaultConfigFile = '$defaultConfigDir/config.yaml';
+
+  final String configFile;
+
+  ConfigParser({String? configFile}) : configFile = configFile ?? defaultConfigFile;
 
   Future<BDDConfig> loadConfig() async {
     final file = File(configFile);
