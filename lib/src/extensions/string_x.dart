@@ -3,8 +3,10 @@ extension StringX on String {
     return split(' ').where((word) => word.isNotEmpty).map((word) => word[0].toUpperCase() + word.substring(1).toLowerCase()).join('');
   }
 
-  String get toScenarioClassName {
-    return "${name}Scenario";
+  String get toScenarioClassName => toClassName('Scenario');
+
+  String toClassName(String suffix) {
+    return '$name$suffix';
   }
 
   String get snakeCaseToCamelCase {

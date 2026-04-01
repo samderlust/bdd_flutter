@@ -39,6 +39,8 @@ extension ScenarioX on Scenario {
 
   String get className => name.toScenarioClassName;
 
+  String classNameWithSuffix(String suffix) => name.toClassName(suffix);
+
   String get getHash {
     return md5.convert(utf8.encode(toString())).toString();
   }

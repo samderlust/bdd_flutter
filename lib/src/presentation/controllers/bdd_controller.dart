@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import '../../domain/build_options.dart';
+import '../../domain/config.dart';
 import '../../domain/feature.dart';
 import '../../domain/manifest.dart';
 import '../../domain/scenario.dart';
@@ -33,12 +34,18 @@ class BDDController {
     final config = await _configParser.loadConfig();
     final manifest = await _manifestParser.loadManifest();
 
-    final featureFiles = Directory('test/')
+    final testDir = Directory(config.testDir);
+    if (!testDir.existsSync()) {
+      stdout.writeln('Directory "${config.testDir}" not found.');
+      return;
+    }
+
+    final featureFiles = testDir
         .listSync(recursive: true)
         .where((file) => file.path.endsWith('.feature'));
 
     if (featureFiles.isEmpty) {
-      stdout.writeln('No .feature files found in test/ directory.');
+      stdout.writeln('No .feature files found in "${config.testDir}".');
       return;
     }
 
@@ -62,7 +69,6 @@ class BDDController {
       final scenarioPath = feature.path.replaceAll('.feature', '.bdd_scenarios.dart');
       final testPath = feature.path.replaceAll('.feature', '.bdd_test.dart');
 
-      // New-only mode: skip if already in manifest
       if (options.newOnly && existingEntry != null) {
         stdout.writeln('  Skipped (existing): ${featureFile.path}');
         skipped++;
@@ -70,13 +76,12 @@ class BDDController {
         continue;
       }
 
-      // Force mode: regenerate everything
       if (options.force || existingEntry == null) {
-        await _generateFull(feature, scenarioPath, testPath);
+        await _generateFull(feature, scenarioPath, testPath, config);
         stdout.writeln('  Generated: $scenarioPath');
         stdout.writeln('  Generated: $testPath');
         generated++;
-        updatedFeatures.add(_buildManifestEntry(featureFile, feature, testPath));
+        updatedFeatures.add(_buildManifestEntry(featureFile, feature, testPath, config));
         continue;
       }
 
@@ -92,25 +97,31 @@ class BDDController {
         continue;
       }
 
-      // Append new scenario classes to scenarios file (preserve existing implementations)
-      final newScenarioContent = _scenarioFileBuilder.buildNewScenarios(feature, newScenarios);
+      // Append new scenario classes to scenarios file
+      final newScenarioContent = _scenarioFileBuilder.buildNewScenarios(
+        feature,
+        newScenarios,
+        scenarioSuffix: config.scenarioSuffix,
+      );
       final scenarioFile = File(scenarioPath);
       if (scenarioFile.existsSync()) {
         await scenarioFile.writeAsString(
           '${await scenarioFile.readAsString()}\n$newScenarioContent',
         );
       } else {
-        // File was deleted — full generate
-        await _generateFull(feature, scenarioPath, testPath);
+        await _generateFull(feature, scenarioPath, testPath, config);
         stdout.writeln('  Generated: $scenarioPath');
         stdout.writeln('  Generated: $testPath');
         generated++;
-        updatedFeatures.add(_buildManifestEntry(featureFile, feature, testPath));
+        updatedFeatures.add(_buildManifestEntry(featureFile, feature, testPath, config));
         continue;
       }
 
-      // Test file is always fully regenerated (no user code in it)
-      final testContent = await _testFileBuilder.buildTestFile(feature);
+      // Test file is always fully regenerated
+      final testContent = await _testFileBuilder.buildTestFile(
+        feature,
+        scenarioSuffix: config.scenarioSuffix,
+      );
       await File(testPath).writeAsString(testContent);
 
       final newNames = newScenarios.map((s) => s.name).join(', ');
@@ -118,7 +129,7 @@ class BDDController {
       stdout.writeln('  Regenerated: $testPath');
       appended++;
 
-      updatedFeatures.add(_buildManifestEntry(featureFile, feature, testPath));
+      updatedFeatures.add(_buildManifestEntry(featureFile, feature, testPath, config));
     }
 
     final updatedManifest = Manifest(features: updatedFeatures);
@@ -131,14 +142,31 @@ class BDDController {
     stdout.writeln('Done. ${parts.join(', ')}.');
   }
 
-  Future<void> _generateFull(Feature feature, String scenarioPath, String testPath) async {
-    final scenarioContent = await _scenarioFileBuilder.buildScenarioFile(feature);
-    final testContent = await _testFileBuilder.buildTestFile(feature);
+  Future<void> _generateFull(
+    Feature feature,
+    String scenarioPath,
+    String testPath,
+    BDDConfig config,
+  ) async {
+    final scenarioContent = await _scenarioFileBuilder.buildScenarioFile(
+      feature,
+      additionalImports: config.additionalImports,
+      scenarioSuffix: config.scenarioSuffix,
+    );
+    final testContent = await _testFileBuilder.buildTestFile(
+      feature,
+      scenarioSuffix: config.scenarioSuffix,
+    );
     await File(scenarioPath).writeAsString(scenarioContent);
     await File(testPath).writeAsString(testContent);
   }
 
-  ManifestFeature _buildManifestEntry(FileSystemEntity featureFile, Feature feature, String testPath) {
+  ManifestFeature _buildManifestEntry(
+    FileSystemEntity featureFile,
+    Feature feature,
+    String testPath,
+    BDDConfig config,
+  ) {
     return ManifestFeature(
       path: featureFile.path,
       lastModified: featureFile.statSync().modified.toIso8601String(),
@@ -147,7 +175,7 @@ class BDDController {
           .map((s) => ManifestScenario(
                 name: s.name,
                 hash: s.getHash,
-                testMethod: 'test${s.className}',
+                testMethod: 'test${s.classNameWithSuffix(config.scenarioSuffix)}',
               ))
           .toList(),
     );

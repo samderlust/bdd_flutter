@@ -98,8 +98,11 @@ await scenario.iHaveACounter(tester);
 ### Config File
 
 `.bdd_flutter/config.yaml`:
+- `test_dir` (string, default `test/`) — where to scan for `.feature` files
 - `generate_widget_tests` (bool, default true)
 - `ignore_features` (list of paths to skip)
+- `additional_imports` (list of imports added to every generated `_scenarios.dart`)
+- `scenario_suffix` (string, default `Scenario`) — class name suffix (e.g., `Steps`)
 
 ### Manifest File
 

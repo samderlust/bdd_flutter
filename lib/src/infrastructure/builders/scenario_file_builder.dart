@@ -4,9 +4,16 @@ import '../../domain/scenario.dart';
 import '../../domain/step.dart';
 
 class ScenariosFileBuilder {
-  Future<String> buildScenarioFile(Feature feature) async {
+  Future<String> buildScenarioFile(
+    Feature feature, {
+    List<String> additionalImports = const [],
+    String scenarioSuffix = 'Scenario',
+  }) async {
     final buffer = StringBuffer();
     buffer.writeln("import 'package:flutter_test/flutter_test.dart';");
+    for (final imp in additionalImports) {
+      buffer.writeln("import '$imp';");
+    }
     buffer.writeln();
 
     if (feature.background != null) {
@@ -26,68 +33,56 @@ class ScenariosFileBuilder {
     }
 
     for (var scenario in feature.scenarios) {
-      // Resolve unit test considering feature-level decorators
-      final isUnitTest = scenario.isUnitTestWithFeature(feature.decorators);
-
-      buffer.writeln("class ${scenario.className} {");
-
-      for (var step in scenario.steps) {
-        final methodName = step.methodName;
-        final params = extractMethodParams(step.text);
-
-        if (!isUnitTest) {
-          buffer.writeln(
-            "  Future<void> $methodName(WidgetTester tester${params.isNotEmpty ? ', $params' : ''}) async {",
-          );
-        } else {
-          buffer.writeln(
-            "  Future<void> $methodName(${params.isNotEmpty ? params : ''}) async {",
-          );
-        }
-        buffer.writeln("    // TODO: Implement ${step.keyword} ${step.text}");
-        buffer.writeln("  }");
-        buffer.writeln();
-      }
-
-      buffer.writeln("}");
-      buffer.writeln();
+      _writeScenarioClass(buffer, feature, scenario, scenarioSuffix);
     }
 
     return buffer.toString();
   }
 
   /// Build only the specified scenarios (for appending to existing file)
-  String buildNewScenarios(Feature feature, List<Scenario> newScenarios) {
+  String buildNewScenarios(
+    Feature feature,
+    List<Scenario> newScenarios, {
+    String scenarioSuffix = 'Scenario',
+  }) {
     final buffer = StringBuffer();
-
     for (var scenario in newScenarios) {
-      final isUnitTest = scenario.isUnitTestWithFeature(feature.decorators);
+      _writeScenarioClass(buffer, feature, scenario, scenarioSuffix);
+    }
+    return buffer.toString();
+  }
 
-      buffer.writeln("class ${scenario.className} {");
+  void _writeScenarioClass(
+    StringBuffer buffer,
+    Feature feature,
+    Scenario scenario,
+    String scenarioSuffix,
+  ) {
+    final isUnitTest = scenario.isUnitTestWithFeature(feature.decorators);
+    final className = scenario.classNameWithSuffix(scenarioSuffix);
 
-      for (var step in scenario.steps) {
-        final methodName = step.methodName;
-        final params = extractMethodParams(step.text);
+    buffer.writeln("class $className {");
 
-        if (!isUnitTest) {
-          buffer.writeln(
-            "  Future<void> $methodName(WidgetTester tester${params.isNotEmpty ? ', $params' : ''}) async {",
-          );
-        } else {
-          buffer.writeln(
-            "  Future<void> $methodName(${params.isNotEmpty ? params : ''}) async {",
-          );
-        }
-        buffer.writeln("    // TODO: Implement ${step.keyword} ${step.text}");
-        buffer.writeln("  }");
-        buffer.writeln();
+    for (var step in scenario.steps) {
+      final methodName = step.methodName;
+      final params = extractMethodParams(step.text);
+
+      if (!isUnitTest) {
+        buffer.writeln(
+          "  Future<void> $methodName(WidgetTester tester${params.isNotEmpty ? ', $params' : ''}) async {",
+        );
+      } else {
+        buffer.writeln(
+          "  Future<void> $methodName(${params.isNotEmpty ? params : ''}) async {",
+        );
       }
-
-      buffer.writeln("}");
+      buffer.writeln("    // TODO: Implement ${step.keyword} ${step.text}");
+      buffer.writeln("  }");
       buffer.writeln();
     }
 
-    return buffer.toString();
+    buffer.writeln("}");
+    buffer.writeln();
   }
 }
 

@@ -5,7 +5,10 @@ import '../../domain/step.dart';
 import '../../extensions/string_x.dart';
 
 class TestFileBuilder {
-  Future<String> buildTestFile(Feature feature) async {
+  Future<String> buildTestFile(
+    Feature feature, {
+    String scenarioSuffix = 'Scenario',
+  }) async {
     final buffer = StringBuffer();
 
     buffer.writeln("import 'package:flutter_test/flutter_test.dart';");
@@ -16,7 +19,7 @@ class TestFileBuilder {
     buffer.writeln("  group('${feature.name}', () {");
 
     for (var scenario in feature.scenarios) {
-      final className = scenario.className;
+      final className = scenario.classNameWithSuffix(scenarioSuffix);
       final isUnitTest = scenario.isUnitTestWithFeature(feature.decorators);
       final testFunction = isUnitTest ? 'test' : 'testWidgets';
 

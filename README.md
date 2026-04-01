@@ -122,10 +122,25 @@ void main() {
 Configure the generator in `.bdd_flutter/config.yaml`:
 
 ```yaml
+# Where to scan for .feature files
+test_dir: "test/"
+
+# Generate widget tests or unit tests
 generate_widget_tests: true
+
+# Feature files to skip during generation
 ignore_features:
   - test/features/login.feature
   - test/features/registration.feature
+
+# Imports added to every generated .bdd_scenarios.dart file
+additional_imports:
+  - "package:mocktail/mocktail.dart"
+  - "test/helpers/test_helpers.dart"
+
+# Suffix for generated scenario class names (default: "Scenario")
+# e.g., "Steps" → IncrementSteps instead of IncrementScenario
+scenario_suffix: "Scenario"
 ```
 
 Or use CLI flags:
@@ -136,10 +151,13 @@ dart run bdd_flutter build --no-widget-test --force
 
 ### Config Options
 
-| Option                  | Type | Default | Description                                            |
-| ----------------------- | ---- | ------- | ------------------------------------------------------ |
-| `generate_widget_tests` | bool | true    | Generate widget tests when true, unit tests when false |
-| `ignore_features`       | List | []      | List of feature file paths to skip during generation   |
+| Option                  | Type   | Default      | Description                                              |
+| ----------------------- | ------ | ------------ | -------------------------------------------------------- |
+| `test_dir`              | String | `test/`      | Directory to scan for `.feature` files                   |
+| `generate_widget_tests` | bool   | true         | Generate widget tests when true, unit tests when false   |
+| `ignore_features`       | List   | []           | Feature file paths to skip during generation             |
+| `additional_imports`    | List   | []           | Imports added to every generated scenario file           |
+| `scenario_suffix`       | String | `Scenario`   | Class name suffix (e.g., `Steps` for `IncrementSteps`)  |
 
 ### CLI Flags
 

@@ -14,7 +14,7 @@ void main() {
       await scenario.iShouldSeeTheSampleFeature(tester);
     });
     testWidgets('Counter', (tester) async {
-      final scenario = CounterCustomName();
+      final scenario = CounterScenario();
       //Scenario: Counter
       // Given I have a counter
       await scenario.iHaveACounter(tester);

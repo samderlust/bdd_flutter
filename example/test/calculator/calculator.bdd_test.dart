@@ -16,7 +16,7 @@ void main() {
       await scenario.theResultShouldBe3(tester);
     });
     testWidgets('Subtract two numbers', (tester) async {
-      final scenario = Subtract();
+      final scenario = SubtractTwoNumbersScenario();
       //Scenario: Subtract two numbers
       // Given I have the number 5
       await scenario.iHaveTheNumber5(tester);

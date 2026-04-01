@@ -140,5 +140,46 @@ void main() {
       expect(result, contains('class SuccessfulLoginScenario {'));
       expect(result, contains('class FailedLoginScenario {'));
     });
+
+    test('includes additional imports', () async {
+      final feature = Feature(
+        name: 'Login',
+        path: 'test/login.feature',
+        scenarios: [
+          Scenario('Test', [Step('Given', 'something')]),
+        ],
+        decorators: {},
+      );
+
+      final result = await builder.buildScenarioFile(
+        feature,
+        additionalImports: [
+          'package:mocktail/mocktail.dart',
+          'test/helpers/test_helpers.dart',
+        ],
+      );
+
+      expect(result, contains("import 'package:mocktail/mocktail.dart';"));
+      expect(result, contains("import 'test/helpers/test_helpers.dart';"));
+    });
+
+    test('uses custom scenario suffix', () async {
+      final feature = Feature(
+        name: 'Login',
+        path: 'test/login.feature',
+        scenarios: [
+          Scenario('Successful login', [Step('Given', 'I am logged in')]),
+        ],
+        decorators: {},
+      );
+
+      final result = await builder.buildScenarioFile(
+        feature,
+        scenarioSuffix: 'Steps',
+      );
+
+      expect(result, contains('class SuccessfulLoginSteps {'));
+      expect(result, isNot(contains('SuccessfulLoginScenario')));
+    });
   });
 }
