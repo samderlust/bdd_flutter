@@ -8,7 +8,10 @@ extension StringX on String {
   }
 
   String get snakeCaseToCamelCase {
-    return split('_').map((word) => word[0].toLowerCase() + word.substring(1).toLowerCase()).join('');
+    final parts = split('_');
+    if (parts.isEmpty) return this;
+    return parts[0].toLowerCase() +
+        parts.skip(1).map((word) => word[0].toUpperCase() + word.substring(1).toLowerCase()).join('');
   }
 
   String get toSnakeCase {

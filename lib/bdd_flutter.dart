@@ -1,6 +1,6 @@
 library bdd_flutter;
 
-export 'src/feature/report/test_reporter.dart' show BDDTestReporter;
+export 'src/presentation/reporter/test_reporter.dart' show BDDTestReporter;
 
 /// A Flutter package for Behavior-Driven Development (BDD) testing.
 ///

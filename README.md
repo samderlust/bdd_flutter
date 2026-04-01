@@ -7,6 +7,8 @@
 
 A powerful Flutter package that simplifies Behavior Driven Development (BDD) by automatically generating test files from Gherkin feature files. Write expressive tests in plain English using Given/When/Then scenarios and let BDD Flutter handle the boilerplate code generation.
 
+> **Note**: This package is currently in active development. While it's stable for production use, new features and improvements are being added regularly. Feel free to submit issues or feature requests on GitHub.
+
 ## 🚨 Breaking Changes in v1.0.0
 
 - The package no longer uses `build_runner`. Instead, it now uses a simpler CLI approach:
@@ -277,6 +279,18 @@ dart run bdd_flutter build --new-only
    - Follow Gherkin syntax guidelines
 
 3. **Test Files**
+
    - Don't modify generated test files directly
    - Add your implementation in the provided methods
    - Use the incremental update mode to preserve changes
+
+4. **Incremental Generation Limitations**
+   - The default incremental generation mode has some limitations when working with existing `.feature` files:
+     - Adding new features at the end of the file works fine
+     - Modifying existing scenarios may cause issues with scenario and test file generation
+     - Adding new scenarios in the middle of the file can cause generation problems
+   - When making significant changes to existing feature files, consider using the force regenerate mode:
+     ```bash
+     dart run bdd_flutter build --force
+     ```
+   - Always backup your implemented test code before force regenerating

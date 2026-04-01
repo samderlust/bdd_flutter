@@ -1,8 +1,7 @@
-import '../domain/step.dart';
-
-import '../domain/feature.dart';
-import '../domain/scenario.dart';
-import '../../../extensions/string_x.dart';
+import '../../extensions/string_x.dart';
+import '../../domain/feature.dart';
+import '../../domain/scenario.dart';
+import '../../domain/step.dart';
 
 class ScenariosFileBuilder {
   Future<String> buildScenarioFile(Feature feature) async {
@@ -14,9 +13,9 @@ class ScenariosFileBuilder {
       buffer.writeln("class ${feature.name}Background {");
       for (var step in feature.background!.steps) {
         final methodName = step.methodName;
-        final params = _extractMethodParams(step.text);
+        final params = extractMethodParams(step.text);
         buffer.writeln(
-          "  static Future<void> $methodName(${params.isNotEmpty ? params : ''}) async {",
+          "  Future<void> $methodName(${params.isNotEmpty ? params : ''}) async {",
         );
         buffer.writeln("    // TODO: Implement ${step.keyword} ${step.text}");
         buffer.writeln("  }");
@@ -25,24 +24,25 @@ class ScenariosFileBuilder {
       buffer.writeln("}");
       buffer.writeln();
     }
+
     // Create a class for each scenario
     for (var scenario in feature.scenarios) {
       final isUnitTest = scenario.isUnitTest;
 
       buffer.writeln("class ${scenario.className} {");
 
-      // Create static methods for each step in the scenario
+      // Create instance methods for each step in the scenario
       for (var step in scenario.steps) {
         final methodName = step.methodName;
-        final params = _extractMethodParams(step.text);
+        final params = extractMethodParams(step.text);
 
         if (!isUnitTest) {
           buffer.writeln(
-            "  static Future<void> $methodName(WidgetTester tester${params.isNotEmpty ? ', $params' : ''}) async {",
+            "  Future<void> $methodName(WidgetTester tester${params.isNotEmpty ? ', $params' : ''}) async {",
           );
         } else {
           buffer.writeln(
-            "  static Future<void> $methodName(${params.isNotEmpty ? params : ''}) async {",
+            "  Future<void> $methodName(${params.isNotEmpty ? params : ''}) async {",
           );
         }
         buffer.writeln("    // TODO: Implement ${step.keyword} ${step.text}");
@@ -56,17 +56,17 @@ class ScenariosFileBuilder {
 
     return buffer.toString();
   }
+}
 
-  String _extractMethodParams(String stepText) {
-    final params = <String>[];
-    final regex = RegExp(r'<(\w+)>');
-    final matches = regex.allMatches(stepText);
+String extractMethodParams(String stepText) {
+  final params = <String>[];
+  final regex = RegExp(r'<(\w+)>');
+  final matches = regex.allMatches(stepText);
 
-    for (var match in matches) {
-      final paramName = match.group(1)!;
-      params.add('String ${paramName.snakeCaseToCamelCase}');
-    }
-
-    return params.join(', ');
+  for (var match in matches) {
+    final paramName = match.group(1)!;
+    params.add('String ${paramName.snakeCaseToCamelCase}');
   }
+
+  return params.join(', ');
 }

@@ -1,75 +1,75 @@
 import 'package:flutter_test/flutter_test.dart';
 
 class SampleScenario {
-  static Future<void> iHaveASampleFeature(WidgetTester tester) async {
+  Future<void> iHaveASampleFeature(WidgetTester tester) async {
     // TODO: Implement Given I have a sample feature
   }
 
-  static Future<void> iRunTheSampleFeature(WidgetTester tester) async {
+  Future<void> iRunTheSampleFeature(WidgetTester tester) async {
     // TODO: Implement When I run the sample feature
   }
 
-  static Future<void> iShouldSeeTheSampleFeature(WidgetTester tester) async {
+  Future<void> iShouldSeeTheSampleFeature(WidgetTester tester) async {
     // TODO: Implement Then I should see the sample feature
   }
 
 }
 
-class CounterCustomName {
-  static Future<void> iHaveACounter(WidgetTester tester) async {
+class CounterScenario {
+  Future<void> iHaveACounter(WidgetTester tester) async {
     // TODO: Implement Given I have a counter
   }
 
-  static Future<void> iIncrementTheCounter(WidgetTester tester) async {
+  Future<void> iIncrementTheCounter(WidgetTester tester) async {
     // TODO: Implement When I increment the counter
   }
 
-  static Future<void> iShouldSeeTheCounterIncremented(WidgetTester tester) async {
+  Future<void> iShouldSeeTheCounterIncremented(WidgetTester tester) async {
     // TODO: Implement Then I should see the counter incremented
   }
 
 }
 
 class CounterWithExamplesScenario {
-  static Future<void> iHaveACounter() async {
+  Future<void> iHaveACounter() async {
     // TODO: Implement Given I have a counter
   }
 
-  static Future<void> iIncrementTheCounter(String counter) async {
+  Future<void> iIncrementTheCounter(String counter) async {
     // TODO: Implement When I increment the <counter>
   }
 
-  static Future<void> iShouldSeeTheCounterIncremented() async {
+  Future<void> iShouldSeeTheCounterIncremented() async {
     // TODO: Implement Then I should see the counter incremented
   }
 
 }
 
 class CounterWithParametersScenario {
-  static Future<void> iHaveACounter() async {
+  Future<void> iHaveACounter() async {
     // TODO: Implement Given I have a counter
   }
 
-  static Future<void> iIncrementTheCounterCounter(String counter) async {
+  Future<void> iIncrementTheCounterCounter(String counter) async {
     // TODO: Implement When I increment the counter <counter>
   }
 
-  static Future<void> iShouldSeeTheResultResult(String result) async {
+  Future<void> iShouldSeeTheResultResult(String result) async {
     // TODO: Implement Then I should see the result <result>
   }
 
 }
 
 class CounterWithWidgetTestScenario {
-  static Future<void> iHaveACounter(WidgetTester tester) async {
+  Future<void> iHaveACounter(WidgetTester tester) async {
     // TODO: Implement Given I have a counter
   }
 
-  static Future<void> iIncrementTheCounter(WidgetTester tester) async {
+  Future<void> iIncrementTheCounter(WidgetTester tester) async {
     // TODO: Implement When I increment the counter
   }
 
-  static Future<void> iShouldSeeTheCounterIncremented(WidgetTester tester) async {
+  Future<void> iShouldSeeTheCounterIncremented(WidgetTester tester) async {
     // TODO: Implement Then I should see the counter incremented
   }
 

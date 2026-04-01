@@ -1,6 +1,6 @@
-import 'package:bdd_flutter/src/runner/command_parser.dart';
+import 'package:bdd_flutter/src/presentation/cli/bbd_cli.dart';
 
 void main(List<String> arguments) async {
-  final parser = CommandParser();
-  await parser.parse(arguments);
+  final cli = BDDCLI();
+  await cli.run(arguments);
 }

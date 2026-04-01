@@ -1,4 +1,6 @@
-import 'package:bdd_flutter/src/extensions/string_x.dart';
+import 'dart:convert';
+import '../extensions/string_x.dart';
+import 'package:crypto/crypto.dart';
 
 import 'decorator.dart';
 import 'step.dart';
@@ -6,18 +8,30 @@ import 'step.dart';
 /// A scenario is a collection of steps
 class Scenario {
   /// The name of the scenario
-  final String name;
+  String name;
 
   /// The steps of the scenario
-  final List<Step> steps;
+  List<Step> steps;
 
   /// The examples of the scenario
-  final List<Map<String, String>>? examples;
+  List<Map<String, String>>? examples;
 
   /// The decorators of the scenario
-  final Set<BDDDecorator> decorators;
+  Set<Decorator> decorators;
 
-  Scenario(this.name, this.steps, {this.examples, this.decorators = const {}});
+  Scenario(
+    this.name,
+    this.steps, {
+    this.examples,
+    this.decorators = const {},
+  });
+
+  factory Scenario.init() => Scenario(
+        '',
+        [],
+        examples: [],
+        decorators: {},
+      );
 
   @override
   String toString() {
@@ -30,9 +44,10 @@ extension ScenarioX on Scenario {
   bool get isWidgetTest => decorators.hasWidgetTest;
 
   String get className {
-    if (decorators.hasClassName) {
-      return decorators.firstWhere((e) => e.isClassName).value!;
-    }
     return name.toScenarioClassName;
+  }
+
+  String get getHash {
+    return md5.convert(utf8.encode(toString())).toString();
   }
 }
