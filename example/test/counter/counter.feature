@@ -10,3 +10,7 @@ Feature: Counter
       | 1     | 1              |
       | 2     | 2              |
       | 3     | 3              |
+
+  Scenario: Decrement
+    When I decrement the counter by 1
+    Then the counter should have value -1

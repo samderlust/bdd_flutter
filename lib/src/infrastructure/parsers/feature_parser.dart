@@ -24,7 +24,6 @@ class FeatureParser {
     // scenario that is being process
     Scenario? currentScenario;
     List<Decorator> currentScenarioDecorators = [];
-    String? currentScenarioClassName;
 
     ExampleContent? currentExampleContent;
 
@@ -51,16 +50,9 @@ class FeatureParser {
             currentExampleContent = null;
             currentScenario = null;
             currentScenarioDecorators = [];
-            currentScenarioClassName = null;
           }
 
-          // Check for @className("...") decorator
-          final className = Decorator.parseClassName(line);
-          if (className != null) {
-            currentScenarioClassName = className;
-          } else {
-            currentScenarioDecorators.add(Decorator.fromString(line));
-          }
+          currentScenarioDecorators.add(Decorator.fromString(line));
         }
       }
       // start parsing background
@@ -76,20 +68,10 @@ class FeatureParser {
       // parsing scenario name
       else if (line.startsWith('Scenario:')) {
         isParsingBackground = false;
-        // isParsingExamples = false;
-        // currentExampleContent = null;
-
-        // if lines start with Scenario:, it means it's a scenario name
         final name = line.substring('Scenario:'.length).trim();
         if (currentScenario != null) {
-          // if currentScenario is not null, add it to the list
           currentScenario.examples = currentExampleContent?.examples;
-          // currentExampleContent = null;
-          // add the current scenario to the list
           scenarios.add(currentScenario);
-          // reset the examples
-          // currentExamples = [];
-          // exampleHeaders = [];
           currentExampleContent = null;
         }
 
@@ -97,10 +79,8 @@ class FeatureParser {
           name,
           [],
           decorators: currentScenarioDecorators.toSet(),
-          customClassName: currentScenarioClassName,
         );
         currentScenarioDecorators = [];
-        currentScenarioClassName = null;
         currentExampleContent = null;
       }
       // parsing steps

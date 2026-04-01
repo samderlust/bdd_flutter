@@ -1,4 +1,3 @@
-import '../../domain/decorator.dart';
 import '../../extensions/string_x.dart';
 import '../../domain/feature.dart';
 import '../../domain/scenario.dart';
@@ -27,9 +26,41 @@ class ScenariosFileBuilder {
     }
 
     for (var scenario in feature.scenarios) {
-      if (scenario.decorators.hasIgnore) continue;
-
       // Resolve unit test considering feature-level decorators
+      final isUnitTest = scenario.isUnitTestWithFeature(feature.decorators);
+
+      buffer.writeln("class ${scenario.className} {");
+
+      for (var step in scenario.steps) {
+        final methodName = step.methodName;
+        final params = extractMethodParams(step.text);
+
+        if (!isUnitTest) {
+          buffer.writeln(
+            "  Future<void> $methodName(WidgetTester tester${params.isNotEmpty ? ', $params' : ''}) async {",
+          );
+        } else {
+          buffer.writeln(
+            "  Future<void> $methodName(${params.isNotEmpty ? params : ''}) async {",
+          );
+        }
+        buffer.writeln("    // TODO: Implement ${step.keyword} ${step.text}");
+        buffer.writeln("  }");
+        buffer.writeln();
+      }
+
+      buffer.writeln("}");
+      buffer.writeln();
+    }
+
+    return buffer.toString();
+  }
+
+  /// Build only the specified scenarios (for appending to existing file)
+  String buildNewScenarios(Feature feature, List<Scenario> newScenarios) {
+    final buffer = StringBuffer();
+
+    for (var scenario in newScenarios) {
       final isUnitTest = scenario.isUnitTestWithFeature(feature.decorators);
 
       buffer.writeln("class ${scenario.className} {");

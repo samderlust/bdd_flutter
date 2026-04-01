@@ -146,26 +146,6 @@ void main() {
       expect(result, contains("import 'counter.bdd_scenarios.dart';"));
     });
 
-    test('generates reporter setup when @enableReporter', () async {
-      final feature = Feature(
-        name: 'Counter',
-        path: 'test/counter.feature',
-        scenarios: [
-          Scenario('Increment', [
-            Step('Given', 'I have a counter'),
-          ]),
-        ],
-        decorators: {Decorator.enableReporter},
-      );
-
-      final result = await builder.buildTestFile(feature);
-
-      expect(result, contains("import 'package:bdd_flutter/bdd_flutter.dart';"));
-      expect(result, contains("final reporter = BDDTestReporter(featureName: 'Counter');"));
-      expect(result, contains('reporter.startScenario'));
-      expect(result, contains('reporter.guard'));
-    });
-
     test('wraps group with feature name', () async {
       final feature = Feature(
         name: 'My Feature',

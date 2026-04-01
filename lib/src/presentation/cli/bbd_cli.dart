@@ -22,7 +22,6 @@ class BDDCLI {
       case 'build':
         final options = BuildOptions(
           widgetTest: !flags.contains('--no-widget-test'),
-          reporter: flags.contains('--reporter'),
           force: flags.contains('--force'),
           newOnly: flags.contains('--new-only'),
         );
@@ -42,7 +41,6 @@ class BDDCLI {
     stdout.writeln('');
     stdout.writeln('Flags:');
     stdout.writeln('  --no-widget-test  Generate unit tests instead of widget tests');
-    stdout.writeln('  --reporter        Enable test reporter');
     stdout.writeln('  --force           Force regenerate all files');
     stdout.writeln('  --new-only        Only generate for new feature files');
   }

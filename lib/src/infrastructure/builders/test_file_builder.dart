@@ -1,5 +1,4 @@
 import '../../constraints/file_constraint.dart';
-import '../../domain/decorator.dart';
 import '../../domain/feature.dart';
 import '../../domain/scenario.dart';
 import '../../domain/step.dart';
@@ -8,47 +7,25 @@ import '../../extensions/string_x.dart';
 class TestFileBuilder {
   Future<String> buildTestFile(Feature feature) async {
     final buffer = StringBuffer();
-    final useReporter = feature.decorators.hasEnableReporter &&
-        !feature.decorators.hasDisableReporter;
 
     buffer.writeln("import 'package:flutter_test/flutter_test.dart';");
-    if (useReporter) {
-      buffer.writeln("import 'package:bdd_flutter/bdd_flutter.dart';");
-    }
-
     buffer.writeln("import '${feature.fileName}${FileConstraint.generatedScenarios}';");
     buffer.writeln();
 
     buffer.writeln("void main() {");
-    if (useReporter) {
-      buffer.writeln("  final reporter = BDDTestReporter(featureName: '${feature.name}');");
-      buffer.writeln("  setUpAll(() {");
-      buffer.writeln("    reporter.testStarted(); // start recording");
-      buffer.writeln("  });");
-      buffer.writeln("  tearDownAll(() {");
-      buffer.writeln("    reporter.testFinished(); // stop recording");
-      buffer.writeln("    reporter.printReport(); // print report");
-      buffer.writeln("    //reporter.saveReportToFile(); //uncomment to save report to file");
-      buffer.writeln("  });");
-    }
-
     buffer.writeln("  group('${feature.name}', () {");
 
     for (var scenario in feature.scenarios) {
-      if (scenario.decorators.hasIgnore) continue;
-
       final className = scenario.className;
       final isUnitTest = scenario.isUnitTestWithFeature(feature.decorators);
       final testFunction = isUnitTest ? 'test' : 'testWidgets';
 
-      // Generate one test case per scenario
       if (isUnitTest) {
         buffer.writeln("    $testFunction('${scenario.name}', () async {");
       } else {
         buffer.writeln("    $testFunction('${scenario.name}', (tester) async {");
       }
 
-      // Instantiate scenario and background
       buffer.writeln("      final scenario = $className();");
 
       if (feature.background != null) {
@@ -61,11 +38,6 @@ class TestFileBuilder {
       }
 
       buffer.writeln("      //Scenario: ${scenario.name}");
-
-      //add start scenario if needed
-      if (useReporter) {
-        buffer.writeln("      reporter.startScenario('${scenario.name}');");
-      }
 
       if (scenario.examples != null && scenario.examples!.isNotEmpty) {
         buffer.writeln("      final examples = [");
@@ -80,7 +52,6 @@ class TestFileBuilder {
         }
         buffer.writeln("      ];");
 
-        // Get the keys from the first example for parameter generation
         final exampleKeys = scenario.examples!.first.keys.toList();
         buffer.writeln("      for (var example in examples) {");
 
@@ -92,23 +63,12 @@ class TestFileBuilder {
             }
           }
 
-          buffer.writeln(_generateStepCall(
-            step,
-            useReporter,
-            isUnitTest,
-            params,
-          ));
+          buffer.writeln(_generateStepCall(step, isUnitTest, params));
         }
         buffer.writeln("      }");
       } else {
-        // For scenarios without examples, just call all steps once
         for (var step in scenario.steps) {
-          buffer.writeln(_generateStepCall(
-            step,
-            useReporter,
-            isUnitTest,
-            [],
-          ));
+          buffer.writeln(_generateStepCall(step, isUnitTest, []));
         }
       }
       buffer.writeln("    });");
@@ -121,22 +81,9 @@ class TestFileBuilder {
   }
 }
 
-String _generateStepCall(
-  Step step,
-  bool withReporter,
-  bool isUnitTest,
-  List<String> params,
-) {
+String _generateStepCall(Step step, bool isUnitTest, List<String> params) {
   final methodName = step.methodName;
-  if (withReporter) {
-    return '''
-      await reporter.guard(
-        () => scenario.$methodName(${isUnitTest ? '' : 'tester'}${params.isNotEmpty ? "${isUnitTest ? '' : ','} ${params.join(', ')}" : ''}),
-        '${step.message}',
-      );''';
-  } else {
-    return '''
+  return '''
       // ${step.message}
       await scenario.$methodName(${isUnitTest ? '' : 'tester'}${params.isNotEmpty ? "${isUnitTest ? '' : ','} ${params.join(', ')}" : ''});''';
-  }
 }

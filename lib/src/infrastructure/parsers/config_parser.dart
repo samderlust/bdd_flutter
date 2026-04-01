@@ -31,7 +31,6 @@ class ConfigParser {
 
     return BDDConfig(
       generateWidgetTests: yaml['generate_widget_tests'] as bool? ?? true,
-      enableReporter: yaml['enable_reporter'] as bool? ?? false,
       ignoreFeatures: _parseStringList(yaml['ignore_features']),
     );
   }

@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import '../../domain/build_options.dart';
-import '../../domain/decorator.dart';
+import '../../domain/feature.dart';
 import '../../domain/manifest.dart';
 import '../../domain/scenario.dart';
 import '../../infrastructure/parsers/config_parser.dart';
@@ -30,10 +30,7 @@ class BDDController {
         _manifestParser = manifestParser ?? ManifestParser();
 
   Future<void> generateFeatureTestCases({BuildOptions options = const BuildOptions()}) async {
-    // Load config
     final config = await _configParser.loadConfig();
-
-    // Load existing manifest
     final manifest = await _manifestParser.loadManifest();
 
     final featureFiles = Directory('test/')
@@ -49,86 +46,110 @@ class BDDController {
 
     final updatedFeatures = <ManifestFeature>[];
     int generated = 0;
+    int appended = 0;
     int skipped = 0;
 
     for (var featureFile in featureFiles) {
       final feature = await _featureParser.parseFeature(featureFile.path);
 
-      // Skip features with @ignore decorator
-      if (feature.decorators.hasIgnore) {
-        stdout.writeln('  Skipped (@ignore): ${featureFile.path}');
-        skipped++;
-        continue;
-      }
-
-      // Skip features in ignore_features config
       if (config.ignoreFeatures.any((ignored) => featureFile.path.endsWith(ignored))) {
         stdout.writeln('  Skipped (config): ${featureFile.path}');
         skipped++;
         continue;
       }
 
-      final existingManifestEntry = _manifestParser.findFeature(manifest, featureFile.path);
-
-      // Check generation mode
-      if (options.newOnly && existingManifestEntry != null) {
-        stdout.writeln('  Skipped (existing): ${featureFile.path}');
-        skipped++;
-        // Keep existing manifest entry
-        updatedFeatures.add(existingManifestEntry);
-        continue;
-      }
-
-      if (!options.force && existingManifestEntry != null) {
-        // Incremental mode: check if feature has changed
-        final fileLastModified = featureFile.statSync().modified.toIso8601String();
-        if (existingManifestEntry.lastModified == fileLastModified) {
-          // Check if all scenario hashes match
-          final currentHashes = feature.scenarios.map((s) => s.getHash).toSet();
-          final manifestHashes = existingManifestEntry.scenarios.map((s) => s.hash).toSet();
-          if (currentHashes.length == manifestHashes.length &&
-              currentHashes.containsAll(manifestHashes)) {
-            stdout.writeln('  Skipped (unchanged): ${featureFile.path}');
-            skipped++;
-            updatedFeatures.add(existingManifestEntry);
-            continue;
-          }
-        }
-      }
-
-      // Generate files
-      final scenarioContent = await _scenarioFileBuilder.buildScenarioFile(feature);
-      final testContent = await _testFileBuilder.buildTestFile(feature);
-
+      final existingEntry = _manifestParser.findFeature(manifest, featureFile.path);
       final scenarioPath = feature.path.replaceAll('.feature', '.bdd_scenarios.dart');
       final testPath = feature.path.replaceAll('.feature', '.bdd_test.dart');
 
-      await File(scenarioPath).writeAsString(scenarioContent);
+      // New-only mode: skip if already in manifest
+      if (options.newOnly && existingEntry != null) {
+        stdout.writeln('  Skipped (existing): ${featureFile.path}');
+        skipped++;
+        updatedFeatures.add(existingEntry);
+        continue;
+      }
+
+      // Force mode: regenerate everything
+      if (options.force || existingEntry == null) {
+        await _generateFull(feature, scenarioPath, testPath);
+        stdout.writeln('  Generated: $scenarioPath');
+        stdout.writeln('  Generated: $testPath');
+        generated++;
+        updatedFeatures.add(_buildManifestEntry(featureFile, feature, testPath));
+        continue;
+      }
+
+      // Incremental mode: check what changed
+      final manifestHashes = existingEntry.scenarios.map((s) => s.hash).toSet();
+      final currentScenarios = feature.scenarios.toList();
+      final newScenarios = currentScenarios.where((s) => !manifestHashes.contains(s.getHash)).toList();
+
+      if (newScenarios.isEmpty) {
+        stdout.writeln('  Skipped (unchanged): ${featureFile.path}');
+        skipped++;
+        updatedFeatures.add(existingEntry);
+        continue;
+      }
+
+      // Append new scenario classes to scenarios file (preserve existing implementations)
+      final newScenarioContent = _scenarioFileBuilder.buildNewScenarios(feature, newScenarios);
+      final scenarioFile = File(scenarioPath);
+      if (scenarioFile.existsSync()) {
+        await scenarioFile.writeAsString(
+          '${await scenarioFile.readAsString()}\n$newScenarioContent',
+        );
+      } else {
+        // File was deleted — full generate
+        await _generateFull(feature, scenarioPath, testPath);
+        stdout.writeln('  Generated: $scenarioPath');
+        stdout.writeln('  Generated: $testPath');
+        generated++;
+        updatedFeatures.add(_buildManifestEntry(featureFile, feature, testPath));
+        continue;
+      }
+
+      // Test file is always fully regenerated (no user code in it)
+      final testContent = await _testFileBuilder.buildTestFile(feature);
       await File(testPath).writeAsString(testContent);
 
-      stdout.writeln('  Generated: $scenarioPath');
-      stdout.writeln('  Generated: $testPath');
-      generated++;
+      final newNames = newScenarios.map((s) => s.name).join(', ');
+      stdout.writeln('  Appended new scenarios to: $scenarioPath ($newNames)');
+      stdout.writeln('  Regenerated: $testPath');
+      appended++;
 
-      // Build manifest entry for this feature
-      updatedFeatures.add(ManifestFeature(
-        path: featureFile.path,
-        lastModified: featureFile.statSync().modified.toIso8601String(),
-        testFile: testPath,
-        scenarios: feature.scenarios.map((s) => ManifestScenario(
-          name: s.name,
-          hash: s.getHash,
-          testMethod: 'test${s.className}',
-        )).toList(),
-      ));
+      updatedFeatures.add(_buildManifestEntry(featureFile, feature, testPath));
     }
 
-    // Save updated manifest
-    final updatedManifest = Manifest(
-      features: updatedFeatures,
-    );
+    final updatedManifest = Manifest(features: updatedFeatures);
     await _manifestParser.saveManifest(updatedManifest);
 
-    stdout.writeln('Done. Generated: $generated, Skipped: $skipped.');
+    final parts = <String>[];
+    if (generated > 0) parts.add('Generated: $generated');
+    if (appended > 0) parts.add('Appended: $appended');
+    if (skipped > 0) parts.add('Skipped: $skipped');
+    stdout.writeln('Done. ${parts.join(', ')}.');
+  }
+
+  Future<void> _generateFull(Feature feature, String scenarioPath, String testPath) async {
+    final scenarioContent = await _scenarioFileBuilder.buildScenarioFile(feature);
+    final testContent = await _testFileBuilder.buildTestFile(feature);
+    await File(scenarioPath).writeAsString(scenarioContent);
+    await File(testPath).writeAsString(testContent);
+  }
+
+  ManifestFeature _buildManifestEntry(FileSystemEntity featureFile, Feature feature, String testPath) {
+    return ManifestFeature(
+      path: featureFile.path,
+      lastModified: featureFile.statSync().modified.toIso8601String(),
+      testFile: testPath,
+      scenarios: feature.scenarios
+          .map((s) => ManifestScenario(
+                name: s.name,
+                hash: s.getHash,
+                testMethod: 'test${s.className}',
+              ))
+          .toList(),
+    );
   }
 }

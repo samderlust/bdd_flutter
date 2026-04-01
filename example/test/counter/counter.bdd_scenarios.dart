@@ -18,3 +18,14 @@ class IncrementScenario {
 
 }
 
+class DecrementScenario {
+  Future<void> iDecrementTheCounterBy1(WidgetTester tester) async {
+    // TODO: Implement When I decrement the counter by 1
+  }
+
+  Future<void> theCounterShouldHaveValue1(WidgetTester tester) async {
+    // TODO: Implement Then the counter should have value -1
+  }
+
+}
+

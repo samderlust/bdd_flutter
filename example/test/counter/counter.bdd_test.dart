@@ -21,5 +21,16 @@ void main() {
       await scenario.theCounterShouldHaveValueExpectedValue(tester, example['expectedValue']!);
       }
     });
+    testWidgets('Decrement', (tester) async {
+      final scenario = DecrementScenario();
+      final background = CounterBackground();
+      //Background: I have a counter with value 0
+      await background.iHaveACounterWithValue0();
+      //Scenario: Decrement
+      // When I decrement the counter by 1
+      await scenario.iDecrementTheCounterBy1(tester);
+      // Then the counter should have value -1
+      await scenario.theCounterShouldHaveValue1(tester);
+    });
   });
 }

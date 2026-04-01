@@ -157,17 +157,6 @@ Feature: Counter
       expect(feature.scenarios.first.decorators.hasWidgetTest, isTrue);
     });
 
-    test('parses @enableReporter decorator on feature', () async {
-      final file = createFeatureFile('''
-@enableReporter
-Feature: Counter
-  Scenario: Increment
-    Given I have a counter
-''');
-      final feature = await parser.parseFeature(file.path);
-      expect(feature.decorators.hasEnableReporter, isTrue);
-    });
-
     test('parses feature with no scenarios returns empty list', () async {
       final file = createFeatureFile('''
 Feature: Empty
@@ -175,55 +164,6 @@ Feature: Empty
       final feature = await parser.parseFeature(file.path);
       expect(feature.name, equals('Empty'));
       expect(feature.scenarios, isEmpty);
-    });
-
-    test('parses @ignore decorator on feature', () async {
-      final file = createFeatureFile('''
-@ignore
-Feature: Ignored
-  Scenario: Test
-    Given something
-''');
-      final feature = await parser.parseFeature(file.path);
-      expect(feature.decorators.hasIgnore, isTrue);
-    });
-
-    test('parses @ignore decorator on scenario', () async {
-      final file = createFeatureFile('''
-Feature: Login
-  @ignore
-  Scenario: Skipped
-    Given something
-  Scenario: Active
-    Given something else
-''');
-      final feature = await parser.parseFeature(file.path);
-      expect(feature.scenarios[0].decorators.hasIgnore, isTrue);
-      expect(feature.scenarios[1].decorators.hasIgnore, isFalse);
-    });
-
-    test('parses @className decorator', () async {
-      final file = createFeatureFile('''
-Feature: Login
-  @className("MyCustomClass")
-  Scenario: Test
-    Given something
-''');
-      final feature = await parser.parseFeature(file.path);
-      expect(feature.scenarios.first.customClassName, equals('MyCustomClass'));
-    });
-
-    test('parses @disableReporter decorator on feature', () async {
-      final file = createFeatureFile('''
-@enableReporter
-@disableReporter
-Feature: Counter
-  Scenario: Test
-    Given something
-''');
-      final feature = await parser.parseFeature(file.path);
-      expect(feature.decorators.hasEnableReporter, isTrue);
-      expect(feature.decorators.hasDisableReporter, isTrue);
     });
 
     test('parses @unitTest on feature applies to scenarios', () async {

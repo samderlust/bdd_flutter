@@ -9,14 +9,14 @@ bdd_flutter is a Dart CLI tool that generates Flutter/Dart test files from Gherk
 ## Common Commands
 
 ```bash
-# Run all tests
-flutter test
-
-# Run a single test file
-flutter test test/file_procesors/feature_parser_test.dart
+# Run package tests (not example — example uses flutter_test)
+dart test test/parsers/ test/builders/
 
 # Run the CLI locally against the example project
-dart run bin/bdd_flutter.dart build
+cd example && dart run bdd_flutter build
+
+# Force regenerate all
+cd example && dart run bdd_flutter build --force
 
 # Analyze code
 dart analyze
@@ -27,51 +27,83 @@ dart pub get
 
 ## Architecture
 
-Clean Architecture in `lib/src2/`. The CLI entry point is `bin/bdd_flutter.dart`.
+Clean Architecture in `lib/src/`. The CLI entry point is `bin/bdd_flutter.dart`.
 
 ### Code Generation Pipeline
 
 ```
 BDDCLI.run(args)
-  → BDDController.generateFeatureTestCases()
-    → FeatureParser.parseFeature(filePath)     # .feature → Feature model
-    → ScenariosFileBuilder.buildScenarioFile()  # Feature → .bdd_scenarios.dart
-    → TestFileBuilder.buildTestFile()           # Feature → .bdd_test.dart
+  → BDDController.generateFeatureTestCases(options)
+    → ConfigParser.loadConfig()                      # .bdd_flutter/config.yaml
+    → ManifestParser.loadManifest()                  # .bdd_flutter/manifest.yaml
+    → FeatureParser.parseFeature(filePath)            # .feature → Feature model
+    → ScenariosFileBuilder.buildScenarioFile(feature) # Feature → .bdd_scenarios.dart
+    → TestFileBuilder.buildTestFile(feature)          # Feature → .bdd_test.dart
+    → ManifestParser.saveManifest()                  # update manifest
 ```
 
 ### Layers
 
-- **`domain/`** — Core models: Feature, Scenario, Step, Decorator, Background
-- **`infrastructure/parsers/`** — FeatureParser (reads `.feature` files into domain models)
+- **`domain/`** — Core models: Feature, Scenario, Step, Decorator, Background, BDDConfig, Manifest, BuildOptions
+- **`infrastructure/parsers/`** — FeatureParser, ConfigParser, ManifestParser
 - **`infrastructure/builders/`** — ScenariosFileBuilder, TestFileBuilder (domain models → Dart code)
-- **`presentation/cli/`** — BDDCLI entry point
-- **`presentation/controllers/`** — BDDController orchestrates parsing and building
+- **`presentation/cli/`** — BDDCLI entry point, argument parsing
+- **`presentation/controllers/`** — BDDController orchestrates config, manifest, parsing, building
+- **`presentation/reporter/`** — BDDTestReporter (exported for use in generated tests)
 
 ### Domain Models
 
 - **Feature** — name, path, scenarios, decorators, optional background
-- **Scenario** — name, steps, optional examples table, decorators
+- **Scenario** — name, steps, optional examples table, decorators, optional customClassName
 - **Step** — keyword (Given/When/Then/And) + text with `<param>` placeholders
-- **Decorator** — enum: `unitTest`, `widgetTest`, `enableReporter`, `ignore`
+- **Decorator** — enum: `unitTest`, `widgetTest`
 - **Background** — shared setup steps applied to all scenarios in a feature
+- **BDDConfig** — generate_widget_tests, enable_reporter, ignore_features
+- **Manifest** — tracks generated features, scenario hashes for incremental builds
+- **BuildOptions** — CLI flags: widgetTest, reporter, force, newOnly
 
-### Generated File Conventions
+### Generated Code Pattern
 
-- `.bdd_scenarios.dart` — Static classes with step method stubs
-- `.bdd_test.dart` — Executable test file using `test()` or `testWidgets()`
-- `.feature` — Gherkin source files
-- Generated files are placed alongside the `.feature` file
+Scenario classes use **instance methods** (not static), so users can add `late` fields for shared state between steps:
+
+```dart
+// .bdd_scenarios.dart
+class IncrementScenario {
+  Future<void> iHaveACounter(WidgetTester tester) async { ... }
+  Future<void> iIncrementIt(WidgetTester tester) async { ... }
+}
+
+// .bdd_test.dart
+final scenario = IncrementScenario();
+await scenario.iHaveACounter(tester);
+```
+
+### Generation Modes
+
+- **Incremental (default)** — compares file timestamps + scenario hashes against manifest, skips unchanged
+- **Force (`--force`)** — regenerates everything
+- **New-only (`--new-only`)** — only generates for features not in manifest
+
+### Decorators
+
+- `@unitTest` / `@widgetTest` — on feature or scenario (scenario overrides feature)
+- Feature files only contain behavior-relevant tags; tooling config lives in `.bdd_flutter/config.yaml`
 
 ### CLI Flags
 
-- `--widget-test` — Generate widget tests (uses `testWidgets` + `WidgetTester`)
-- `--reporter` — Enable BDD test reporter
+- `--no-widget-test` — Generate unit tests instead of widget tests
 - `--force` — Regenerate all files regardless of changes
 - `--new-only` — Only generate for new feature files
 
 ### Config File
 
-User projects store config at `.bdd_flutter/config.yaml` with options: `generate_widget_tests`, `enable_reporter`, `ignore_features`.
+`.bdd_flutter/config.yaml`:
+- `generate_widget_tests` (bool, default true)
+- `ignore_features` (list of paths to skip)
+
+### Manifest File
+
+`.bdd_flutter/manifest.yaml` — auto-generated, tracks per-feature paths, timestamps, and scenario hashes for incremental builds.
 
 ## Coding Conventions
 
