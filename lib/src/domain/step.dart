@@ -38,14 +38,21 @@ extension StepX on Step {
     final words =
         processedText.replaceAll(RegExp(r'[^a-zA-Z0-9\s]'), ' ').split(' ').where((word) => word.isNotEmpty).toList();
 
-    if (words.isEmpty) return '';
+    if (words.isEmpty) return 'unnamed';
 
-    return words[0].toLowerCase() +
+    String result = words[0].toLowerCase() +
         words
             .skip(1)
             .map(
               (word) => word[0].toUpperCase() + word.substring(1).toLowerCase(),
             )
             .join('');
+
+    // Strip leading digits to ensure a valid Dart identifier
+    result = result.replaceFirst(RegExp(r'^[0-9]+'), '');
+    if (result.isEmpty) return 'step';
+    // Ensure first char is lowercase after stripping digits
+    result = result[0].toLowerCase() + result.substring(1);
+    return result;
   }
 }

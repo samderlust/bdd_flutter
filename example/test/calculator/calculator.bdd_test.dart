@@ -55,36 +55,36 @@ void main() {
       final scenario = DivideTwoNumbersScenario();
       //Scenario: Divide two numbers
       final examples = [
-        {'number1': '10', 'number2': '2', 'result': '5'},
-        {'number1': '10', 'number2': '1', 'result': '10'},
-        {'number1': '10', 'number2': '10', 'result': '1'},
+        {'number1': '10','number2': '2','result': '5',},
+        {'number1': '10','number2': '1','result': '10',},
+        {'number1': '10','number2': '10','result': '1',},
       ];
       for (var example in examples) {
-        // Given I have the number <number1>
-        await scenario.iHaveTheNumberNumber1(tester, example['number1']!);
-        // And I have the number <number2>
-        await scenario.iHaveTheNumberNumber2(tester, example['number2']!);
-        // When I divide them
-        await scenario.iDivideThem(tester);
-        // Then the result should be <result>
-        await scenario.theResultShouldBeResult(tester, example['result']!);
+      // Given I have the number <number1>
+      await scenario.iHaveTheNumberNumber1(tester, example['number1']!);
+      // And I have the number <number2>
+      await scenario.iHaveTheNumberNumber2(tester, example['number2']!);
+      // When I divide them
+      await scenario.iDivideThem(tester);
+      // Then the result should be <result>
+      await scenario.theResultShouldBeResult(tester, example['result']!);
       }
     });
     testWidgets('Divide two numbers2', (tester) async {
       final scenario = DivideTwoNumbers2Scenario();
       //Scenario: Divide two numbers2
       final examples = [
-        {'number1': '10', 'number2': '2', 'result': '5'},
-        {'number1': '10', 'number2': '1', 'result': '10'},
-        {'number1': '10', 'number2': '10', 'result': '1'},
+        {'number1': '10','number2': '2','result': '5',},
+        {'number1': '10','number2': '1','result': '10',},
+        {'number1': '10','number2': '10','result': '1',},
       ];
       for (var example in examples) {
-        // Given I have <number1> and <number2>
-        await scenario.iHaveNumber1AndNumber2(tester, example['number1']!, example['number2']!);
-        // When I divide them to each other
-        await scenario.iDivideThemToEachOther(tester);
-        // Then the result should be <result>
-        await scenario.theResultShouldBeResult(tester, example['result']!);
+      // Given I have <number1> and <number2>
+      await scenario.iHaveNumber1AndNumber2(tester, example['number1']!, example['number2']!);
+      // When I divide them to each other
+      await scenario.iDivideThemToEachOther(tester);
+      // Then the result should be <result>
+      await scenario.theResultShouldBeResult(tester, example['result']!);
       }
     });
   });

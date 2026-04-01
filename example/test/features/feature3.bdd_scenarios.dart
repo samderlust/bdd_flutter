@@ -12,4 +12,6 @@ class Scenario3Scenario {
   Future<void> theCounterShouldHaveValue1(WidgetTester tester) async {
     // TODO: Implement Then the counter should have value 1
   }
+
 }
+

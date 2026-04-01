@@ -37,7 +37,7 @@ class TestFileBuilder {
       buffer.writeln("      final scenario = $className();");
 
       if (feature.background != null) {
-        buffer.writeln("      final background = ${feature.name}Background();");
+        buffer.writeln("      final background = ${feature.name.name}Background();");
         buffer.writeln("      //Background: ${feature.background!.description}");
         for (var step in feature.background!.steps) {
           final methodName = step.methodName;

@@ -16,6 +16,7 @@ class AddTwoNumbersScenario {
   Future<void> theResultShouldBe3(WidgetTester tester) async {
     // TODO: Implement Then the result should be 3
   }
+
 }
 
 class SubtractTwoNumbersScenario {
@@ -34,6 +35,7 @@ class SubtractTwoNumbersScenario {
   Future<void> theResultShouldBe2(WidgetTester tester) async {
     // TODO: Implement Then the result should be 2
   }
+
 }
 
 class SubtractTwoNumbers2Scenario {
@@ -52,6 +54,7 @@ class SubtractTwoNumbers2Scenario {
   Future<void> theResultShouldBe2(WidgetTester tester) async {
     // TODO: Implement Then the result should be -2
   }
+
 }
 
 class MultiplyTwoNumbersScenario {
@@ -70,6 +73,7 @@ class MultiplyTwoNumbersScenario {
   Future<void> theResultShouldBe6(WidgetTester tester) async {
     // TODO: Implement Then the result should be 6
   }
+
 }
 
 class DivideTwoNumbersScenario {
@@ -88,6 +92,7 @@ class DivideTwoNumbersScenario {
   Future<void> theResultShouldBeResult(WidgetTester tester, String result) async {
     // TODO: Implement Then the result should be <result>
   }
+
 }
 
 class DivideTwoNumbers2Scenario {
@@ -102,4 +107,6 @@ class DivideTwoNumbers2Scenario {
   Future<void> theResultShouldBeResult(WidgetTester tester, String result) async {
     // TODO: Implement Then the result should be <result>
   }
+
 }
+

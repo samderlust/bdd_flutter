@@ -1,3 +1,23 @@
+## 1.1.0
+
+### Bug Fixes
+
+- Fix class name generation for names starting with digits (e.g., `"123 login"` → `X123LoginScenario`)
+- Fix class name generation for names with special characters (hyphens, punctuation now stripped)
+- Fix method name generation for steps starting with digits (leading digits stripped)
+- Fix `snakeCaseToCamelCase` crash on leading/trailing underscores
+- Return safe fallback names (`Unnamed`, `unnamed`, `step`) instead of empty strings for edge cases
+- Fix Background class name not sanitized — feature names with spaces/hyphens (e.g., `"Form auto-save"`) produced invalid Dart class names
+- Fix incremental build skipping regeneration when generated files are deleted but manifest entry still exists
+- Fix incremental build appending instead of regenerating when scenarios are removed, renamed, or modified — caused broken test files referencing non-existent classes
+
+### Tests
+
+- Add comprehensive unit tests for `StringX` extensions (PascalCase, snakeCaseToCamelCase, toSnakeCase)
+- Add unit tests for `Step.methodName` edge cases (digits, special chars, empty text, params)
+- Add unit tests for `Scenario` class name generation, decorator resolution, and hash consistency
+- Add unit tests for `Decorator` parsing and set helpers
+
 ## 1.0.0
 
 ### BREAKING CHANGES

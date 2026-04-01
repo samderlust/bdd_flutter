@@ -26,7 +26,7 @@ class ScenariosFileBuilder {
     buffer.writeln();
 
     if (feature.background != null) {
-      buffer.writeln("class ${feature.name}Background {");
+      buffer.writeln("class ${feature.name.name}Background {");
       for (var step in feature.background!.steps) {
         final methodName = step.methodName;
         final params = extractMethodParams(step.text);
