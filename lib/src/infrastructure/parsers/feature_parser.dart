@@ -23,13 +23,8 @@ class FeatureParser {
 
     // scenario that is being process
     Scenario? currentScenario;
-    // currrent scenario decorators that is being process
     List<Decorator> currentScenarioDecorators = [];
-    // current scenario example that is being process
-    // List<Map<String, String>> currentExamples = [];
-    // List<String> exampleHeaders = [];
-
-    // bool isParsingExamples = false;
+    String? currentScenarioClassName;
 
     ExampleContent? currentExampleContent;
 
@@ -45,27 +40,27 @@ class FeatureParser {
       else if (line.startsWith("@")) {
         //parsing feature decorators
         if (featureName == null) {
-          // if lines start with @ and feature name is null,
-          // it means it's a decorator for the feature
           featureDecorators.add(Decorator.fromString(line));
         }
         //parsing scenario decorators
         else {
           isParsingBackground = false;
           if (currentScenario != null) {
-            // add currentScenario to the list and clear it and currentScenarioDecorators
             currentScenario.examples = currentExampleContent?.examples;
-
             scenarios.add(currentScenario);
-
             currentExampleContent = null;
             currentScenario = null;
             currentScenarioDecorators = [];
+            currentScenarioClassName = null;
           }
 
-          // if lines start with @ and feature name is not null,
-          // it means it's a decorator for the scenario
-          currentScenarioDecorators.add(Decorator.fromString(line));
+          // Check for @className("...") decorator
+          final className = Decorator.parseClassName(line);
+          if (className != null) {
+            currentScenarioClassName = className;
+          } else {
+            currentScenarioDecorators.add(Decorator.fromString(line));
+          }
         }
       }
       // start parsing background
@@ -98,16 +93,14 @@ class FeatureParser {
           currentExampleContent = null;
         }
 
-        //create new scenario
-        final decorators = currentScenarioDecorators.toSet();
-
         currentScenario = Scenario(
           name,
           [],
-          decorators: decorators,
+          decorators: currentScenarioDecorators.toSet(),
+          customClassName: currentScenarioClassName,
         );
-        // Reset decorators and example content for next scenario
         currentScenarioDecorators = [];
+        currentScenarioClassName = null;
         currentExampleContent = null;
       }
       // parsing steps

@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:bdd_flutter/src/domain/decorator.dart';
+import 'package:bdd_flutter/src/domain/scenario.dart';
 import 'package:bdd_flutter/src/infrastructure/parsers/feature_parser.dart';
 import 'package:test/test.dart';
 
@@ -174,6 +175,85 @@ Feature: Empty
       final feature = await parser.parseFeature(file.path);
       expect(feature.name, equals('Empty'));
       expect(feature.scenarios, isEmpty);
+    });
+
+    test('parses @ignore decorator on feature', () async {
+      final file = createFeatureFile('''
+@ignore
+Feature: Ignored
+  Scenario: Test
+    Given something
+''');
+      final feature = await parser.parseFeature(file.path);
+      expect(feature.decorators.hasIgnore, isTrue);
+    });
+
+    test('parses @ignore decorator on scenario', () async {
+      final file = createFeatureFile('''
+Feature: Login
+  @ignore
+  Scenario: Skipped
+    Given something
+  Scenario: Active
+    Given something else
+''');
+      final feature = await parser.parseFeature(file.path);
+      expect(feature.scenarios[0].decorators.hasIgnore, isTrue);
+      expect(feature.scenarios[1].decorators.hasIgnore, isFalse);
+    });
+
+    test('parses @className decorator', () async {
+      final file = createFeatureFile('''
+Feature: Login
+  @className("MyCustomClass")
+  Scenario: Test
+    Given something
+''');
+      final feature = await parser.parseFeature(file.path);
+      expect(feature.scenarios.first.customClassName, equals('MyCustomClass'));
+    });
+
+    test('parses @disableReporter decorator on feature', () async {
+      final file = createFeatureFile('''
+@enableReporter
+@disableReporter
+Feature: Counter
+  Scenario: Test
+    Given something
+''');
+      final feature = await parser.parseFeature(file.path);
+      expect(feature.decorators.hasEnableReporter, isTrue);
+      expect(feature.decorators.hasDisableReporter, isTrue);
+    });
+
+    test('parses @unitTest on feature applies to scenarios', () async {
+      final file = createFeatureFile('''
+@unitTest
+Feature: Calculator
+  Scenario: Add
+    Given I have a calculator
+''');
+      final feature = await parser.parseFeature(file.path);
+      expect(feature.decorators.hasUnitTest, isTrue);
+      // Scenario inherits from feature
+      expect(feature.scenarios.first.isUnitTestWithFeature(feature.decorators), isTrue);
+    });
+
+    test('scenario decorator overrides feature decorator', () async {
+      final file = createFeatureFile('''
+@unitTest
+Feature: Calculator
+  @widgetTest
+  Scenario: Widget scenario
+    Given something
+  Scenario: Unit scenario
+    Given something else
+''');
+      final feature = await parser.parseFeature(file.path);
+      // First scenario has @widgetTest, should NOT be unit test
+      expect(feature.scenarios[0].isUnitTestWithFeature(feature.decorators), isFalse);
+      // Second scenario has no decorator, falls back to feature @unitTest
+      expect(feature.scenarios[1].isUnitTestWithFeature(feature.decorators), isTrue);
     });
 
     test('parses multiple scenarios with Examples', () async {

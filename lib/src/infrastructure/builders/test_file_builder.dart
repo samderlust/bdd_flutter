@@ -8,9 +8,11 @@ import '../../extensions/string_x.dart';
 class TestFileBuilder {
   Future<String> buildTestFile(Feature feature) async {
     final buffer = StringBuffer();
+    final useReporter = feature.decorators.hasEnableReporter &&
+        !feature.decorators.hasDisableReporter;
+
     buffer.writeln("import 'package:flutter_test/flutter_test.dart';");
-    //add reporter import if needed
-    if (feature.decorators.hasEnableReporter) {
+    if (useReporter) {
       buffer.writeln("import 'package:bdd_flutter/bdd_flutter.dart';");
     }
 
@@ -18,8 +20,7 @@ class TestFileBuilder {
     buffer.writeln();
 
     buffer.writeln("void main() {");
-    //add reporter initialization if needed
-    if (feature.decorators.hasEnableReporter) {
+    if (useReporter) {
       buffer.writeln("  final reporter = BDDTestReporter(featureName: '${feature.name}');");
       buffer.writeln("  setUpAll(() {");
       buffer.writeln("    reporter.testStarted(); // start recording");
@@ -34,8 +35,10 @@ class TestFileBuilder {
     buffer.writeln("  group('${feature.name}', () {");
 
     for (var scenario in feature.scenarios) {
+      if (scenario.decorators.hasIgnore) continue;
+
       final className = scenario.className;
-      final isUnitTest = scenario.isUnitTest;
+      final isUnitTest = scenario.isUnitTestWithFeature(feature.decorators);
       final testFunction = isUnitTest ? 'test' : 'testWidgets';
 
       // Generate one test case per scenario
@@ -60,7 +63,7 @@ class TestFileBuilder {
       buffer.writeln("      //Scenario: ${scenario.name}");
 
       //add start scenario if needed
-      if (feature.decorators.hasEnableReporter) {
+      if (useReporter) {
         buffer.writeln("      reporter.startScenario('${scenario.name}');");
       }
 
@@ -91,7 +94,7 @@ class TestFileBuilder {
 
           buffer.writeln(_generateStepCall(
             step,
-            feature.decorators.hasEnableReporter,
+            useReporter,
             isUnitTest,
             params,
           ));
@@ -102,7 +105,7 @@ class TestFileBuilder {
         for (var step in scenario.steps) {
           buffer.writeln(_generateStepCall(
             step,
-            feature.decorators.hasEnableReporter,
+            useReporter,
             isUnitTest,
             [],
           ));

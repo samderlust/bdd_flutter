@@ -1,3 +1,4 @@
+import '../../domain/decorator.dart';
 import '../../extensions/string_x.dart';
 import '../../domain/feature.dart';
 import '../../domain/scenario.dart';
@@ -25,13 +26,14 @@ class ScenariosFileBuilder {
       buffer.writeln();
     }
 
-    // Create a class for each scenario
     for (var scenario in feature.scenarios) {
-      final isUnitTest = scenario.isUnitTest;
+      if (scenario.decorators.hasIgnore) continue;
+
+      // Resolve unit test considering feature-level decorators
+      final isUnitTest = scenario.isUnitTestWithFeature(feature.decorators);
 
       buffer.writeln("class ${scenario.className} {");
 
-      // Create instance methods for each step in the scenario
       for (var step in scenario.steps) {
         final methodName = step.methodName;
         final params = extractMethodParams(step.text);

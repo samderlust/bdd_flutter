@@ -172,20 +172,18 @@ testWidgets('Increment', (tester) async {
 
 ---
 
-## Iteration 4: Rename Command & Polish
+## Iteration 4: Polish
 
-**Goal**: `rename` command works. Clean up, final docs.
+**Goal**: Clean up, final docs.
 
-### 4.1 Rename command
-- `dart run bdd_flutter rename` strips `.bdd_` prefix from generated files
-- Add to CLI parser and controller
+~~Rename command removed~~ — manifest tracking makes it unnecessary. The `.bdd_` prefix signals generated files for `.gitignore`, and incremental builds avoid overwriting implemented steps.
 
-### 4.2 Cleanup
+### 4.1 Cleanup
 - Remove all remaining debug `print()` statements
 - Update CLAUDE.md to reflect final architecture
-- Update README if needed
+- Update README to remove `rename` command references
 
-### 4.3 Final verification
+### 4.2 Final verification
 - All commands work end-to-end against example project
 - `dart analyze` — no issues
 - `flutter test` — all tests pass

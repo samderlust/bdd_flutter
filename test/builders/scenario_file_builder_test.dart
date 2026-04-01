@@ -108,6 +108,55 @@ void main() {
       expect(result, contains("import 'package:flutter_test/flutter_test.dart';"));
     });
 
+    test('uses @className for custom class name', () async {
+      final feature = Feature(
+        name: 'Login',
+        path: 'test/login.feature',
+        scenarios: [
+          Scenario('Test', [Step('Given', 'something')], customClassName: 'MyCustomScenario'),
+        ],
+        decorators: {},
+      );
+
+      final result = await builder.buildScenarioFile(feature);
+
+      expect(result, contains('class MyCustomScenario {'));
+      expect(result, isNot(contains('class TestScenario {')));
+    });
+
+    test('skips scenarios with @ignore', () async {
+      final feature = Feature(
+        name: 'Login',
+        path: 'test/login.feature',
+        scenarios: [
+          Scenario('Skipped', [Step('Given', 'something')], decorators: {Decorator.ignore}),
+          Scenario('Active', [Step('Given', 'something else')]),
+        ],
+        decorators: {},
+      );
+
+      final result = await builder.buildScenarioFile(feature);
+
+      expect(result, isNot(contains('class SkippedScenario {')));
+      expect(result, contains('class ActiveScenario {'));
+    });
+
+    test('inherits @unitTest from feature decorators', () async {
+      final feature = Feature(
+        name: 'Calculator',
+        path: 'test/calculator.feature',
+        scenarios: [
+          Scenario('Add', [Step('Given', 'I have a calculator')]),
+        ],
+        decorators: {Decorator.unitTest},
+      );
+
+      final result = await builder.buildScenarioFile(feature);
+
+      // Should NOT have WidgetTester since feature is @unitTest
+      expect(result, isNot(contains('WidgetTester')));
+    });
+
     test('generates multiple scenario classes', () async {
       final feature = Feature(
         name: 'Login',

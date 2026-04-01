@@ -15,7 +15,7 @@ class SampleScenario {
 
 }
 
-class CounterScenario {
+class CounterCustomName {
   Future<void> iHaveACounter(WidgetTester tester) async {
     // TODO: Implement Given I have a counter
   }

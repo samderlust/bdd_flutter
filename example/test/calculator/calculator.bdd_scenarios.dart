@@ -19,7 +19,7 @@ class AddTwoNumbersScenario {
 
 }
 
-class SubtractTwoNumbersScenario {
+class Subtract {
   Future<void> iHaveTheNumber5(WidgetTester tester) async {
     // TODO: Implement Given I have the number 5
   }
