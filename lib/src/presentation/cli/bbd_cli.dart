@@ -5,6 +5,12 @@ import '../../infrastructure/parsers/config_parser.dart';
 import '../controllers/bdd_controller.dart';
 import '../reporter/bdd_test_runner.dart';
 
+/// CLI entry point for `dart run bdd_flutter`.
+///
+/// Supports commands:
+/// - `build` — generate test files from `.feature` files
+/// - `build --force` — force regenerate all files
+/// - `test` — run BDD tests with formatted report
 class BDDCLI {
   final BDDController _bddController;
   final ConfigParser _configParser;
@@ -15,6 +21,7 @@ class BDDCLI {
   })  : _bddController = bddController ?? BDDController(),
         _configParser = configParser ?? ConfigParser();
 
+  /// Parses [arguments] and executes the corresponding command.
   Future<void> run(List<String> arguments) async {
     if (arguments.isEmpty) {
       _printUsage();

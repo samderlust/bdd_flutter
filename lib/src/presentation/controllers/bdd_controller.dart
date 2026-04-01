@@ -11,6 +11,11 @@ import '../../infrastructure/parsers/manifest_parser.dart';
 import '../../infrastructure/builders/scenario_file_builder.dart';
 import '../../infrastructure/builders/test_file_builder.dart';
 
+/// Orchestrates the BDD test generation pipeline.
+///
+/// Loads config and manifest, parses feature files, generates scenario
+/// and test files, and updates the manifest. Supports incremental and
+/// force generation modes.
 class BDDController {
   final FeatureParser _featureParser;
   final ScenariosFileBuilder _scenarioFileBuilder;
@@ -30,6 +35,11 @@ class BDDController {
         _configParser = configParser ?? ConfigParser(),
         _manifestParser = manifestParser ?? ManifestParser();
 
+  /// Generates test files from `.feature` files.
+  ///
+  /// In incremental mode (default), new scenarios are appended to existing
+  /// scenario files and test files are regenerated. With [options.force],
+  /// all files are regenerated from scratch.
   Future<void> generateFeatureTestCases({BuildOptions options = const BuildOptions()}) async {
     final config = await _configParser.loadConfig();
     final manifest = await _manifestParser.loadManifest();

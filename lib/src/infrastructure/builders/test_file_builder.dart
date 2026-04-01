@@ -4,7 +4,12 @@ import '../../domain/scenario.dart';
 import '../../domain/step.dart';
 import '../../extensions/string_x.dart';
 
+/// Generates `.bdd_test.dart` files containing test orchestration code.
+///
+/// The test file instantiates scenario classes and calls their step methods.
+/// This file is always fully regenerated — it contains no user code.
 class TestFileBuilder {
+  /// Builds a test file for all scenarios in [feature].
   Future<String> buildTestFile(
     Feature feature, {
     String scenarioSuffix = 'Scenario',

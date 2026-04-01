@@ -1,9 +1,12 @@
-/// A step is a keyword and a text
+/// Represents a single step in a Gherkin scenario.
+///
+/// A step has a [keyword] (Given, When, Then, And) and [text] describing
+/// the action. Parameters are denoted with angle brackets (e.g., `<value>`).
 class Step {
-  /// The keyword of the step
+  /// The Gherkin keyword: `Given`, `When`, `Then`, or `And`.
   final String keyword;
 
-  /// The text of the step
+  /// The step text, potentially containing `<param>` placeholders.
   final String text;
 
   Step(this.keyword, this.text);
@@ -14,10 +17,16 @@ class Step {
   }
 }
 
+/// Extension methods for [Step].
 extension StepX on Step {
+  /// The full step message (keyword + text).
   String get message => '$keyword $text';
+
+  /// Converts the step text to a camelCase method name.
+  ///
+  /// Parameters like `<first_name>` are included as part of the name.
+  /// Non-alphanumeric characters are stripped.
   String get methodName {
-    // First, replace parameters with their names
     var processedText = text;
     final paramRegex = RegExp(r'<(\w+)>');
     final paramMatches = paramRegex.allMatches(text);
@@ -26,12 +35,10 @@ extension StepX on Step {
       processedText = processedText.replaceAll(match.group(0)!, paramName);
     }
 
-    // Split into words and process
     final words = processedText.replaceAll(RegExp(r'[^a-zA-Z0-9\s]'), ' ').split(' ').where((word) => word.isNotEmpty).toList();
 
     if (words.isEmpty) return '';
 
-    // Convert to camelCase
     return words[0].toLowerCase() +
         words
             .skip(1)

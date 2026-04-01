@@ -4,6 +4,10 @@ import 'package:yaml/yaml.dart';
 
 import '../../domain/manifest.dart';
 
+/// Reads and writes the manifest file (`.bdd_flutter/manifest.yaml`).
+///
+/// The manifest tracks generated features and their scenario hashes,
+/// enabling incremental builds that skip unchanged content.
 class ManifestParser {
   static const String defaultManifestDir = '.bdd_flutter';
   static const String defaultManifestFile = '$defaultManifestDir/manifest.yaml';
@@ -15,6 +19,9 @@ class ManifestParser {
       : manifestDir = manifestDir ?? defaultManifestDir,
         manifestFile = manifestFile ?? defaultManifestFile;
 
+  /// Loads the manifest file and returns a [Manifest].
+  ///
+  /// Returns an empty manifest if the file does not exist.
   Future<Manifest> loadManifest() async {
     final file = File(manifestFile);
 
@@ -65,6 +72,9 @@ class ManifestParser {
     );
   }
 
+  /// Saves the [manifest] to the manifest file.
+  ///
+  /// Creates the `.bdd_flutter` directory if it does not exist.
   Future<void> saveManifest(Manifest manifest) async {
     final dir = Directory(manifestDir);
     if (!dir.existsSync()) {
@@ -91,6 +101,9 @@ class ManifestParser {
     await File(manifestFile).writeAsString(buffer.toString());
   }
 
+  /// Finds a feature entry in the [manifest] by file [path].
+  ///
+  /// Returns `null` if the feature is not tracked.
   ManifestFeature? findFeature(Manifest manifest, String path) {
     for (final feature in manifest.features) {
       if (feature.path == path) return feature;

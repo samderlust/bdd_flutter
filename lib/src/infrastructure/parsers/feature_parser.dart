@@ -7,9 +7,13 @@ import '../../domain/feature.dart';
 import '../../domain/scenario.dart';
 import '../../domain/step.dart';
 
+/// Parses Gherkin `.feature` files into [Feature] domain models.
+///
+/// Handles Feature/Scenario/Background blocks, Given/When/Then/And steps,
+/// Examples tables, and `@unitTest`/`@widgetTest` decorators.
 class FeatureParser {
+  /// Parses a `.feature` file at [filePath] and returns a [Feature] model.
   Future<Feature> parseFeature(String filePath) async {
-    // read files and parse the content
 
     final file = File(filePath);
     final fileContent = await file.readAsString();
@@ -128,6 +132,7 @@ class FeatureParser {
   }
 }
 
+/// Accumulates example table headers and rows during parsing.
 class ExampleContent {
   List<String> headers = [];
   List<List<String>> values = [];

@@ -3,6 +3,11 @@ import 'dart:io';
 
 import 'bdd_report_formatter.dart';
 
+/// Runs BDD tests via `flutter test --machine` and formats the output.
+///
+/// Finds all `.bdd_test.dart` files, runs them through Flutter's test runner,
+/// parses the JSON event stream, and prints a BDD-formatted report grouped
+/// by Feature with pass/fail per Scenario.
 class BDDTestRunner {
   final BDDReportFormatter _formatter;
   final String testDir;
@@ -12,6 +17,9 @@ class BDDTestRunner {
     this.testDir = 'test/',
   }) : _formatter = formatter ?? BDDReportFormatter();
 
+  /// Runs all `.bdd_test.dart` files and prints the BDD report.
+  ///
+  /// Returns the exit code from `flutter test` (0 = all passed).
   Future<int> run() async {
     _formatter.start();
 

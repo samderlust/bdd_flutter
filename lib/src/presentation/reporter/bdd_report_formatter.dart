@@ -6,6 +6,9 @@ const String _cyan = '\x1B[36m';
 const String _dim = '\x1B[2m';
 const String _reset = '\x1B[0m';
 
+/// Formats BDD test results into a colored Feature/Scenario report.
+///
+/// Used by [BDDTestRunner] to display results from `flutter test --machine`.
 class BDDReportFormatter {
   final List<FeatureReport> features = [];
   DateTime? _startTime;
@@ -93,6 +96,7 @@ class BDDReportFormatter {
   }
 }
 
+/// Aggregated test results for a single feature.
 class FeatureReport {
   final String name;
   final List<ScenarioResult> scenarios = [];
@@ -100,6 +104,7 @@ class FeatureReport {
   FeatureReport({required this.name});
 }
 
+/// The result of a single scenario test execution.
 class ScenarioResult {
   final String name;
   final bool passed;

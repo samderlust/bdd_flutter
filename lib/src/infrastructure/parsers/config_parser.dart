@@ -4,6 +4,10 @@ import 'package:yaml/yaml.dart';
 
 import '../../domain/config.dart';
 
+/// Reads configuration from `.bdd_flutter/config.yaml`.
+///
+/// Returns [BDDConfig] with defaults for any missing options.
+/// If the config file does not exist, all defaults are used.
 class ConfigParser {
   static const String defaultConfigDir = '.bdd_flutter';
   static const String defaultConfigFile = '$defaultConfigDir/config.yaml';
@@ -12,6 +16,7 @@ class ConfigParser {
 
   ConfigParser({String? configFile}) : configFile = configFile ?? defaultConfigFile;
 
+  /// Loads the config file and returns a [BDDConfig].
   Future<BDDConfig> loadConfig() async {
     final file = File(configFile);
 

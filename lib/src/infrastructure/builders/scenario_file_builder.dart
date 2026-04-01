@@ -3,7 +3,16 @@ import '../../domain/feature.dart';
 import '../../domain/scenario.dart';
 import '../../domain/step.dart';
 
+/// Generates `.bdd_scenarios.dart` files containing scenario classes.
+///
+/// Each scenario in a feature becomes an instance-based class with
+/// step methods that users implement. Background steps get their own class.
 class ScenariosFileBuilder {
+  /// Builds a full scenario file for all scenarios in [feature].
+  ///
+  /// Includes imports, optional background class, and a class per scenario.
+  /// [additionalImports] are added after the flutter_test import.
+  /// [scenarioSuffix] controls the class name suffix (default: "Scenario").
   Future<String> buildScenarioFile(
     Feature feature, {
     List<String> additionalImports = const [],
@@ -39,7 +48,10 @@ class ScenariosFileBuilder {
     return buffer.toString();
   }
 
-  /// Build only the specified scenarios (for appending to existing file)
+  /// Builds only the specified [newScenarios] for appending to an existing file.
+  ///
+  /// Used in incremental mode when new scenarios are added to a feature
+  /// without touching existing implementations.
   String buildNewScenarios(
     Feature feature,
     List<Scenario> newScenarios, {
@@ -86,6 +98,9 @@ class ScenariosFileBuilder {
   }
 }
 
+/// Extracts method parameters from `<param>` placeholders in step text.
+///
+/// Returns a comma-separated parameter list (e.g., `String firstName, String lastName`).
 String extractMethodParams(String stepText) {
   final params = <String>[];
   final regex = RegExp(r'<(\w+)>');
