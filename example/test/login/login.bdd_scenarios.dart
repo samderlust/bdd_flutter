@@ -1,137 +1,107 @@
-import 'package:example/src/auth_provider.dart';
-import 'package:example/src/auth_repository.dart';
-import 'package:example/src/login_screen.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mocktail/mocktail.dart';
-import 'package:provider/provider.dart';
-
-class MockAuthRepository extends Mock implements AuthRepository {}
 
 class SuccessfulLoginScenario {
-  late MockAuthRepository mockAuthRepo;
-  late AuthProvider authProvider;
-
   Future<void> iHaveAMockAuthRepository(WidgetTester tester) async {
-    mockAuthRepo = MockAuthRepository();
-    authProvider = AuthProvider(mockAuthRepo);
+    // TODO: Implement Given I have a mock auth repository
   }
 
   Future<void> theMockReturnsASuccessfulLoginForTestTestCom(WidgetTester tester) async {
-    when(
-      () => mockAuthRepo.login('test@test.com', 'password'),
-    ).thenAnswer((_) async => User(name: 'Test User', email: 'test@test.com'));
+    // TODO: Implement And the mock returns a successful login for "test@test.com"
   }
 
   Future<void> iPumpTheLoginScreenWithProviders(WidgetTester tester) async {
-    await tester.pumpWidget(
-      ChangeNotifierProvider<AuthProvider>.value(value: authProvider, child: const MaterialApp(home: LoginScreen())),
-    );
+    // TODO: Implement When I pump the login screen with providers
   }
 
   Future<void> iEnterTestTestComInTheEmailField(WidgetTester tester) async {
-    await tester.enterText(find.byType(TextField).first, 'test@test.com');
+    // TODO: Implement And I enter "test@test.com" in the email field
   }
 
   Future<void> iEnterPasswordInThePasswordField(WidgetTester tester) async {
-    await tester.enterText(find.byType(TextField).last, 'password');
+    // TODO: Implement And I enter "password" in the password field
   }
 
   Future<void> iTapTheLoginButton(WidgetTester tester) async {
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Login'));
-    await tester.pumpAndSettle();
+    // TODO: Implement And I tap the login button
   }
 
   Future<void> iShouldSeeWelcomeTestUser(WidgetTester tester) async {
-    expect(find.text('Welcome, Test User!'), findsOneWidget);
+    // TODO: Implement Then I should see "Welcome, Test User!"
   }
+
 }
 
 class FailedLoginShowsErrorScenario {
-  late MockAuthRepository mockAuthRepo;
-  late AuthProvider authProvider;
-
   Future<void> iHaveAMockAuthRepository(WidgetTester tester) async {
-    mockAuthRepo = MockAuthRepository();
-    authProvider = AuthProvider(mockAuthRepo);
+    // TODO: Implement Given I have a mock auth repository
   }
 
   Future<void> theMockThrowsAnErrorForLogin(WidgetTester tester) async {
-    when(() => mockAuthRepo.login(any(), any())).thenThrow(Exception('Invalid credentials'));
+    // TODO: Implement And the mock throws an error for login
   }
 
   Future<void> iPumpTheLoginScreenWithProviders(WidgetTester tester) async {
-    await tester.pumpWidget(
-      ChangeNotifierProvider<AuthProvider>.value(value: authProvider, child: const MaterialApp(home: LoginScreen())),
-    );
+    // TODO: Implement When I pump the login screen with providers
   }
 
   Future<void> iEnterWrongTestComInTheEmailField(WidgetTester tester) async {
-    await tester.enterText(find.byType(TextField).first, 'wrong@test.com');
+    // TODO: Implement And I enter "wrong@test.com" in the email field
   }
 
   Future<void> iEnterWrongInThePasswordField(WidgetTester tester) async {
-    await tester.enterText(find.byType(TextField).last, 'wrong');
+    // TODO: Implement And I enter "wrong" in the password field
   }
 
   Future<void> iTapTheLoginButton(WidgetTester tester) async {
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Login'));
-    await tester.pumpAndSettle();
+    // TODO: Implement And I tap the login button
   }
 
   Future<void> iShouldSeeInvalidCredentials(WidgetTester tester) async {
-    expect(find.textContaining('Invalid credentials'), findsOneWidget);
+    // TODO: Implement Then I should see "Invalid credentials"
   }
+
 }
 
 class LogoutAfterLoginScenario {
-  late MockAuthRepository mockAuthRepo;
-  late AuthProvider authProvider;
-
   Future<void> iHaveAMockAuthRepository(WidgetTester tester) async {
-    mockAuthRepo = MockAuthRepository();
-    authProvider = AuthProvider(mockAuthRepo);
+    // TODO: Implement Given I have a mock auth repository
   }
 
   Future<void> theMockReturnsASuccessfulLoginForTestTestCom(WidgetTester tester) async {
-    when(
-      () => mockAuthRepo.login('test@test.com', 'password'),
-    ).thenAnswer((_) async => User(name: 'Test User', email: 'test@test.com'));
+    // TODO: Implement And the mock returns a successful login for "test@test.com"
   }
 
   Future<void> theMockAllowsLogout(WidgetTester tester) async {
-    when(() => mockAuthRepo.logout()).thenAnswer((_) async {});
+    // TODO: Implement And the mock allows logout
   }
 
   Future<void> iPumpTheLoginScreenWithProviders(WidgetTester tester) async {
-    await tester.pumpWidget(
-      ChangeNotifierProvider<AuthProvider>.value(value: authProvider, child: const MaterialApp(home: LoginScreen())),
-    );
+    // TODO: Implement When I pump the login screen with providers
   }
 
   Future<void> iEnterTestTestComInTheEmailField(WidgetTester tester) async {
-    await tester.enterText(find.byType(TextField).first, 'test@test.com');
+    // TODO: Implement And I enter "test@test.com" in the email field
   }
 
   Future<void> iEnterPasswordInThePasswordField(WidgetTester tester) async {
-    await tester.enterText(find.byType(TextField).last, 'password');
+    // TODO: Implement And I enter "password" in the password field
   }
 
   Future<void> iTapTheLoginButton(WidgetTester tester) async {
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Login'));
-    await tester.pumpAndSettle();
+    // TODO: Implement And I tap the login button
   }
 
   Future<void> iShouldSeeWelcomeTestUser(WidgetTester tester) async {
-    expect(find.text('Welcome, Test User!'), findsOneWidget);
+    // TODO: Implement Then I should see "Welcome, Test User!"
   }
 
   Future<void> iTapTheLogoutButton(WidgetTester tester) async {
-    await tester.tap(find.text('Logout'));
-    await tester.pumpAndSettle();
+    // TODO: Implement When I tap the logout button
   }
 
   Future<void> iShouldSeeLogin(WidgetTester tester) async {
-    expect(find.widgetWithText(ElevatedButton, 'Login'), findsOneWidget);
+    // TODO: Implement Then I should see "Login"
   }
+
 }
+

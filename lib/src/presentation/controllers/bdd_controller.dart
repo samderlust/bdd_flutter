@@ -77,7 +77,9 @@ class BDDController {
       final scenarioPath = feature.path.replaceAll('.feature', '.bdd_scenarios.dart');
       final testPath = feature.path.replaceAll('.feature', '.bdd_test.dart');
 
-      if (options.force || existingEntry == null) {
+      final filesExist = File(scenarioPath).existsSync() && File(testPath).existsSync();
+
+      if (options.force || existingEntry == null || !filesExist) {
         await _generateFull(feature, scenarioPath, testPath, config);
         stdout.writeln('  Generated: $scenarioPath');
         stdout.writeln('  Generated: $testPath');
@@ -89,7 +91,19 @@ class BDDController {
       // Incremental mode: check what changed
       final manifestHashes = existingEntry.scenarios.map((s) => s.hash).toSet();
       final currentScenarios = feature.scenarios.toList();
+      final currentHashes = currentScenarios.map((s) => s.getHash).toSet();
       final newScenarios = currentScenarios.where((s) => !manifestHashes.contains(s.getHash)).toList();
+
+      // Check if any existing scenarios were removed or modified
+      final removedScenarios = manifestHashes.difference(currentHashes);
+      if (removedScenarios.isNotEmpty) {
+        await _generateFull(feature, scenarioPath, testPath, config);
+        stdout.writeln('  Regenerated (scenarios changed): $scenarioPath');
+        stdout.writeln('  Regenerated: $testPath');
+        generated++;
+        updatedFeatures.add(_buildManifestEntry(featureFile, feature, testPath, config));
+        continue;
+      }
 
       if (newScenarios.isEmpty) {
         stdout.writeln('  Skipped (unchanged): ${featureFile.path}');

@@ -8,6 +8,8 @@
 - Fix `snakeCaseToCamelCase` crash on leading/trailing underscores
 - Return safe fallback names (`Unnamed`, `unnamed`, `step`) instead of empty strings for edge cases
 - Fix Background class name not sanitized — feature names with spaces/hyphens (e.g., `"Form auto-save"`) produced invalid Dart class names
+- Fix incremental build skipping regeneration when generated files are deleted but manifest entry still exists
+- Fix incremental build appending instead of regenerating when scenarios are removed, renamed, or modified — caused broken test files referencing non-existent classes
 
 ### Tests
 
