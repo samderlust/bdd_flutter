@@ -51,11 +51,13 @@ dart run bdd_flutter build
 
 3. Implement the generated step methods in `counter.bdd_scenarios.dart`
 
-4. Run your tests:
+4. Run your tests with BDD report:
 
 ```bash
-flutter test
+dart run bdd_flutter test
 ```
+
+Or run normally with `flutter test`.
 
 ## Generated Files
 
@@ -161,11 +163,18 @@ dart run bdd_flutter build --no-widget-test --force
 
 ### CLI Flags
 
-| Flag               | Description                              |
-| ------------------ | ---------------------------------------- |
-| `--no-widget-test` | Generate unit tests instead of widget tests |
-| `--force`          | Force regenerate all files               |
-| `--new-only`       | Only generate for new feature files      |
+| Flag               | Command | Description                              |
+| ------------------ | ------- | ---------------------------------------- |
+| `--no-widget-test` | build   | Generate unit tests instead of widget tests |
+| `--force`          | build   | Force regenerate all files               |
+| `--new-only`       | build   | Only generate for new feature files      |
+
+### Commands
+
+| Command | Description |
+| ------- | ----------- |
+| `build` | Generate test files from `.feature` files |
+| `test`  | Run BDD tests with formatted Feature/Scenario report |
 
 ## Decorators
 

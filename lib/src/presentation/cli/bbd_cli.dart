@@ -1,13 +1,19 @@
 import 'dart:io';
 
 import '../../domain/build_options.dart';
+import '../../infrastructure/parsers/config_parser.dart';
 import '../controllers/bdd_controller.dart';
+import '../reporter/bdd_test_runner.dart';
 
 class BDDCLI {
   final BDDController _bddController;
+  final ConfigParser _configParser;
 
-  BDDCLI({BDDController? bddController})
-      : _bddController = bddController ?? BDDController();
+  BDDCLI({
+    BDDController? bddController,
+    ConfigParser? configParser,
+  })  : _bddController = bddController ?? BDDController(),
+        _configParser = configParser ?? ConfigParser();
 
   Future<void> run(List<String> arguments) async {
     if (arguments.isEmpty) {
@@ -27,6 +33,11 @@ class BDDCLI {
         );
         await _bddController.generateFeatureTestCases(options: options);
         break;
+      case 'test':
+        final config = await _configParser.loadConfig();
+        final runner = BDDTestRunner(testDir: config.testDir);
+        final exitCode = await runner.run();
+        exit(exitCode);
       default:
         stdout.writeln('Unknown command: $command');
         _printUsage();
@@ -38,8 +49,9 @@ class BDDCLI {
     stdout.writeln('');
     stdout.writeln('Available commands:');
     stdout.writeln('  build    Generate test files from .feature files');
+    stdout.writeln('  test     Run BDD tests with formatted report');
     stdout.writeln('');
-    stdout.writeln('Flags:');
+    stdout.writeln('Build flags:');
     stdout.writeln('  --no-widget-test  Generate unit tests instead of widget tests');
     stdout.writeln('  --force           Force regenerate all files');
     stdout.writeln('  --new-only        Only generate for new feature files');

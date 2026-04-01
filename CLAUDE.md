@@ -15,6 +15,9 @@ dart test test/parsers/ test/builders/
 # Run the CLI locally against the example project
 cd example && dart run bdd_flutter build
 
+# Run BDD tests with formatted report
+cd example && dart run bdd_flutter test
+
 # Force regenerate all
 cd example && dart run bdd_flutter build --force
 
@@ -49,7 +52,7 @@ BDDCLI.run(args)
 - **`infrastructure/builders/`** — ScenariosFileBuilder, TestFileBuilder (domain models → Dart code)
 - **`presentation/cli/`** — BDDCLI entry point, argument parsing
 - **`presentation/controllers/`** — BDDController orchestrates config, manifest, parsing, building
-- **`presentation/reporter/`** — BDDTestReporter (exported for use in generated tests)
+- **`presentation/reporter/`** — BDDTestRunner (CLI `test` command), BDDReportFormatter (output formatting), BDDTestReporter (legacy, exported)
 
 ### Domain Models
 
