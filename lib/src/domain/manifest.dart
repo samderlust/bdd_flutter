@@ -17,6 +17,12 @@ class Manifest {
     DateTime? lastGenerated,
     this.features = const [],
   }) : lastGenerated = lastGenerated ?? DateTime.now();
+
+  Map<String, dynamic> toMap() => {
+        'version': version,
+        'last_generated': lastGenerated.toIso8601String(),
+        'features': features.map((f) => f.toMap()).toList(),
+      };
 }
 
 /// A feature entry in the manifest, tracking its file and scenarios.
@@ -39,6 +45,13 @@ class ManifestFeature {
     required this.testFile,
     this.scenarios = const [],
   });
+
+  Map<String, dynamic> toMap() => {
+        'path': path,
+        'last_modified': lastModified,
+        'test_file': testFile,
+        'scenarios': scenarios.map((s) => s.toMap()).toList(),
+      };
 }
 
 /// A scenario entry in the manifest, identified by its content hash.
@@ -57,4 +70,10 @@ class ManifestScenario {
     required this.hash,
     required this.testMethod,
   });
+
+  Map<String, dynamic> toMap() => {
+        'name': name,
+        'hash': hash,
+        'test_method': testMethod,
+      };
 }

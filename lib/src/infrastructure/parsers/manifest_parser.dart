@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:yaml/yaml.dart';
@@ -75,30 +76,19 @@ class ManifestParser {
   /// Saves the [manifest] to the manifest file.
   ///
   /// Creates the `.bdd_flutter` directory if it does not exist.
+  ///
+  /// Output is JSON, which is a strict subset of YAML 1.2 — `loadManifest()` parses
+  /// it unchanged. Using `JsonEncoder` delegates string escaping to `dart:convert`,
+  /// preventing malformed output for scenario names or paths containing quotes,
+  /// colons, or other YAML-significant characters.
   Future<void> saveManifest(Manifest manifest) async {
     final dir = Directory(manifestDir);
     if (!dir.existsSync()) {
       dir.createSync(recursive: true);
     }
 
-    final buffer = StringBuffer();
-    buffer.writeln('version: "${manifest.version}"');
-    buffer.writeln('last_generated: "${manifest.lastGenerated.toIso8601String()}"');
-    buffer.writeln('features:');
-
-    for (final feature in manifest.features) {
-      buffer.writeln('  - path: "${feature.path}"');
-      buffer.writeln('    last_modified: "${feature.lastModified}"');
-      buffer.writeln('    test_file: "${feature.testFile}"');
-      buffer.writeln('    scenarios:');
-      for (final scenario in feature.scenarios) {
-        buffer.writeln('      - name: "${scenario.name}"');
-        buffer.writeln('        hash: "${scenario.hash}"');
-        buffer.writeln('        test_method: "${scenario.testMethod}"');
-      }
-    }
-
-    await File(manifestFile).writeAsString(buffer.toString());
+    final encoded = const JsonEncoder.withIndent('  ').convert(manifest.toMap());
+    await File(manifestFile).writeAsString(encoded);
   }
 
   /// Finds a feature entry in the [manifest] by file [path].

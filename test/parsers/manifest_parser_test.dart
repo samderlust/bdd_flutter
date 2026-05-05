@@ -86,6 +86,131 @@ void main() {
       expect(parser.findFeature(manifest, 'test/missing.feature'), isNull);
     });
 
+    test('round-trip preserves lastGenerated timestamp', () async {
+      final parser = parserInDir();
+      final original = Manifest(
+        version: '1.0',
+        lastGenerated: DateTime.utc(2025, 1, 1, 12, 30, 45),
+        features: [
+          ManifestFeature(
+            path: 'test/login/login.feature',
+            lastModified: '2025-01-01T00:00:00.000',
+            testFile: 'test/login/login.bdd_test.dart',
+            scenarios: [
+              ManifestScenario(
+                name: 'Successful login',
+                hash: 'abc123',
+                testMethod: 'successfulLogin',
+              ),
+            ],
+          ),
+        ],
+      );
+
+      await parser.saveManifest(original);
+      final loaded = await parser.loadManifest();
+
+      expect(loaded.lastGenerated, equals(original.lastGenerated));
+    });
+
+    test('scenario name with double quotes survives round-trip', () async {
+      final parser = parserInDir();
+      final manifest = Manifest(features: [
+        ManifestFeature(
+          path: 'test/a.feature',
+          lastModified: '',
+          testFile: 'test/a.bdd_test.dart',
+          scenarios: [
+            ManifestScenario(
+              name: 'User sees "Welcome" screen',
+              hash: 'x',
+              testMethod: 'userSeesWelcomeScreen',
+            ),
+          ],
+        ),
+      ]);
+
+      await parser.saveManifest(manifest);
+      final loaded = await parser.loadManifest();
+
+      expect(
+        loaded.features.first.scenarios.first.name,
+        equals('User sees "Welcome" screen'),
+      );
+    });
+
+    test('scenario name with colon survives round-trip', () async {
+      final parser = parserInDir();
+      final manifest = Manifest(features: [
+        ManifestFeature(
+          path: 'test/b.feature',
+          lastModified: '',
+          testFile: 'test/b.bdd_test.dart',
+          scenarios: [
+            ManifestScenario(
+              name: 'Login: valid credentials',
+              hash: 'y',
+              testMethod: 'loginValidCredentials',
+            ),
+          ],
+        ),
+      ]);
+
+      await parser.saveManifest(manifest);
+      final loaded = await parser.loadManifest();
+
+      expect(
+        loaded.features.first.scenarios.first.name,
+        equals('Login: valid credentials'),
+      );
+    });
+
+    test('scenario name with backslash and newline survives round-trip', () async {
+      final parser = parserInDir();
+      final manifest = Manifest(features: [
+        ManifestFeature(
+          path: 'test/c.feature',
+          lastModified: '',
+          testFile: 'test/c.bdd_test.dart',
+          scenarios: [
+            ManifestScenario(
+              name: 'Path C:\\Users with\nnewline',
+              hash: 'z',
+              testMethod: 'pathBackslashNewline',
+            ),
+          ],
+        ),
+      ]);
+
+      await parser.saveManifest(manifest);
+      final loaded = await parser.loadManifest();
+
+      expect(
+        loaded.features.first.scenarios.first.name,
+        equals('Path C:\\Users with\nnewline'),
+      );
+    });
+
+    test('feature path with space survives round-trip', () async {
+      final parser = parserInDir();
+      final manifest = Manifest(features: [
+        ManifestFeature(
+          path: 'test/my feature dir/some_thing.feature',
+          lastModified: '',
+          testFile: 'test/my feature dir/some_thing.bdd_test.dart',
+          scenarios: [],
+        ),
+      ]);
+
+      await parser.saveManifest(manifest);
+      final loaded = await parser.loadManifest();
+
+      expect(
+        loaded.features.first.path,
+        equals('test/my feature dir/some_thing.feature'),
+      );
+    });
+
     test('handles multiple features with multiple scenarios', () async {
       final parser = parserInDir();
       final manifest = Manifest(
