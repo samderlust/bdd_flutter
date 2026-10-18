@@ -27,7 +27,7 @@ class ScenariosFileBuilder {
 
     if (feature.background != null) {
       buffer.writeln("class ${feature.name.name}Background {");
-      for (var step in feature.background!.steps) {
+      for (var step in _uniqueSteps(feature.background!.steps)) {
         final methodName = step.methodName;
         final params = step.parameterDeclarations.join(', ');
         buffer.writeln(
@@ -75,7 +75,7 @@ class ScenariosFileBuilder {
 
     buffer.writeln("class $className {");
 
-    for (var step in scenario.steps) {
+    for (var step in _uniqueSteps(scenario.steps)) {
       final methodName = step.methodName;
       final params = step.parameterDeclarations.join(', ');
 
@@ -96,4 +96,13 @@ class ScenariosFileBuilder {
     buffer.writeln("}");
     buffer.writeln();
   }
+}
+
+/// [steps] without repeats of an earlier step's method name.
+///
+/// A step written twice (e.g. `And I tap` after `When I tap`) is one method,
+/// called twice from the test file. Declaring it twice would not compile.
+List<Step> _uniqueSteps(List<Step> steps) {
+  final seen = <String>{};
+  return steps.where((step) => seen.add(step.methodName)).toList();
 }

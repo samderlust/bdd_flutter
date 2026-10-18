@@ -40,22 +40,25 @@ class BDDController {
   ///
   /// In incremental mode (default), new scenarios are appended to existing
   /// scenario files and test files are regenerated. With [options.force],
-  /// all files are regenerated from scratch.
-  Future<void> generateFeatureTestCases({BuildOptions options = const BuildOptions()}) async {
+  /// all files are regenerated from scratch. When an existing scenario changed,
+  /// the old scenario file is first copied to `.bdd_scenarios.dart.bak`.
+  ///
+  /// Returns the number of `.feature` files that failed to parse.
+  Future<int> generateFeatureTestCases({BuildOptions options = const BuildOptions()}) async {
     final config = await _configParser.loadConfig();
     final manifest = await _manifestParser.loadManifest();
 
     final testDir = Directory(config.testDir);
     if (!testDir.existsSync()) {
       stdout.writeln('Directory "${config.testDir}" not found.');
-      return;
+      return 0;
     }
 
     final featureFiles = testDir.listSync(recursive: true).where((file) => file.path.endsWith('.feature'));
 
     if (featureFiles.isEmpty) {
       stdout.writeln('No .feature files found in "${config.testDir}".');
-      return;
+      return 0;
     }
 
     stdout.writeln('Found ${featureFiles.length} feature file(s).');
@@ -107,6 +110,8 @@ class BDDController {
       // Check if any existing scenarios were removed or modified
       final removedScenarios = manifestHashes.difference(currentHashes);
       if (removedScenarios.isNotEmpty) {
+        final backupPath = await _backupFile(scenarioPath);
+        stdout.writeln('  Backed up step code: $backupPath');
         await _generateFull(feature, scenarioPath, testPath, config);
         stdout.writeln('  Regenerated (scenarios changed): $scenarioPath');
         stdout.writeln('  Regenerated: $testPath');
@@ -166,6 +171,15 @@ class BDDController {
     if (skipped > 0) parts.add('Skipped: $skipped');
     if (failed > 0) parts.add('Failed: $failed');
     stdout.writeln('Done. ${parts.join(', ')}.');
+    return failed;
+  }
+
+  /// Copies [path] to `<path>.bak`, so step code is recoverable after the
+  /// file is regenerated. Returns the backup path.
+  Future<String> _backupFile(String path) async {
+    final backupPath = '$path.bak';
+    await File(path).copy(backupPath);
+    return backupPath;
   }
 
   Future<void> _generateFull(

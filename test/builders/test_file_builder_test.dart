@@ -183,6 +183,50 @@ void main() {
 
       expect(result, contains("scenario.iAddQuantityItem(tester, example['quantity']!, example['item']!)"));
     });
+
+    test('fills columns missing from an Examples block with the placeholder text', () async {
+      const feature = Feature(
+        name: 'Cart',
+        path: 'test/cart.feature',
+        scenarios: [
+          Scenario('Add', [
+            Step('When', 'I add <item>'),
+          ], examples: [
+            {'item': 'apple'},
+            {'other': 'z'},
+          ]),
+        ],
+        decorators: {},
+      );
+
+      final result = await builder.buildTestFile(feature);
+
+      expect(result, contains("{'item': 'apple','other': '<other>',},"));
+      expect(result, contains("{'item': '<item>','other': 'z',},"));
+    });
+
+    test('passes placeholder text when a step has no matching example column', () async {
+      const feature = Feature(
+        name: 'Cart',
+        path: 'test/cart.feature',
+        scenarios: [
+          Scenario('Plain', [Step('Given', 'I have <count> items')]),
+          Scenario('Outline', [
+            Step('When', 'I add <item> to <list>'),
+          ], examples: [
+            {'item': 'apple'},
+          ]),
+        ],
+        decorators: {},
+        background: Background(description: '', steps: [Step('Given', 'user <name>')]),
+      );
+
+      final result = await builder.buildTestFile(feature);
+
+      expect(result, contains("await scenario.iHaveCountItems(tester, '<count>');"));
+      expect(result, contains("await scenario.iAddItemToList(tester, example['item']!, '<list>');"));
+      expect(result, contains("await background.userName('<name>');"));
+    });
   });
 
   group('TestFileBuilder doc strings and data tables', () {

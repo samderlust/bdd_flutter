@@ -48,19 +48,22 @@ class TestFileBuilder {
       buffer.writeln("      //Scenario: ${scenario.name}");
 
       if (scenario.examples != null && scenario.examples!.isNotEmpty) {
+        final columns = scenario.examples!.expand((e) => e.keys).toSet();
         buffer.writeln("      final examples = [");
 
         for (var example in scenario.examples!) {
           buffer.write("        {");
-          for (var entry in example.entries) {
-            buffer.write("'${entry.key.snakeCaseToCamelCase}': ${entry.value.toDartStringLiteral},");
+          for (var column in columns) {
+            // A column missing from this row's Examples block keeps its
+            // `<column>` text, as Gherkin leaves unmatched placeholders as-is.
+            final value = example[column] ?? '<$column>';
+            buffer.write("'${column.snakeCaseToCamelCase}': ${value.toDartStringLiteral},");
           }
           buffer.write("},");
           buffer.writeln();
         }
         buffer.writeln("      ];");
 
-        final columns = scenario.examples!.expand((e) => e.keys).toSet();
         buffer.writeln("      for (var example in examples) {");
 
         for (var step in scenario.steps) {
@@ -85,14 +88,16 @@ class TestFileBuilder {
 /// Arguments for a step call, in the same order as
 /// [StepX.parameterDeclarations]: placeholders, then doc string, then data table.
 ///
-/// Inside an Examples loop ([exampleColumns] not empty), placeholders are read
-/// from the current row, including `<column>` inside doc strings and tables.
+/// Placeholders matching one of [exampleColumns] are read from the current
+/// example row, including `<column>` inside doc strings and tables. Any other
+/// placeholder is passed as its literal `<name>` text, so every declared
+/// parameter always receives an argument.
 List<String> _stepArgs(Step step, {Set<String> exampleColumns = const {}}) {
-  final inExamples = exampleColumns.isNotEmpty;
   final docString = step.docString;
   final dataTable = step.dataTable;
   return [
-    if (inExamples) ...step.placeholders.map(_exampleValue),
+    for (final name in step.placeholders)
+      exampleColumns.contains(name) ? _exampleValue(name) : '<$name>'.toDartStringLiteral,
     if (docString != null) _literal(docString, exampleColumns),
     if (dataTable != null) _tableLiteral(dataTable, exampleColumns),
   ];

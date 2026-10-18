@@ -18,6 +18,11 @@
 - Fix example values containing `'` or `$` producing invalid generated code
 - Remove a stray space in generated unit-test step calls (`scenario.step( value)`)
 - Fix duplicate method parameters (compile error) when a step uses the same placeholder twice, e.g. `from "<city>" and back to "<city>"`
+- Fix a crash (`Null check operator used on a null value`) when a Scenario Outline has several `Examples` blocks with different columns; a column missing from a block keeps its `<column>` text
+- Fix generated calls missing arguments (compile error) when a `<placeholder>` has no matching example column, or appears in a plain Scenario or Background; its literal `<name>` text is passed
+- Fix duplicate method declarations (compile error) when the same step text appears twice in a scenario or background
+- `build` now exits with code 1 when any `.feature` file fails to parse, so CI catches invalid Gherkin
+- Before regenerating a scenario file because a scenario changed, the old file is copied to `.bdd_scenarios.dart.bak` so step code can be recovered
 
 ### Example
 

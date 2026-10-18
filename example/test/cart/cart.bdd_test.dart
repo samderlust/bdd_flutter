@@ -33,9 +33,9 @@ void main() {
       ];
       for (var example in examples) {
       // When I add <quantity> "<item>" at <price> each
-      await scenario.iAddQuantityItemAtPriceEach( example['quantity']!, example['item']!, example['price']!);
+      await scenario.iAddQuantityItemAtPriceEach(example['quantity']!, example['item']!, example['price']!);
       // Then the total for "<item>" is <total>
-      await scenario.theTotalForItemIsTotal( example['item']!, example['total']!);
+      await scenario.theTotalForItemIsTotal(example['item']!, example['total']!);
       }
     });
     test('Adding to a closed cart', () async {

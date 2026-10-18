@@ -226,6 +226,29 @@ Feature: Login
       expect(scenarioContent, isNot(contains('iShouldSeeTheHomePage')));
     });
 
+    test('backs up the scenario file before regenerating a changed scenario', () async {
+      writeFeatureFile('login.feature', '''
+Feature: Login
+  Scenario: Successful login
+    Given I am on the login page
+''');
+      final controller = createController();
+      await controller.generateFeatureTestCases();
+      final scenarioFile = File('$testDir/login.bdd_scenarios.dart');
+      scenarioFile.writeAsStringSync('// my step code');
+
+      writeFeatureFile('login.feature', '''
+Feature: Login
+  Scenario: Successful login
+    Given I am on the sign-in page
+''');
+      await controller.generateFeatureTestCases();
+
+      final backup = File('$testDir/login.bdd_scenarios.dart.bak');
+      expect(backup.readAsStringSync(), '// my step code');
+      expect(scenarioFile.readAsStringSync(), contains('iAmOnTheSignInPage'));
+    });
+
     test('deleted generated files are regenerated', () async {
       writeFeatureFile('login.feature', '''
 Feature: Login
@@ -289,10 +312,23 @@ Feature: Login
     Given I am on the login page
 ''');
 
-      await createController().generateFeatureTestCases();
+      final failed = await createController().generateFeatureTestCases();
 
+      expect(failed, 1);
       expect(File('$testDir/login.bdd_test.dart').existsSync(), isTrue);
       expect(File('$testDir/broken.bdd_test.dart').existsSync(), isFalse);
+    });
+
+    test('returns zero when every file parses', () async {
+      writeFeatureFile('login.feature', '''
+Feature: Login
+  Scenario: Successful login
+    Given I am on the login page
+''');
+
+      final failed = await createController().generateFeatureTestCases();
+
+      expect(failed, 0);
     });
   });
 }

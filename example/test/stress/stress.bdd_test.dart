@@ -44,7 +44,7 @@ void main() {
       //Scenario: Same placeholder twice and <placeholder> in name
       final examples = [
         {'from': 'Berlin','to': 'Paris','qty': '1','left': '9','firstValue': 'a',},
-        {'to': 'Austin','from': 'Seattle','left': '8','qty': '2','firstValue': 'b',},
+        {'from': 'Seattle','to': 'Austin','qty': '2','left': '8','firstValue': 'b',},
       ];
       for (var example in examples) {
       // When I move <qty> from "<from>" to "<to>" and back to "<from>"

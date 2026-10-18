@@ -188,6 +188,31 @@ void main() {
     });
   });
 
+  group('ScenariosFileBuilder repeated steps', () {
+    test('declares a repeated step method once', () async {
+      const feature = Feature(
+        name: 'Clicks',
+        path: 'test/clicks.feature',
+        scenarios: [
+          Scenario('Double', [
+            Step('When', 'I click'),
+            Step('And', 'I click'),
+          ]),
+        ],
+        decorators: {},
+        background: Background(description: '', steps: [
+          Step('Given', 'I wait'),
+          Step('And', 'I wait'),
+        ]),
+      );
+
+      final result = await builder.buildScenarioFile(feature);
+
+      expect('Future<void> iClick('.allMatches(result).length, 1);
+      expect('Future<void> iWait('.allMatches(result).length, 1);
+    });
+  });
+
   group('ScenariosFileBuilder doc strings and data tables', () {
     test('adds docString and dataTable parameters after placeholders', () async {
       const feature = Feature(

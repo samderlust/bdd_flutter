@@ -36,7 +36,8 @@ class BDDCLI {
         final options = BuildOptions(
           force: flags.contains('--force'),
         );
-        await _bddController.generateFeatureTestCases(options: options);
+        final failed = await _bddController.generateFeatureTestCases(options: options);
+        if (failed > 0) exit(1);
         break;
       case 'test':
         final config = await _configParser.loadConfig();
