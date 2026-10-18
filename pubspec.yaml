@@ -4,7 +4,7 @@ version: 1.1.1
 homepage: https://github.com/samderlust/bdd_flutter
 
 environment:
-  sdk: ">=3.0.0 <4.0.0"
+  sdk: ">=3.8.0 <4.0.0"
   flutter: ">=3.0.0"
 
 topics:
@@ -15,6 +15,8 @@ topics:
 
 dependencies:
   crypto: ^3.0.0
+  cucumber_gherkin: ^42.0.1
+  cucumber_messages: ^34.2.1
   yaml: ^3.1.0
 
 dev_dependencies:
