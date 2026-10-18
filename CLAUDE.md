@@ -39,7 +39,8 @@ BDDCLI.run(args)
   → BDDController.generateFeatureTestCases(options)
     → ConfigParser.loadConfig()                      # .bdd_flutter/config.yaml
     → ManifestParser.loadManifest()                  # .bdd_flutter/manifest.yaml
-    → FeatureParser.parseFeature(filePath)            # .feature → Feature model
+    → FeatureParser.parseFeature(filePath)            # cucumber_gherkin → GherkinDocument
+      → GherkinMapper.toFeature(document, path)       # GherkinDocument → Feature model
     → ScenariosFileBuilder.buildScenarioFile(feature) # Feature → .bdd_scenarios.dart
     → TestFileBuilder.buildTestFile(feature)          # Feature → .bdd_test.dart
     → ManifestParser.saveManifest()                  # update manifest
@@ -48,7 +49,7 @@ BDDCLI.run(args)
 ### Layers
 
 - **`domain/`** — Core models: Feature, Scenario, Step, Decorator, Background, BDDConfig, Manifest, BuildOptions
-- **`infrastructure/parsers/`** — FeatureParser, ConfigParser, ManifestParser
+- **`infrastructure/parsers/`** — FeatureParser (wraps `cucumber_gherkin`), GherkinMapper (the only code that touches `cucumber_messages` types), ConfigParser, ManifestParser
 - **`infrastructure/builders/`** — ScenariosFileBuilder, TestFileBuilder (domain models → Dart code)
 - **`presentation/cli/`** — BDDCLI entry point, argument parsing
 - **`presentation/controllers/`** — BDDController orchestrates config, manifest, parsing, building

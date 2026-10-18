@@ -1,3 +1,35 @@
+## 2.0.0
+
+### Breaking
+
+- Minimum Dart SDK is now 3.8.0 (required by `cucumber_gherkin`)
+
+### Features
+
+- `.feature` files are now parsed by the official [`cucumber_gherkin`](https://pub.dev/packages/cucumber_gherkin) parser and mapped from [`cucumber_messages`](https://pub.dev/packages/cucumber_messages) types (#6)
+- Supports `But` and `*` steps, `Scenario Outline`, `Rule` (with its own `Background`), several `Examples` blocks, several tags on one line, comments, escaped `\|` in tables and non-English keywords (`# language: fr`)
+- Invalid `.feature` files are reported with line and column and skipped; other features still build
+- Steps carry a `keywordType` (context, action, outcome, conjunction)
+- Doc strings and data tables are passed to step methods as `String docString` and `List<List<String>> dataTable`; `<column>` placeholders inside them are filled from the current example row
+
+### Bug Fixes
+
+- Fix example values being passed in table-column order instead of step-text order, which silently swapped arguments when the columns were ordered differently from the placeholders
+- Fix example values containing `'` or `$` producing invalid generated code
+- Remove a stray space in generated unit-test step calls (`scenario.step( value)`)
+- Fix duplicate method parameters (compile error) when a step uses the same placeholder twice, e.g. `from "<city>" and back to "<city>"`
+
+### Example
+
+- Add `test/cart/cart.feature`: Rule with its own Background, Scenario Outline with two Examples blocks, `But` and `*` steps, several tags on one line
+- Add `test/compteur/compteur.feature`: French keywords
+- Add `test/stress/stress.feature`: doc strings, data tables (including example placeholders inside them), repeated placeholders, tags on Examples, symbols in step text
+
+### Notes
+
+- Scenario hashes are unchanged, so existing manifests stay valid and no files are regenerated after upgrading. The exception is features that use a doc string or data table: those steps get new parameters, so the feature's whole `.bdd_scenarios.dart` file is regenerated once and the step code in it is overwritten. Commit before upgrading and copy your step code back
+- Non-ASCII letters are dropped from generated names (`Incrémenter` → `IncrMenterScenario`), since Dart identifiers are ASCII only
+
 ## 1.1.1
 
 ### Features

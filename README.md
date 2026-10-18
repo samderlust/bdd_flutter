@@ -7,7 +7,7 @@ A Flutter package that simplifies Behavior Driven Development (BDD) by automatic
 
 ## Features
 
-- Parse `.feature` files written in Gherkin syntax (Given/When/Then/And)
+- Parses `.feature` files with the official Cucumber parser ([`cucumber_gherkin`](https://pub.dev/packages/cucumber_gherkin)), so the full Gherkin syntax and 70+ spoken languages work
 - Generate boilerplate test files automatically
 - Support for both widget tests and unit tests
 - Incremental generation — new scenarios are appended without overwriting existing implementations
@@ -19,7 +19,7 @@ A Flutter package that simplifies Behavior Driven Development (BDD) by automatic
 
 ## Installation
 
-Add to your `pubspec.yaml`:
+Requires Dart 3.8 or later. Add to your `pubspec.yaml`:
 
 ```yaml
 dev_dependencies:
@@ -219,6 +219,62 @@ Non-BDD Test Report
   Time: 2781ms
 ```
 
+## Gherkin Support
+
+`.feature` files are parsed by [`cucumber_gherkin`](https://pub.dev/packages/cucumber_gherkin), the official Cucumber parser, and read through the [`cucumber_messages`](https://pub.dev/packages/cucumber_messages) data model.
+
+| Syntax | How bdd_flutter uses it |
+| --- | --- |
+| `Given` / `When` / `Then` / `And` / `But` / `*` | One step method each |
+| `Background:` | A `<Feature>Background` class, run before every scenario |
+| `Scenario Outline:` and `Examples:` | One test that loops over every example row |
+| Several `Examples:` blocks | Rows from all blocks are combined; columns can be in any order |
+| `Rule:` | Its scenarios are generated like any other; a `Background:` inside a Rule runs as the first steps of each scenario in that Rule |
+| Tags (`@unitTest @smoke`) | Several per line; tags on a Rule apply to its scenarios |
+| Doc strings (`"""`) | Passed to the step method as `String docString` |
+| Data tables | Passed to the step method as `List<List<String>> dataTable` (all rows, header row included) |
+| `<column>` inside doc strings and tables | Replaced with the current example row's value |
+| `# comments`, descriptions, `\|` in tables | Supported |
+| `# language: fr` | Keywords in any [Gherkin language](https://cucumber.io/docs/gherkin/languages/) |
+
+Invalid Gherkin is reported with line and column, and that file is skipped:
+
+```
+Failed: Invalid Gherkin in test/login/login.feature:
+  (4:3): expected: #EOF, #TableRow, #DocStringSeparator, #StepLine, ..., got 'this line is not Gherkin'
+```
+
+**Not yet supported:**
+
+- Dart identifiers are ASCII only, so letters such as `é` are dropped from generated names (`Incrémenter` → `IncrMenterScenario`).
+- The Background runs once per test, so in a Scenario Outline all example rows share the state it sets up.
+
+### Doc Strings and Data Tables
+
+```gherkin
+Scenario Outline: Send an order
+  When I send the payload:
+    """
+    {"item": "<item>"}
+    """
+  Then the table shows:
+    | item   | price   |
+    | <item> | <price> |
+
+  Examples:
+    | item  | price |
+    | apple | 1.50  |
+```
+
+generates
+
+```dart
+Future<void> iSendThePayload(String docString) async { ... }
+Future<void> theTableShows(List<List<String>> dataTable) async { ... }
+```
+
+and the test file passes the values, with `<item>` and `<price>` filled in for each example row. Parameters come in this order: `tester` (widget tests), step placeholders, `docString`, `dataTable`.
+
 ## Decorators
 
 Control test type with standard Gherkin tags:
@@ -278,7 +334,7 @@ your_project/
 
 4. **Adding Scenarios** — When you add new scenarios to a `.feature` file, run `build` — new scenario classes are appended without touching existing ones.
 
-5. **Feature Files** — Keep feature files clean. Only use `@unitTest`/`@widgetTest` decorators. All other configuration belongs in `.bdd_flutter/config.yaml`.
+5. **Feature Files** — Keep feature files about behavior. `@unitTest`/`@widgetTest` are the only tags bdd_flutter acts on; other tags are allowed and ignored. Tooling configuration belongs in `.bdd_flutter/config.yaml`.
 
 ## License
 
