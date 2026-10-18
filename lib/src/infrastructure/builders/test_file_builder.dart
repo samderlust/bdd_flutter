@@ -60,16 +60,11 @@ class TestFileBuilder {
         }
         buffer.writeln("      ];");
 
-        final exampleKeys = scenario.examples!.first.keys.toList();
         buffer.writeln("      for (var example in examples) {");
 
         for (var step in scenario.steps) {
-          final params = <String>[];
-          for (var key in exampleKeys) {
-            if (step.text.contains('<$key>')) {
-              params.add("example['${key.snakeCaseToCamelCase}']!");
-            }
-          }
+          // Same order as the generated method's parameters: placeholder order in the step text.
+          final params = step.placeholders.map((name) => "example['${name.snakeCaseToCamelCase}']!").toList();
 
           buffer.writeln(_generateStepCall(step, isUnitTest, params));
         }

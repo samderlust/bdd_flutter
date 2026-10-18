@@ -77,4 +77,11 @@ void main() {
       expect(step.toString(), equals('When I click the button'));
     });
   });
+
+  group('Step.placeholders', () {
+    test('lists each placeholder once, in text order', () {
+      const step = Step('When', 'I move <qty> from <from> to <to> and back to <from>');
+      expect(step.placeholders, equals(['qty', 'from', 'to']));
+    });
+  });
 }

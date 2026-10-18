@@ -27,6 +27,13 @@ class Step {
 
 /// Extension methods for [Step].
 extension StepX on Step {
+  /// Distinct `<param>` names in the order they first appear in [text].
+  ///
+  /// A placeholder used twice becomes one method parameter.
+  List<String> get placeholders {
+    return RegExp(r'<(\w+)>').allMatches(text).map((m) => m.group(1)!).toSet().toList();
+  }
+
   /// The full step message (keyword + text).
   String get message => '$keyword $text';
 

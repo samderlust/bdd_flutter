@@ -163,4 +163,25 @@ void main() {
       expect(result, contains("group('My Feature', () {"));
     });
   });
+
+  group('TestFileBuilder example arguments', () {
+    test('passes example values in step text order, not column order', () async {
+      const feature = Feature(
+        name: 'Cart',
+        path: 'test/cart.feature',
+        scenarios: [
+          Scenario('Add', [
+            Step('When', 'I add <quantity> "<item>"'),
+          ], examples: [
+            {'item': 'apple', 'quantity': '2'},
+          ]),
+        ],
+        decorators: {},
+      );
+
+      final result = await builder.buildTestFile(feature);
+
+      expect(result, contains("scenario.iAddQuantityItem(tester, example['quantity']!, example['item']!)"));
+    });
+  });
 }

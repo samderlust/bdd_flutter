@@ -102,14 +102,5 @@ class ScenariosFileBuilder {
 ///
 /// Returns a comma-separated parameter list (e.g., `String firstName, String lastName`).
 String extractMethodParams(String stepText) {
-  final params = <String>[];
-  final regex = RegExp(r'<(\w+)>');
-  final matches = regex.allMatches(stepText);
-
-  for (var match in matches) {
-    final paramName = match.group(1)!;
-    params.add('String ${paramName.snakeCaseToCamelCase}');
-  }
-
-  return params.join(', ');
+  return Step('', stepText).placeholders.map((name) => 'String ${name.snakeCaseToCamelCase}').join(', ');
 }
