@@ -6,6 +6,7 @@ import '../../domain/feature.dart';
 import '../../domain/manifest.dart';
 import '../../domain/scenario.dart';
 import '../../infrastructure/parsers/config_parser.dart';
+import '../../infrastructure/parsers/feature_parse_exception.dart';
 import '../../infrastructure/parsers/feature_parser.dart';
 import '../../infrastructure/parsers/manifest_parser.dart';
 import '../../infrastructure/builders/scenario_file_builder.dart';
@@ -29,7 +30,7 @@ class BDDController {
     TestFileBuilder? testFileBuilder,
     ConfigParser? configParser,
     ManifestParser? manifestParser,
-  })  : _featureParser = featureParser ?? FeatureParser(),
+  })  : _featureParser = featureParser ?? const FeatureParser(),
         _scenarioFileBuilder = scenarioFileBuilder ?? ScenariosFileBuilder(),
         _testFileBuilder = testFileBuilder ?? TestFileBuilder(),
         _configParser = configParser ?? ConfigParser(),
@@ -63,10 +64,9 @@ class BDDController {
     int generated = 0;
     int appended = 0;
     int skipped = 0;
+    int failed = 0;
 
     for (var featureFile in featureFiles) {
-      final feature = await _featureParser.parseFeature(featureFile.path);
-
       if (config.ignoreFeatures.any((ignored) => featureFile.path.endsWith(ignored))) {
         stdout.writeln('  Skipped (config): ${featureFile.path}');
         skipped++;
@@ -74,6 +74,16 @@ class BDDController {
       }
 
       final existingEntry = _manifestParser.findFeature(manifest, featureFile.path);
+      final Feature feature;
+      try {
+        feature = await _featureParser.parseFeature(featureFile.path);
+      } on FeatureParseException catch (e) {
+        stderr.writeln('  Failed: $e');
+        failed++;
+        if (existingEntry != null) updatedFeatures.add(existingEntry);
+        continue;
+      }
+
       final scenarioPath = feature.path.replaceAll('.feature', '.bdd_scenarios.dart');
       final testPath = feature.path.replaceAll('.feature', '.bdd_test.dart');
 
@@ -154,6 +164,7 @@ class BDDController {
     if (generated > 0) parts.add('Generated: $generated');
     if (appended > 0) parts.add('Appended: $appended');
     if (skipped > 0) parts.add('Skipped: $skipped');
+    if (failed > 0) parts.add('Failed: $failed');
     stdout.writeln('Done. ${parts.join(', ')}.');
   }
 

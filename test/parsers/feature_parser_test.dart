@@ -2,6 +2,8 @@ import 'dart:io';
 
 import 'package:bdd_flutter/src/domain/decorator.dart';
 import 'package:bdd_flutter/src/domain/scenario.dart';
+import 'package:bdd_flutter/src/domain/step_keyword_type.dart';
+import 'package:bdd_flutter/src/infrastructure/parsers/feature_parse_exception.dart';
 import 'package:bdd_flutter/src/infrastructure/parsers/feature_parser.dart';
 import 'package:test/test.dart';
 
@@ -10,7 +12,7 @@ void main() {
   late Directory tempDir;
 
   setUp(() {
-    parser = FeatureParser();
+    parser = const FeatureParser();
     tempDir = Directory.systemTemp.createTempSync('bdd_test_');
   });
 
@@ -216,6 +218,168 @@ Feature: Calculator
       expect(feature.scenarios.length, equals(2));
       expect(feature.scenarios[0].examples!.length, equals(1));
       expect(feature.scenarios[1].examples!.length, equals(1));
+    });
+  });
+
+  group('FeatureParser full Gherkin support', () {
+    test('parses But and * steps', () async {
+      final file = createFeatureFile('''
+Feature: Cart
+  Scenario: Checkout
+    Given I have items
+    But I am not logged in
+    * I open the cart
+''');
+      final steps = (await parser.parseFeature(file.path)).scenarios.first.steps;
+      expect(steps.map((s) => s.keyword), equals(['Given', 'But', '*']));
+      expect(steps[1].text, equals('I am not logged in'));
+    });
+
+    test('maps keyword types', () async {
+      final file = createFeatureFile('''
+Feature: Login
+  Scenario: Login
+    Given a user
+    And a password
+    When I log in
+    Then I see home
+''');
+      final steps = (await parser.parseFeature(file.path)).scenarios.first.steps;
+      expect(
+        steps.map((s) => s.keywordType),
+        equals([StepKeywordType.context, StepKeywordType.conjunction, StepKeywordType.action, StepKeywordType.outcome]),
+      );
+    });
+
+    test('parses several tags on one line', () async {
+      final file = createFeatureFile('''
+Feature: Calculator
+  @smoke @unitTest
+  Scenario: Add
+    Given a calculator
+''');
+      final feature = await parser.parseFeature(file.path);
+      expect(feature.scenarios.first.decorators.hasUnitTest, isTrue);
+    });
+
+    test('parses Scenario Outline', () async {
+      final file = createFeatureFile('''
+Feature: Calculator
+  Scenario Outline: Add
+    When I add <a> and <b>
+    Examples:
+      | a | b |
+      | 1 | 2 |
+''');
+      final scenario = (await parser.parseFeature(file.path)).scenarios.single;
+      expect(scenario.name, equals('Add'));
+      expect(
+        scenario.examples,
+        equals([
+          {'a': '1', 'b': '2'},
+        ]),
+      );
+    });
+
+    test('merges rows from several Examples blocks', () async {
+      final file = createFeatureFile('''
+Feature: Calculator
+  Scenario Outline: Add
+    When I add <a> and <b>
+    Examples: small
+      | a | b |
+      | 1 | 2 |
+    Examples: large
+      | a   | b   |
+      | 100 | 200 |
+''');
+      final scenario = (await parser.parseFeature(file.path)).scenarios.single;
+      expect(scenario.examples, hasLength(2));
+      expect(scenario.examples![1], equals({'a': '100', 'b': '200'}));
+    });
+
+    test('keeps pipes escaped inside example cells', () async {
+      final file = createFeatureFile(r"""
+Feature: Strings
+  Scenario: Split
+    When I split <input>
+    Examples:
+      | input  |
+      | a\|b   |
+""");
+      final scenario = (await parser.parseFeature(file.path)).scenarios.single;
+      expect(
+        scenario.examples,
+        equals([
+          {'input': 'a|b'},
+        ]),
+      );
+    });
+
+    test('ignores comments', () async {
+      final file = createFeatureFile('''
+# Owner: payments team
+Feature: Pay
+  # Happy path
+  Scenario: Pay
+    Given a card
+''');
+      final feature = await parser.parseFeature(file.path);
+      expect(feature.scenarios.single.steps.single.text, equals('a card'));
+    });
+
+    test('collects scenarios inside Rule and prepends the rule background', () async {
+      final file = createFeatureFile('''
+Feature: Accounts
+  Scenario: Open
+    Given nothing
+  @unitTest
+  Rule: Closed accounts
+    Background:
+      Given a closed account
+    Scenario: Deposit
+      When I deposit 5
+''');
+      final scenarios = (await parser.parseFeature(file.path)).scenarios;
+      expect(scenarios.map((s) => s.name), equals(['Open', 'Deposit']));
+      expect(scenarios[1].steps.map((s) => s.text), equals(['a closed account', 'I deposit 5']));
+      expect(scenarios[1].decorators.hasUnitTest, isTrue);
+    });
+
+    test('parses non-English keywords', () async {
+      final file = createFeatureFile('''
+# language: fr
+Fonctionnalité: Compteur
+  Scénario: Incrémenter
+    Soit un compteur à 0
+    Quand j'incrémente
+    Alors le compteur vaut 1
+''');
+      final feature = await parser.parseFeature(file.path);
+      final steps = feature.scenarios.single.steps;
+      expect(feature.name, equals('Compteur'));
+      expect(steps.first.keyword, equals('Soit'));
+      expect(steps.first.keywordType, equals(StepKeywordType.context));
+    });
+
+    test('throws FeatureParseException with line and column', () async {
+      final file = createFeatureFile('''
+Feature: Broken
+  Scenario: A
+    Given b
+  this line is not Gherkin
+''');
+      expect(
+        () => parser.parseFeature(file.path),
+        throwsA(isA<FeatureParseException>().having((e) => e.errors.single, 'error', startsWith('(4:3)'))),
+      );
+    });
+
+    test('empty file returns unnamed feature', () async {
+      final file = createFeatureFile('');
+      final feature = await parser.parseFeature(file.path);
+      expect(feature.name, equals('Unnamed Feature'));
+      expect(feature.scenarios, isEmpty);
     });
   });
 }

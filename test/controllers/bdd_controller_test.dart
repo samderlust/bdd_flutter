@@ -77,7 +77,7 @@ Feature: Login
           File('$testDir/login.bdd_scenarios.dart').lastModifiedSync();
 
       // Small delay to detect timestamp change
-      await Future.delayed(Duration(milliseconds: 50));
+      await Future.delayed(const Duration(milliseconds: 50));
       await controller.generateFeatureTestCases();
 
       final scenarioModifiedAfter =
@@ -272,6 +272,27 @@ Feature: Login
           File('$testDir/login.bdd_scenarios.dart').readAsStringSync();
       expect(content, contains('SuccessfulLoginScenario'));
       expect(content, isNot(contains('corrupted')));
+    });
+  });
+
+  group('BDDController invalid feature files', () {
+    test('skips an invalid file and still builds the others', () async {
+      writeFeatureFile('broken.feature', '''
+Feature: Broken
+  Scenario: A
+    Given b
+  this line is not Gherkin
+''');
+      writeFeatureFile('login.feature', '''
+Feature: Login
+  Scenario: Successful login
+    Given I am on the login page
+''');
+
+      await createController().generateFeatureTestCases();
+
+      expect(File('$testDir/login.bdd_test.dart').existsSync(), isTrue);
+      expect(File('$testDir/broken.bdd_test.dart').existsSync(), isFalse);
     });
   });
 }

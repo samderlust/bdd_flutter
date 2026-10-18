@@ -10,21 +10,21 @@ import 'scenario.dart';
 /// scenarios, and any decorators applied at the feature level.
 class Feature {
   /// The feature name (text after `Feature:`).
-  String name;
+  final String name;
 
   /// The file path of the `.feature` file.
-  String path;
+  final String path;
 
   /// The scenarios defined in this feature.
-  List<Scenario> scenarios;
+  final List<Scenario> scenarios;
 
   /// Optional background steps shared by all scenarios.
-  Background? background;
+  final Background? background;
 
   /// Decorators applied at the feature level (e.g., `@unitTest`).
-  Set<Decorator> decorators;
+  final Set<Decorator> decorators;
 
-  Feature({
+  const Feature({
     required this.name,
     required this.path,
     required this.scenarios,

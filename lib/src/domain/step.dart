@@ -1,15 +1,23 @@
+import 'step_keyword_type.dart';
+
 /// Represents a single step in a Gherkin scenario.
 ///
 /// A step has a [keyword] (Given, When, Then, And) and [text] describing
 /// the action. Parameters are denoted with angle brackets (e.g., `<value>`).
 class Step {
-  /// The Gherkin keyword: `Given`, `When`, `Then`, or `And`.
+  /// The Gherkin keyword as written, e.g. `Given`, `And`, `But` or `*`.
   final String keyword;
 
   /// The step text, potentially containing `<param>` placeholders.
   final String text;
 
-  Step(this.keyword, this.text);
+  /// The role of the step, independent of spoken language.
+  ///
+  /// `And`, `But` and `*` are [StepKeywordType.conjunction]: they continue
+  /// the step before them.
+  final StepKeywordType keywordType;
+
+  const Step(this.keyword, this.text, {this.keywordType = StepKeywordType.unknown});
 
   @override
   String toString() {

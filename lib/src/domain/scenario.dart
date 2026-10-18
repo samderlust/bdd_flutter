@@ -11,26 +11,28 @@ import 'step.dart';
 /// Users implement the step logic; the test file instantiates and calls them.
 class Scenario {
   /// The scenario name (text after `Scenario:`).
-  String name;
+  final String name;
 
   /// The steps in this scenario (Given/When/Then/And).
-  List<Step> steps;
+  final List<Step> steps;
 
   /// Example rows for parameterized scenarios, if any.
   ///
   /// Each entry maps column header to cell value.
-  List<Map<String, String>>? examples;
+  final List<Map<String, String>>? examples;
 
   /// Decorators applied to this scenario (e.g., `@unitTest`).
-  Set<Decorator> decorators;
+  final Set<Decorator> decorators;
 
-  Scenario(
+  const Scenario(
     this.name,
     this.steps, {
     this.examples,
     this.decorators = const {},
   });
 
+  /// Also the input for [ScenarioX.getHash]. Changing this format changes
+  /// every scenario hash and forces a full regeneration of existing projects.
   @override
   String toString() {
     return 'Scenario(name: $name, steps: $steps, examples: $examples, decorators: $decorators)';

@@ -15,7 +15,7 @@ void main() {
 
   group('ScenariosFileBuilder', () {
     test('generates instance methods (not static)', () async {
-      final feature = Feature(
+      const feature = Feature(
         name: 'Counter',
         path: 'test/counter.feature',
         scenarios: [
@@ -37,7 +37,7 @@ void main() {
     });
 
     test('generates unit test methods without WidgetTester', () async {
-      final feature = Feature(
+      const feature = Feature(
         name: 'Calculator',
         path: 'test/calculator.feature',
         scenarios: [
@@ -57,7 +57,7 @@ void main() {
     });
 
     test('generates methods with parameters from angle brackets', () async {
-      final feature = Feature(
+      const feature = Feature(
         name: 'Calculator',
         path: 'test/calculator.feature',
         scenarios: [
@@ -77,7 +77,7 @@ void main() {
     });
 
     test('generates Background class with instance methods', () async {
-      final feature = Feature(
+      const feature = Feature(
         name: 'Counter',
         path: 'test/counter.feature',
         scenarios: [
@@ -101,7 +101,7 @@ void main() {
     });
 
     test('generates import for flutter_test', () async {
-      final feature = Feature(
+      const feature = Feature(
         name: 'Test',
         path: 'test/test.feature',
         scenarios: [],
@@ -114,7 +114,7 @@ void main() {
     });
 
     test('inherits @unitTest from feature decorators', () async {
-      final feature = Feature(
+      const feature = Feature(
         name: 'Calculator',
         path: 'test/calculator.feature',
         scenarios: [
@@ -130,7 +130,7 @@ void main() {
     });
 
     test('generates multiple scenario classes', () async {
-      final feature = Feature(
+      const feature = Feature(
         name: 'Login',
         path: 'test/login.feature',
         scenarios: [
@@ -147,7 +147,7 @@ void main() {
     });
 
     test('includes additional imports', () async {
-      final feature = Feature(
+      const feature = Feature(
         name: 'Login',
         path: 'test/login.feature',
         scenarios: [
@@ -169,7 +169,7 @@ void main() {
     });
 
     test('uses custom scenario suffix', () async {
-      final feature = Feature(
+      const feature = Feature(
         name: 'Login',
         path: 'test/login.feature',
         scenarios: [

@@ -15,7 +15,7 @@ void main() {
 
   group('TestFileBuilder', () {
     test('generates testWidgets by default', () async {
-      final feature = Feature(
+      const feature = Feature(
         name: 'Counter',
         path: 'test/counter.feature',
         scenarios: [
@@ -33,7 +33,7 @@ void main() {
     });
 
     test('instantiates scenario class', () async {
-      final feature = Feature(
+      const feature = Feature(
         name: 'Counter',
         path: 'test/counter.feature',
         scenarios: [
@@ -50,7 +50,7 @@ void main() {
     });
 
     test('calls instance methods on scenario', () async {
-      final feature = Feature(
+      const feature = Feature(
         name: 'Counter',
         path: 'test/counter.feature',
         scenarios: [
@@ -71,7 +71,7 @@ void main() {
     });
 
     test('generates test() for unit tests', () async {
-      final feature = Feature(
+      const feature = Feature(
         name: 'Calculator',
         path: 'test/calculator.feature',
         scenarios: [
@@ -91,7 +91,7 @@ void main() {
     });
 
     test('generates examples loop', () async {
-      final feature = Feature(
+      const feature = Feature(
         name: 'Calculator',
         path: 'test/calculator.feature',
         scenarios: [
@@ -113,7 +113,7 @@ void main() {
     });
 
     test('instantiates background and calls its methods', () async {
-      final feature = Feature(
+      const feature = Feature(
         name: 'Counter',
         path: 'test/counter.feature',
         scenarios: [
@@ -135,7 +135,7 @@ void main() {
     });
 
     test('generates imports', () async {
-      final feature = Feature(
+      const feature = Feature(
         name: 'Counter',
         path: 'test/counter.feature',
         scenarios: [],
@@ -149,7 +149,7 @@ void main() {
     });
 
     test('wraps group with feature name', () async {
-      final feature = Feature(
+      const feature = Feature(
         name: 'My Feature',
         path: 'test/my_feature.feature',
         scenarios: [
