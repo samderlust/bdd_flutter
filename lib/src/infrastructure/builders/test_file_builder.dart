@@ -41,7 +41,7 @@ class TestFileBuilder {
         buffer.writeln("      //Background: ${feature.background!.description}");
         for (var step in feature.background!.steps) {
           final methodName = step.methodName;
-          buffer.writeln("      await background.$methodName();");
+          buffer.writeln("      await background.$methodName(${_stepArgs(step).join(', ')});");
         }
       }
 
@@ -53,25 +53,23 @@ class TestFileBuilder {
         for (var example in scenario.examples!) {
           buffer.write("        {");
           for (var entry in example.entries) {
-            buffer.write("'${entry.key.snakeCaseToCamelCase}': '${entry.value}',");
+            buffer.write("'${entry.key.snakeCaseToCamelCase}': ${entry.value.toDartStringLiteral},");
           }
           buffer.write("},");
           buffer.writeln();
         }
         buffer.writeln("      ];");
 
+        final columns = scenario.examples!.expand((e) => e.keys).toSet();
         buffer.writeln("      for (var example in examples) {");
 
         for (var step in scenario.steps) {
-          // Same order as the generated method's parameters: placeholder order in the step text.
-          final params = step.placeholders.map((name) => "example['${name.snakeCaseToCamelCase}']!").toList();
-
-          buffer.writeln(_generateStepCall(step, isUnitTest, params));
+          buffer.writeln(_generateStepCall(step, isUnitTest, _stepArgs(step, exampleColumns: columns)));
         }
         buffer.writeln("      }");
       } else {
         for (var step in scenario.steps) {
-          buffer.writeln(_generateStepCall(step, isUnitTest, []));
+          buffer.writeln(_generateStepCall(step, isUnitTest, _stepArgs(step)));
         }
       }
       buffer.writeln("    });");
@@ -84,9 +82,43 @@ class TestFileBuilder {
   }
 }
 
+/// Arguments for a step call, in the same order as
+/// [StepX.parameterDeclarations]: placeholders, then doc string, then data table.
+///
+/// Inside an Examples loop ([exampleColumns] not empty), placeholders are read
+/// from the current row, including `<column>` inside doc strings and tables.
+List<String> _stepArgs(Step step, {Set<String> exampleColumns = const {}}) {
+  final inExamples = exampleColumns.isNotEmpty;
+  final docString = step.docString;
+  final dataTable = step.dataTable;
+  return [
+    if (inExamples) ...step.placeholders.map(_exampleValue),
+    if (docString != null) _literal(docString, exampleColumns),
+    if (dataTable != null) _tableLiteral(dataTable, exampleColumns),
+  ];
+}
+
+String _exampleValue(String column) => "example['${column.snakeCaseToCamelCase}']!";
+
+/// A Dart string literal for [value], with `<column>` replaced by the
+/// current example row's value for every column in [exampleColumns].
+String _literal(String value, Set<String> exampleColumns) {
+  final buffer = StringBuffer(value.toDartStringLiteral);
+  for (final column in exampleColumns) {
+    if (!value.contains('<$column>')) continue;
+    buffer.write(".replaceAll('<$column>', ${_exampleValue(column)})");
+  }
+  return buffer.toString();
+}
+
+String _tableLiteral(List<List<String>> rows, Set<String> exampleColumns) {
+  final rowLiterals = rows.map((row) => '[${row.map((cell) => _literal(cell, exampleColumns)).join(', ')}]');
+  return '[${rowLiterals.join(', ')}]';
+}
+
 String _generateStepCall(Step step, bool isUnitTest, List<String> params) {
   final methodName = step.methodName;
   return '''
       // ${step.message}
-      await scenario.$methodName(${isUnitTest ? '' : 'tester'}${params.isNotEmpty ? "${isUnitTest ? '' : ','} ${params.join(', ')}" : ''});''';
+      await scenario.$methodName(${[if (!isUnitTest) 'tester', ...params].join(', ')});''';
 }

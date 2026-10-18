@@ -41,6 +41,19 @@ extension StringX on String {
         parts.skip(1).map((word) => word[0].toUpperCase() + word.substring(1).toLowerCase()).join('');
   }
 
+  /// This string as a single-quoted Dart string literal.
+  ///
+  /// Escapes backslashes, quotes, `$` and line breaks so the generated code
+  /// produces exactly this value.
+  String get toDartStringLiteral {
+    final escaped = replaceAll(r'\', r'\\')
+        .replaceAll("'", r"\'")
+        .replaceAll(r'$', r'\$')
+        .replaceAll('\n', r'\n')
+        .replaceAll('\r', r'\r');
+    return "'$escaped'";
+  }
+
   /// Converts a space-separated string to snake_case.
   ///
   /// Example: `"Hello World"` -> `"hello_world"`.

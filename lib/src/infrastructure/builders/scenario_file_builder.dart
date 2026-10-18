@@ -29,7 +29,7 @@ class ScenariosFileBuilder {
       buffer.writeln("class ${feature.name.name}Background {");
       for (var step in feature.background!.steps) {
         final methodName = step.methodName;
-        final params = extractMethodParams(step.text);
+        final params = step.parameterDeclarations.join(', ');
         buffer.writeln(
           "  Future<void> $methodName(${params.isNotEmpty ? params : ''}) async {",
         );
@@ -77,7 +77,7 @@ class ScenariosFileBuilder {
 
     for (var step in scenario.steps) {
       final methodName = step.methodName;
-      final params = extractMethodParams(step.text);
+      final params = step.parameterDeclarations.join(', ');
 
       if (!isUnitTest) {
         buffer.writeln(
@@ -96,11 +96,4 @@ class ScenariosFileBuilder {
     buffer.writeln("}");
     buffer.writeln();
   }
-}
-
-/// Extracts method parameters from `<param>` placeholders in step text.
-///
-/// Returns a comma-separated parameter list (e.g., `String firstName, String lastName`).
-String extractMethodParams(String stepText) {
-  return Step('', stepText).placeholders.map((name) => 'String ${name.snakeCaseToCamelCase}').join(', ');
 }

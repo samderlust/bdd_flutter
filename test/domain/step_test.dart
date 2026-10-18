@@ -84,4 +84,24 @@ void main() {
       expect(step.placeholders, equals(['qty', 'from', 'to']));
     });
   });
+
+  group('Step doc strings and data tables', () {
+    test('toString is unchanged when neither is present', () {
+      const step = Step('Given', 'a user');
+      expect(step.toString(), equals('Given a user'));
+    });
+
+    test('toString includes doc string and data table', () {
+      const step = Step('Given', 'a user', docString: 'hi', dataTable: [['a', 'b']]);
+      expect(step.toString(), equals('Given a user docString: hi dataTable: [[a, b]]'));
+    });
+
+    test('parameterDeclarations lists placeholders, then doc string, then data table', () {
+      const step = Step('When', 'I send <first_name>', docString: 'x', dataTable: [['a']]);
+      expect(
+        step.parameterDeclarations,
+        equals(['String firstName', 'String docString', 'List<List<String>> dataTable']),
+      );
+    });
+  });
 }

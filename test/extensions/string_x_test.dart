@@ -106,4 +106,14 @@ void main() {
       expect('Hello'.toSnakeCase, equals('hello'));
     });
   });
+
+  group('StringX.toDartStringLiteral', () {
+    test('wraps plain text in single quotes', () {
+      expect('hello'.toDartStringLiteral, equals("'hello'"));
+    });
+
+    test('escapes quotes, dollar signs, backslashes and line breaks', () {
+      expect("it's \$5 \\ ok\nnext".toDartStringLiteral, equals(r"'it\'s \$5 \\ ok\nnext'"));
+    });
+  });
 }

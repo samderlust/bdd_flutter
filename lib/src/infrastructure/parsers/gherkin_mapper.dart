@@ -82,6 +82,8 @@ class GherkinMapper {
       step.keyword.trim(),
       step.text.trim(),
       keywordType: _keywordType(step.keywordType),
+      docString: step.docString?.content,
+      dataTable: step.dataTable?.rows.map((r) => r.cells.map((c) => c.value).toList()).toList(),
     );
   }
 

@@ -382,4 +382,24 @@ Feature: Broken
       expect(feature.scenarios, isEmpty);
     });
   });
+
+  group('FeatureParser doc strings and data tables', () {
+    test('maps doc string content and data table rows', () async {
+      final file = createFeatureFile('''
+Feature: Orders
+  Scenario: Post
+    Given the products:
+      | name  | price |
+      | apple | 1.5   |
+    When I post:
+      """json
+      {"item": "apple"}
+      """
+''');
+      final steps = (await parser.parseFeature(file.path)).scenarios.single.steps;
+      expect(steps[0].dataTable, equals([['name', 'price'], ['apple', '1.5']]));
+      expect(steps[0].docString, isNull);
+      expect(steps[1].docString, equals('{"item": "apple"}'));
+    });
+  });
 }

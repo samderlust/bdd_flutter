@@ -187,4 +187,41 @@ void main() {
       expect(result, isNot(contains('SuccessfulLoginScenario')));
     });
   });
+
+  group('ScenariosFileBuilder doc strings and data tables', () {
+    test('adds docString and dataTable parameters after placeholders', () async {
+      const feature = Feature(
+        name: 'Orders',
+        path: 'test/orders.feature',
+        scenarios: [
+          Scenario('Post', [
+            Step('When', 'I post <kind>', docString: '{}'),
+            Step('Given', 'products', dataTable: [['name'], ['apple']]),
+          ], examples: [
+            {'kind': 'json'},
+          ]),
+        ],
+        decorators: {},
+      );
+
+      final result = await builder.buildScenarioFile(feature);
+
+      expect(result, contains('Future<void> iPostKind(WidgetTester tester, String kind, String docString) async {'));
+      expect(result, contains('Future<void> products(WidgetTester tester, List<List<String>> dataTable) async {'));
+    });
+
+    test('adds docString parameter to background steps', () async {
+      const feature = Feature(
+        name: 'Orders',
+        path: 'test/orders.feature',
+        scenarios: [],
+        decorators: {},
+        background: Background(description: '', steps: [Step('Given', 'the config', docString: 'a: 1')]),
+      );
+
+      final result = await builder.buildScenarioFile(feature);
+
+      expect(result, contains('Future<void> theConfig(String docString) async {'));
+    });
+  });
 }

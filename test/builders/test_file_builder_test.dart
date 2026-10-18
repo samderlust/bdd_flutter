@@ -184,4 +184,60 @@ void main() {
       expect(result, contains("scenario.iAddQuantityItem(tester, example['quantity']!, example['item']!)"));
     });
   });
+
+  group('TestFileBuilder doc strings and data tables', () {
+    test('passes doc string and data table as escaped literals', () async {
+      const feature = Feature(
+        name: 'Orders',
+        path: 'test/orders.feature',
+        scenarios: [
+          Scenario('Post', [
+            Step('When', 'I post', docString: '{"price": "\$5"}\nit\'s'),
+            Step('Given', 'products', dataTable: [['name'], ['apple']]),
+          ]),
+        ],
+        decorators: {Decorator.unitTest},
+      );
+
+      final result = await builder.buildTestFile(feature);
+
+      expect(result, contains(r"""await scenario.iPost('{"price": "\$5"}\nit\'s');"""));
+      expect(result, contains("await scenario.products([['name'], ['apple']]);"));
+    });
+
+    test('replaces example placeholders inside doc strings and tables', () async {
+      const feature = Feature(
+        name: 'Orders',
+        path: 'test/orders.feature',
+        scenarios: [
+          Scenario('Post', [
+            Step('When', 'I post', docString: 'qty: <qty>'),
+            Step('Then', 'I see', dataTable: [['<item>', 'fixed']]),
+          ], examples: [
+            {'qty': '2', 'item': 'apple'},
+          ]),
+        ],
+        decorators: {Decorator.unitTest},
+      );
+
+      final result = await builder.buildTestFile(feature);
+
+      expect(result, contains("await scenario.iPost('qty: <qty>'.replaceAll('<qty>', example['qty']!));"));
+      expect(result, contains("await scenario.iSee([['<item>'.replaceAll('<item>', example['item']!), 'fixed']]);"));
+    });
+
+    test('passes doc string to background steps', () async {
+      const feature = Feature(
+        name: 'Orders',
+        path: 'test/orders.feature',
+        scenarios: [Scenario('Post', [Step('When', 'I post')])],
+        decorators: {Decorator.unitTest},
+        background: Background(description: '', steps: [Step('Given', 'the config', docString: 'a: 1')]),
+      );
+
+      final result = await builder.buildTestFile(feature);
+
+      expect(result, contains("await background.theConfig('a: 1');"));
+    });
+  });
 }

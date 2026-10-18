@@ -1,3 +1,4 @@
+import '../extensions/string_x.dart';
 import 'step_keyword_type.dart';
 
 /// Represents a single step in a Gherkin scenario.
@@ -17,11 +18,30 @@ class Step {
   /// the step before them.
   final StepKeywordType keywordType;
 
-  const Step(this.keyword, this.text, {this.keywordType = StepKeywordType.unknown});
+  /// Content of a doc string (`"""` block) attached to the step, if any.
+  final String? docString;
 
+  /// Rows of a data table attached to the step, if any. The first row is
+  /// the header row as written; bdd_flutter does not treat it specially.
+  final List<List<String>>? dataTable;
+
+  const Step(
+    this.keyword,
+    this.text, {
+    this.keywordType = StepKeywordType.unknown,
+    this.docString,
+    this.dataTable,
+  });
+
+  /// Part of the scenario hash input. Steps without a doc string or data
+  /// table produce the same string as before these were supported, so their
+  /// hashes do not change.
   @override
   String toString() {
-    return '$keyword $text';
+    final buffer = StringBuffer('$keyword $text');
+    if (docString != null) buffer.write(' docString: $docString');
+    if (dataTable != null) buffer.write(' dataTable: $dataTable');
+    return buffer.toString();
   }
 }
 
@@ -32,6 +52,18 @@ extension StepX on Step {
   /// A placeholder used twice becomes one method parameter.
   List<String> get placeholders {
     return RegExp(r'<(\w+)>').allMatches(text).map((m) => m.group(1)!).toSet().toList();
+  }
+
+  /// Parameter declarations for the generated step method, after `tester`.
+  ///
+  /// Placeholders come first, in text order, then `docString`, then
+  /// `dataTable`.
+  List<String> get parameterDeclarations {
+    return [
+      for (final name in placeholders) 'String ${name.snakeCaseToCamelCase}',
+      if (docString != null) 'String docString',
+      if (dataTable != null) 'List<List<String>> dataTable',
+    ];
   }
 
   /// The full step message (keyword + text).
