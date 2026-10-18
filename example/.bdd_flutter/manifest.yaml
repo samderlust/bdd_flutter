@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "last_generated": "2026-05-04T19:32:29.737371",
+  "last_generated": "2026-10-18T15:49:42.271330",
   "features": [
     {
       "path": "test/calculator/calculator.feature",
@@ -93,6 +93,18 @@
           "name": "Cancel stops pending debounce",
           "hash": "d8f25ffc04f4481272614176871ea923",
           "test_method": "testCancelStopsPendingDebounceScenario"
+        }
+      ]
+    },
+    {
+      "path": "test/compteur/compteur.feature",
+      "last_modified": "2026-10-18T15:31:02.280",
+      "test_file": "test/compteur/compteur.bdd_test.dart",
+      "scenarios": [
+        {
+          "name": "Incrémenter",
+          "hash": "143b575666622b80f5b7f28ac935b086",
+          "test_method": "testIncrMenterScenario"
         }
       ]
     },
@@ -190,6 +202,28 @@
       ]
     },
     {
+      "path": "test/cart/cart.feature",
+      "last_modified": "2026-10-18T15:32:08.912",
+      "test_file": "test/cart/cart.bdd_test.dart",
+      "scenarios": [
+        {
+          "name": "Add and remove items",
+          "hash": "7b205664af61127e8620af409c69f02f",
+          "test_method": "testAddAndRemoveItemsScenario"
+        },
+        {
+          "name": "Total for several items",
+          "hash": "fe0c5d3b4246dd50fda7559ef9bfc24b",
+          "test_method": "testTotalForSeveralItemsScenario"
+        },
+        {
+          "name": "Adding to a closed cart",
+          "hash": "497368d1a9a5673321fcc2fee1eb7937",
+          "test_method": "testAddingToAClosedCartScenario"
+        }
+      ]
+    },
+    {
       "path": "test/counter/counter.feature",
       "last_modified": "2026-04-01T13:49:34.625",
       "test_file": "test/counter/counter.bdd_test.dart",
@@ -225,6 +259,48 @@
           "name": "Logout after login",
           "hash": "ab40a81506e5b317c5a888164c886324",
           "test_method": "testLogoutAfterLoginScenario"
+        }
+      ]
+    },
+    {
+      "path": "test/stress/stress.feature",
+      "last_modified": "2026-10-18T15:49:41.764",
+      "test_file": "test/stress/stress.bdd_test.dart",
+      "scenarios": [
+        {
+          "name": "Doc string and data table steps",
+          "hash": "3d15093042e7ee594641fa73fb9ef0b5",
+          "test_method": "testDocStringAndDataTableStepsScenario"
+        },
+        {
+          "name": "Placeholders inside doc strings and tables",
+          "hash": "f959cbc2ccfa809c59349b4b41fd36e9",
+          "test_method": "testPlaceholdersInsideDocStringsAndTablesScenario"
+        },
+        {
+          "name": "Same placeholder twice and <placeholder> in name",
+          "hash": "290cb09bd12e014ac2da222eb838d466",
+          "test_method": "testSamePlaceholderTwiceAndPlaceholderInNameScenario"
+        },
+        {
+          "name": "Steps with symbols: 100% & (parens) / slashes",
+          "hash": "d32e5a63b02f95691270e33c3aae67bf",
+          "test_method": "testStepsWithSymbols100ParensSlashesScenario"
+        },
+        {
+          "name": "Cancel before shipping",
+          "hash": "22f9e39c6aff8bcd3bb8d1342d363ce6",
+          "test_method": "testCancelBeforeShippingScenario"
+        },
+        {
+          "name": "Cancel after shipping",
+          "hash": "1a6c2f0aaf2e44513af957f0173293c2",
+          "test_method": "testCancelAfterShippingScenario"
+        },
+        {
+          "name": "2 refunds in one day",
+          "hash": "91964038fc4455776ca377fcd1b9e292",
+          "test_method": "testX2RefundsInOneDayScenario"
         }
       ]
     }
