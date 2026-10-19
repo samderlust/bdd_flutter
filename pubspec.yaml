@@ -2,6 +2,8 @@ name: bdd_flutter
 description: A Flutter package for Behavior-Driven Development (BDD) testing.
 version: 2.0.0
 homepage: https://github.com/samderlust/bdd_flutter
+funding:
+  - https://www.buymeacoffee.com/samderlust
 
 environment:
   sdk: ">=3.8.0 <4.0.0"

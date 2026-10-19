@@ -2,6 +2,7 @@
 
 [![pub package](https://img.shields.io/pub/v/bdd_flutter.svg)](https://pub.dev/packages/bdd_flutter)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20me%20a%20coffee-FFDD00?logo=buymeacoffee&logoColor=black)](https://www.buymeacoffee.com/samderlust)
 
 Write Flutter tests as Gherkin scenarios in plain English. BDD Flutter generates the test code from your `.feature` files; you write each step once, as a typed Dart method.
 
@@ -351,6 +352,12 @@ your_project/
 ```
 
 Every generated file matches `*.bdd_*.dart` and your own files never do, so one glob is enough for `.gitignore`, coverage excludes or `analyzer: exclude`. Commit the generated files so `flutter test` works on a fresh clone without running `build`, or ignore them and run `dart run bdd_flutter build` in CI. bdd_flutter does not use `build_runner`, so its files do not end in `.g.dart`.
+
+## Support
+
+If bdd_flutter saves you time, you can buy me a coffee:
+
+<a href="https://www.buymeacoffee.com/samderlust"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy me a coffee" height="50"></a>
 
 ## License
 
