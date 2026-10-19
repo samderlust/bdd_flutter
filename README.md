@@ -12,6 +12,7 @@ Write Flutter tests as Gherkin scenarios in plain English. BDD Flutter generates
 - **One method per step, reused everywhere.** Quoted text and numbers become typed parameters, so `I add 2 "apple"` and `I add <qty> "<item>"` share `iAdd(num qty, String item)`
 - **The analyzer tracks your steps.** A generated interface lists every step; your class implements it, so a missing or outdated step is a compile error, not a silent pass
 - **Your code is never overwritten.** Generated files and your steps file are separate
+- **Steps shared across features are written once**, in a mixin every feature can use
 - One test per Scenario Outline row, each with fresh state
 - Widget tests and unit tests, `@skip`, and Gherkin tags passed to `dart test --tags`
 - Generated code is run through `dart format`
@@ -205,6 +206,37 @@ To avoid losing data, a number stays part of the method name when it is part of 
 
 Accented letters are folded for names (`j'incrémente` → `jincremente`, `Tiếng Việt` → `tiengViet`). Steps with no Latin letters get a stable name like `stepA1b2c3`; the doc comment shows the original text.
 
+### Steps shared across features
+
+When the same step appears in two or more `.feature` files, `build` also writes two files at the root of your test directory:
+
+| File | Owner | What it holds |
+| --- | --- | --- |
+| `shared.bdd_steps.dart` | bdd_flutter, rewritten on every build | `SharedStepsContract`: every shared step, with the features that use it |
+| `shared_steps.dart` | **you**, created once | `mixin SharedSteps implements SharedStepsContract` |
+
+New steps classes mix it in and contain only their own steps:
+
+```dart
+// test/shared_steps.dart
+mixin SharedSteps implements SharedStepsContract {
+  String? user;
+
+  @override
+  Future<void> iAmLoggedInAs(String text) async => user = text;
+}
+
+// test/cart/cart_steps.dart
+class CartSteps with SharedSteps implements CartStepsContract {
+  @override
+  Future<void> iAddAtEach(num quantity, String item, num price) async { ... }
+}
+```
+
+Each test still creates a fresh `CartSteps`, so shared and feature steps work on the same object and its state, and nothing leaks between tests.
+
+A feature contract still declares every step its feature uses, shared ones included. A steps class that implements a shared step itself, without the mixin, keeps compiling. So when a step becomes shared because a second feature starts using it, your existing classes don't break; move the step into the mixin when convenient. A class method overrides the mixin's, so both can exist while you move it.
+
 ### Widget tests
 
 In widget tests the steps class gets a `tester` field, set before the first step:
@@ -354,10 +386,12 @@ your_project/
 ├── .bdd_flutter/
 │   └── config.yaml                 # optional
 ├── test/
+│   ├── shared_steps.dart           # yours: steps used by several features
+│   ├── shared.bdd_steps.dart       # generated
 │   └── cart/
 │       ├── cart.feature
 │       ├── cart_steps.dart         # yours
-│       ├── cart.bdd_steps.dart   # generated
+│       ├── cart.bdd_steps.dart     # generated
 │       └── cart.bdd_test.dart      # generated
 └── pubspec.yaml
 ```

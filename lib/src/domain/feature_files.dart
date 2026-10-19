@@ -46,7 +46,11 @@ class FeatureFiles {
   String get stepsFileName => stepsPath.substring(_lastSeparator(stepsPath) + 1);
 
   /// The class the user implements, e.g. `ShoppingCartSteps`.
-  String get stepsClass => '${feature.name.name}$stepsSuffix';
+  String get stepsClass {
+    final name = feature.name.name;
+    // `Shared` + suffix is the shared steps mixin; keep the names apart.
+    return name == 'Shared' ? 'SharedFeature$stepsSuffix' : '$name$stepsSuffix';
+  }
 
   /// The generated interface, e.g. `ShoppingCartStepsContract`.
   String get contractClass => '${stepsClass}Contract';

@@ -30,7 +30,7 @@ const Feature _feature = Feature(
 
 void main() {
   const files = FeatureFiles(_feature);
-  final catalog = StepsCatalog.of(_feature);
+  final catalog = StepsCatalog.of([_feature]);
 
   group('FeatureFiles', () {
     test('names files next to the feature and classes after its name', () {

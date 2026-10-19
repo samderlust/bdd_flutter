@@ -28,7 +28,7 @@ class TestFileBuilder {
   String build(FeatureFiles files, StepsCatalog catalog) {
     final writer = _TestWriter(files, catalog, widgetTestsByDefault);
     final feature = files.feature;
-    final buffer = StringBuffer(generatedHeader(feature))
+    final buffer = StringBuffer(generatedHeader('${feature.fileName}.feature'))
       ..writeln("import 'package:flutter_test/flutter_test.dart';\n")
       ..writeln("import '${files.stepsFileName}';\n")
       ..writeln('void main() {')

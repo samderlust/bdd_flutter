@@ -18,10 +18,12 @@ Feature _feature({List<Scenario> scenarios = const [], List<Rule> rules = const 
   );
 }
 
+StepsCatalog _catalog(Feature feature) => StepsCatalog.of([feature]);
+
 void main() {
   group('StepsCatalog', () {
     test('shares one method between steps that differ only in values', () {
-      final catalog = StepsCatalog.of(
+      final catalog = _catalog(
         _feature(
           scenarios: [
             const Scenario('A', [Step('Then', 'the cart has 1 item')]),
@@ -36,7 +38,7 @@ void main() {
     });
 
     test('collects background, rule background and rule steps in file order', () {
-      final catalog = StepsCatalog.of(
+      final catalog = _catalog(
         _feature(
           background: const Background(description: '', steps: [Step('Given', 'an empty cart')]),
           scenarios: [
@@ -58,7 +60,7 @@ void main() {
     });
 
     test('names parameters after placeholders, else after their type', () {
-      final catalog = StepsCatalog.of(
+      final catalog = _catalog(
         _feature(
           scenarios: [
             const Scenario('A', [Step('When', 'I add 2 "apple"')]),
@@ -83,7 +85,7 @@ void main() {
     });
 
     test('suffixes names that collide', () {
-      final catalog = StepsCatalog.of(
+      final catalog = _catalog(
         _feature(
           scenarios: [
             const Scenario('A', [Step('Then', 'the cart has 1 item'), Step('Then', 'the cart has item')]),
@@ -95,7 +97,7 @@ void main() {
     });
 
     test('adds doc string and data table parameters last', () {
-      final catalog = StepsCatalog.of(
+      final catalog = _catalog(
         _feature(
           scenarios: [
             const Scenario('A', [
@@ -119,7 +121,7 @@ void main() {
     });
 
     test('uses a hash for steps without Latin letters', () {
-      final catalog = StepsCatalog.of(
+      final catalog = _catalog(
         _feature(
           scenarios: [
             const Scenario('A', [Step('Given', 'カウンター')]),

@@ -29,9 +29,11 @@ The CLI entry point is `bin/bdd_flutter.dart`. A `build` runs:
 BDDCLI.run(args)
   → BDDController.generateFeatureTestCases()
     → ConfigParser.loadConfig()                 # .bdd_flutter/config.yaml
-    → FeatureParser.parseFeature(path)          # cucumber_gherkin → GherkinDocument
-      → GherkinMapper.toFeature(document)       # GherkinDocument → Feature
-    → StepsCatalog.of(feature)                  # distinct step patterns → StepMethods
+    → parseFeatures(paths)                      # every .feature file first
+      → FeatureParser.parseFeature(path)        # cucumber_gherkin → envelopes
+        → GherkinMapper.fromEnvelopes(...)      # envelopes → Feature
+    → StepsCatalog.of(features)                 # step patterns of all features → StepMethods
+    → SharedStepsBuilder                        # → shared.bdd_steps.dart, shared_steps.dart (only if missing)
     → StepsContractBuilder.build(...)           # → <name>.bdd_steps.dart (always rewritten)
     → TestFileBuilder.build(...)                # → <name>.bdd_test.dart (always rewritten)
     → StepsStubBuilder.build(...)               # → <name>_steps.dart (only if missing)
@@ -40,6 +42,8 @@ BDDCLI.run(args)
 ```
 
 The tool never writes to a `_steps.dart` file that already exists. That file belongs to the user.
+
+`StepsCatalog` names methods once for all features (in path order), so a step has the same name in every contract and in the shared mixin. A step used by two or more features is shared. Feature contracts still declare every step their feature uses: that keeps classes that implement shared steps themselves compiling, so a step becoming shared is never a breaking change.
 
 `migrate` (`MigrateController`) moves 1.x projects: `LegacyScenariosFile` reads a 1.x `.bdd_scenarios.dart` with a brace- and string-aware scanner (no `analyzer`), `LegacyCodeMapper` maps its method bodies onto the 2.0 methods using the 1.x naming rules in `LegacyNames`, and the old file is renamed to `.bak`.
 
@@ -52,7 +56,7 @@ Clean Architecture under `lib/src/`:
 | `domain/` | Feature, Rule, Scenario, ExamplesTable, Step, Background, Decorator, ValueType, StepPattern/StepSlot, StepMethod, FeatureFiles (paths and class names), BDDConfig |
 | `infrastructure/parsers/` | FeatureParser (wraps `cucumber_gherkin`), GherkinMapper, ConfigParser |
 | `infrastructure/steps/` | StepPatternParser, columnTypes, StepsCatalog |
-| `infrastructure/builders/` | StepsContractBuilder, StepsStubBuilder, TestFileBuilder, ScenarioSettings (test kind, skip, tags), stepArguments |
+| `infrastructure/builders/` | StepsContractBuilder, StepsStubBuilder, SharedStepsBuilder, TestFileBuilder, ScenarioSettings (test kind, skip, tags), stepArguments |
 | `infrastructure/migration/` | 1.x → 2.0 migration |
 | `infrastructure/formatting/` | CodeFormatter: `DartFormatCommand`, and `NoFormatting` for tests |
 | `extensions/` | Name building (`StringX`) and accent folding (`latin_fold.dart`) |

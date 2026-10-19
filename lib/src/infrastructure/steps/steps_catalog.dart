@@ -7,26 +7,61 @@ import '../../extensions/string_x.dart';
 import 'column_types.dart';
 import 'step_pattern_parser.dart';
 
-/// The methods of one feature's steps class: one per distinct step pattern,
+/// The step methods of a set of features: one per distinct step pattern,
 /// across backgrounds, scenarios and rules.
+///
+/// Names are worked out once for all features, so a step has the same
+/// method name in every contract. A step used by two or more features is
+/// shared: it also goes into the shared steps contract.
 class StepsCatalog {
   final StepPatternParser _parser;
   final Map<String, StepMethod> _methodsByKey;
+  final Map<String, List<String>> _keysByFeature;
+  final Map<String, List<String>> _featuresByKey;
 
-  StepsCatalog._(this._parser, this._methodsByKey);
+  StepsCatalog._(this._parser, this._methodsByKey, this._keysByFeature, this._featuresByKey);
 
-  /// Collects every step of [feature] and names its methods.
-  factory StepsCatalog.of(Feature feature, {StepPatternParser parser = const StepPatternParser()}) {
+  /// Collects every step of [features] and names their methods. Features
+  /// are read in path order, so names do not depend on the caller's order.
+  factory StepsCatalog.of(List<Feature> features, {StepPatternParser parser = const StepPatternParser()}) {
+    final sorted = [...features]..sort((a, b) => a.path.compareTo(b.path));
     final occurrences = <String, List<(Step, StepPattern)>>{};
-    for (final (step, columns) in _stepsWithColumns(feature)) {
-      final pattern = parser.parse(step, columns: columns);
-      occurrences.putIfAbsent(pattern.key, () => []).add((step, pattern));
+    final keysByFeature = <String, List<String>>{};
+    final featuresByKey = <String, List<String>>{};
+    for (final feature in sorted) {
+      final keys = keysByFeature[feature.path] = [];
+      for (final (step, columns) in _stepsWithColumns(feature)) {
+        final pattern = parser.parse(step, columns: columns);
+        occurrences.putIfAbsent(pattern.key, () => []).add((step, pattern));
+        if (keys.contains(pattern.key)) continue;
+        keys.add(pattern.key);
+        featuresByKey.putIfAbsent(pattern.key, () => []).add(feature.path);
+      }
     }
-    return StepsCatalog._(parser, _nameMethods(occurrences));
+    return StepsCatalog._(parser, _nameMethods(occurrences), keysByFeature, featuresByKey);
   }
 
-  /// The methods in order of first use.
+  /// Every method, in order of first use.
   List<StepMethod> get methods => _methodsByKey.values.toList();
+
+  /// The methods [feature] uses, in order of first use in that feature.
+  List<StepMethod> methodsFor(Feature feature) {
+    return [for (final key in _keysByFeature[feature.path] ?? const <String>[]) _methodsByKey[key]!];
+  }
+
+  /// The methods used by two or more features, in order of first use.
+  List<StepMethod> get sharedMethods {
+    return [
+      for (final MapEntry(:key, value: method) in _methodsByKey.entries)
+        if (_featuresByKey[key]!.length > 1) method,
+    ];
+  }
+
+  /// The `.feature` paths that use [method], in path order.
+  List<String> featuresUsing(StepMethod method) {
+    final key = _methodsByKey.entries.firstWhere((e) => identical(e.value, method)).key;
+    return _featuresByKey[key]!;
+  }
 
   /// The pattern of [step] inside a scenario with Examples [columns].
   StepPattern patternOf(Step step, {Map<String, ValueType> columns = const {}}) {

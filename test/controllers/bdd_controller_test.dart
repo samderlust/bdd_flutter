@@ -138,6 +138,55 @@ void main() {
     });
   });
 
+  group('BDDController shared steps', () {
+    const login = """
+@unitTest
+Feature: Login
+  Scenario: Log in
+    Given an empty cart
+    When I log in
+""";
+
+    test('puts steps used by several features in a shared contract and mixin', () async {
+      File('$testDir/cart.feature').writeAsStringSync(_cartFeature);
+      File('$testDir/login.feature').writeAsStringSync(login);
+
+      await buildController().generateFeatureTestCases();
+
+      expect(read('shared.bdd_steps.dart'), contains('Future<void> anEmptyCart();'));
+      expect(read('shared_steps.dart'), contains('mixin SharedSteps implements SharedStepsContract {'));
+      expect(
+        read('cart_steps.dart'),
+        contains('class ShoppingCartSteps with SharedSteps implements ShoppingCartStepsContract {'),
+      );
+      expect(read('cart_steps.dart'), isNot(contains('anEmptyCart')));
+      expect(read('cart.bdd_steps.dart'), contains('Future<void> anEmptyCart();'));
+      expect(read('cart.bdd_test.dart'), contains('await steps.anEmptyCart();'));
+    });
+
+    test('leaves existing steps files alone when a step becomes shared', () async {
+      File('$testDir/cart.feature').writeAsStringSync(_cartFeature);
+      await buildController().generateFeatureTestCases();
+      final cartSteps = read('cart_steps.dart');
+
+      File('$testDir/login.feature').writeAsStringSync(login);
+      await buildController().generateFeatureTestCases();
+
+      expect(read('cart_steps.dart'), cartSteps);
+      expect(read('shared.bdd_steps.dart'), contains('Future<void> anEmptyCart();'));
+      expect(read('login_steps.dart'), contains('with SharedSteps'));
+    });
+
+    test('creates no shared files when no step is shared', () async {
+      File('$testDir/cart.feature').writeAsStringSync(_cartFeature);
+
+      await buildController().generateFeatureTestCases();
+
+      expect(File('$testDir/shared.bdd_steps.dart').existsSync(), isFalse);
+      expect(File('$testDir/shared_steps.dart').existsSync(), isFalse);
+    });
+  });
+
   group('MigrateController.migrate', () {
     MigrateController migrateController() {
       return MigrateController(
