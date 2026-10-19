@@ -16,7 +16,6 @@ topics:
   - gherkin
 
 dependencies:
-  crypto: ^3.0.0
   cucumber_gherkin: ^42.0.1
   cucumber_messages: ^34.2.1
   yaml: ^3.1.0

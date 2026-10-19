@@ -63,6 +63,19 @@ void main() {
     });
   });
 
+  group('StringX.shortHash', () {
+    test('matches the 32-bit FNV-1a reference values', () {
+      expect(''.shortHash, '811c9d');
+      expect('a'.shortHash, 'e40c29');
+      expect('foobar'.shortHash, 'bf9cf9');
+    });
+
+    test('hashes UTF-8 bytes, so non-Latin text is stable', () {
+      expect('カウンター'.shortHash, 'カウンター'.shortHash);
+      expect('カウンター'.shortHash, isNot('カウンタ'.shortHash));
+    });
+  });
+
   group('StringX.toCamelIdentifier', () {
     test('joins words in camelCase', () {
       expect('I add an item'.toCamelIdentifier(), equals('iAddAnItem'));

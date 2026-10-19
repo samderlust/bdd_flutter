@@ -1,7 +1,5 @@
 import 'dart:convert';
 
-import 'package:crypto/crypto.dart';
-
 import 'latin_fold.dart';
 
 /// Dart reserved words and built-in identifiers that cannot name a method,
@@ -92,7 +90,17 @@ extension StringX on String {
   }
 
   /// A short, stable hash of this string, for names of non-Latin text.
-  String get shortHash => md5.convert(utf8.encode(this)).toString().substring(0, 6);
+  ///
+  /// The first 6 hex digits of its 32-bit FNV-1a hash over UTF-8 bytes. It
+  /// must give the same result on every machine and run, so generated
+  /// names stay stable; `String.hashCode` does not promise that.
+  String get shortHash {
+    var hash = 0x811c9dc5;
+    for (final byte in utf8.encode(this)) {
+      hash = ((hash ^ byte) * 0x01000193) & 0xffffffff;
+    }
+    return hash.toRadixString(16).padLeft(8, '0').substring(0, 6);
+  }
 
   /// Converts this string to a PascalCase Dart class name.
   ///
