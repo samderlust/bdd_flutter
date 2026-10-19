@@ -1,26 +1,10 @@
 import 'package:flutter_test/flutter_test.dart';
 
+import '../shared_steps.dart';
 import 'feature3.bdd_steps.dart';
 
-/// The steps of the feature "Feature 3".
-class Feature3Steps implements Feature3StepsContract {
+/// The steps of the feature "Feature 3". All of them are shared.
+class Feature3Steps with SharedSteps implements Feature3StepsContract {
   @override
   late WidgetTester tester;
-
-  int counter = 0;
-
-  @override
-  Future<void> iHaveACounterWithValue(num number) async {
-    counter = number.toInt();
-  }
-
-  @override
-  Future<void> iIncrementTheCounterBy(num number) async {
-    counter += number.toInt();
-  }
-
-  @override
-  Future<void> theCounterShouldHaveValue(num number) async {
-    expect(counter, number);
-  }
 }

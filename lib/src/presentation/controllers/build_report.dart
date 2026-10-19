@@ -47,6 +47,9 @@ class BuildReport {
     }
   }
 
+  /// Prints a suggestion that is not a problem.
+  void addTip(String tip) => stdout.writeln('  Tip: $tip');
+
   /// Records the `dart test` tags used by [feature].
   void addTags(Feature feature) {
     Iterable<String> scenarioTags(Scenario s) => [...s.tags, for (final t in s.examples) ...t.tags];

@@ -13,6 +13,10 @@
 /// - `<name>_steps.dart`: your implementation, created once;
 /// - `<name>.bdd_test.dart`: the tests, rewritten on every build.
 ///
+/// Steps used by several features can be written once in
+/// `mixin SharedSteps` (`shared_steps.dart` at the root of the test
+/// directory), which steps classes mix in.
+///
 /// ## Quick Start
 ///
 /// 1. Create a `.feature` file in your test folder

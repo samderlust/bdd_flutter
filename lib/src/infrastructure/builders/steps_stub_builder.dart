@@ -25,10 +25,26 @@ class StepsStubContent {
   });
 }
 
+/// How a new steps class uses the shared steps mixin.
+class SharedStepsUse {
+  /// The mixin's name, e.g. `SharedSteps`.
+  final String mixinName;
+
+  /// The import of the mixin's file from the steps file.
+  final String importPath;
+
+  /// The methods the mixin provides, left out of the steps class.
+  final Set<String> methodNames;
+
+  const SharedStepsUse({required this.mixinName, required this.importPath, required this.methodNames});
+}
+
 /// Generates the steps file the user owns, e.g. `cart_steps.dart`.
 ///
 /// bdd_flutter writes this file once, when it does not exist yet, and
 /// never touches it again. Every method throws until it is implemented.
+/// Steps shared with other features come from the shared steps mixin
+/// instead, when [SharedStepsUse] is given.
 class StepsStubBuilder {
   const StepsStubBuilder();
 
@@ -42,36 +58,40 @@ class StepsStubBuilder {
     required bool needsTester,
     List<String> additionalImports = const [],
     StepsStubContent content = const StepsStubContent(),
+    SharedStepsUse? shared,
   }) {
     final buffer = StringBuffer();
-    _writeImports(buffer, files, additionalImports, content.imports);
+    _writeImports(buffer, files, [...additionalImports.map((p) => "import '$p';"), ...content.imports], shared);
     for (final declaration in content.topLevel) {
       buffer.writeln('$declaration\n');
     }
     buffer
       ..writeln('/// The steps of the feature "${files.feature.name}".')
-      ..writeln('class ${files.stepsClass} implements ${files.contractClass} {');
+      ..writeln(
+        'class ${files.stepsClass} ${shared == null ? '' : 'with ${shared.mixinName} '}implements ${files.contractClass} {',
+      );
     if (needsTester) {
       buffer.writeln('  @override\n  late WidgetTester tester;\n');
     }
     for (final field in content.fields) {
       buffer.writeln('  $field\n');
     }
-    for (final method in catalog.methods) {
+    for (final method in catalog.methodsFor(files.feature)) {
+      if (shared?.methodNames.contains(method.name) ?? false) continue;
       _writeMethod(buffer, method, content.bodies[method.name]);
     }
     buffer.writeln('}');
     return buffer.toString();
   }
 
-  void _writeImports(StringBuffer buffer, FeatureFiles files, List<String> configImports, List<String> extra) {
-    final imports = <String>{
-      "import 'package:flutter_test/flutter_test.dart';",
-      for (final path in configImports) "import '$path';",
-      ...extra,
-    };
-    imports.forEach(buffer.writeln);
-    buffer.writeln("\nimport '${files.contractFileName}';\n");
+  /// Package imports first, then the shared mixin and the contract, which
+  /// sit next to the steps file.
+  void _writeImports(StringBuffer buffer, FeatureFiles files, List<String> imports, SharedStepsUse? shared) {
+    final packageImports = {"import 'package:flutter_test/flutter_test.dart';", ...imports};
+    packageImports.forEach(buffer.writeln);
+    buffer.writeln();
+    if (shared != null) buffer.writeln("import '${shared.importPath}';");
+    buffer.writeln("import '${files.contractFileName}';\n");
   }
 
   void _writeMethod(StringBuffer buffer, StepMethod method, String? body) {

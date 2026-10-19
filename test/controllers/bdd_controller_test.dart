@@ -138,6 +138,102 @@ void main() {
     });
   });
 
+  group('BDDController shared steps', () {
+    const login = """
+@unitTest
+Feature: Login
+  Scenario: Log in
+    Given an empty cart
+    When I log in
+""";
+
+    test('creates a shared mixin the first time steps are shared, and new classes use it', () async {
+      File('$testDir/cart.feature').writeAsStringSync(_cartFeature);
+      File('$testDir/login.feature').writeAsStringSync(login);
+
+      await buildController().generateFeatureTestCases();
+
+      expect(read('shared_steps.dart'), contains('mixin SharedSteps {'));
+      expect(read('shared_steps.dart'), contains('Future<void> anEmptyCart() async {'));
+      expect(File('$testDir/shared.bdd_steps.dart').existsSync(), isFalse);
+      expect(
+        read('cart_steps.dart'),
+        contains('class ShoppingCartSteps with SharedSteps implements ShoppingCartStepsContract {'),
+      );
+      expect(read('cart_steps.dart'), contains("import 'shared_steps.dart';"));
+      expect(read('cart_steps.dart'), isNot(contains('anEmptyCart')));
+      expect(read('cart.bdd_steps.dart'), contains('Future<void> anEmptyCart();'));
+      expect(read('cart.bdd_test.dart'), contains('await steps.anEmptyCart();'));
+    });
+
+    test('leaves existing steps files alone when a step becomes shared', () async {
+      File('$testDir/cart.feature').writeAsStringSync(_cartFeature);
+      await buildController().generateFeatureTestCases();
+      final cartSteps = read('cart_steps.dart');
+
+      File('$testDir/login.feature').writeAsStringSync(login);
+      await buildController().generateFeatureTestCases();
+
+      expect(read('cart_steps.dart'), cartSteps);
+      expect(read('login_steps.dart'), contains('with SharedSteps'));
+    });
+
+    test('never changes the mixin; later shared steps stay in the new class', () async {
+      File('$testDir/cart.feature').writeAsStringSync(_cartFeature);
+      File('$testDir/login.feature').writeAsStringSync(login);
+      await buildController().generateFeatureTestCases();
+      final mixin = read('shared_steps.dart');
+
+      File('$testDir/checkout.feature').writeAsStringSync(
+        '@unitTest\nFeature: Checkout\n  Scenario: Pay\n    Given an empty cart\n    When I remove "apple"\n',
+      );
+      await buildController().generateFeatureTestCases();
+
+      expect(read('shared_steps.dart'), mixin);
+      expect(read('checkout_steps.dart'), contains('with SharedSteps'));
+      expect(read('checkout_steps.dart'), isNot(contains('anEmptyCart')));
+      expect(read('checkout_steps.dart'), contains('Future<void> iRemove(String text) async {'));
+    });
+
+    test('gives unit-test classes a tester when the mixin declares one', () async {
+      File('$testDir/cart.feature').writeAsStringSync(_cartFeature);
+      File('$testDir/login.feature').writeAsStringSync(login.replaceFirst('@unitTest\n', ''));
+
+      await buildController().generateFeatureTestCases();
+
+      expect(read('shared_steps.dart'), contains('WidgetTester get tester;'));
+      expect(read('cart_steps.dart'), contains('late WidgetTester tester;'));
+      expect(read('cart.bdd_steps.dart'), isNot(contains('WidgetTester')));
+    });
+
+    test('does not mix in the shared steps when one has other parameter types', () async {
+      File('$testDir/cart.feature').writeAsStringSync(_cartFeature);
+      File('$testDir/login.feature').writeAsStringSync(login);
+      await buildController().generateFeatureTestCases();
+      File('$testDir/shared_steps.dart').writeAsStringSync(
+        'mixin SharedSteps {\n  Future<void> anEmptyCart() async {}\n  Future<void> iRemove(num number) async {}\n}\n',
+      );
+
+      File('$testDir/checkout.feature').writeAsStringSync(
+        '@unitTest\nFeature: Checkout\n  Scenario: Pay\n    Given an empty cart\n    When I remove "apple"\n',
+      );
+      await buildController().generateFeatureTestCases();
+
+      expect(read('checkout_steps.dart'), isNot(contains('SharedSteps')));
+      expect(read('checkout_steps.dart'), contains('Future<void> anEmptyCart() async {'));
+      expect(read('checkout_steps.dart'), contains('Future<void> iRemove(String text) async {'));
+    });
+
+    test('creates no shared mixin when no step is shared', () async {
+      File('$testDir/cart.feature').writeAsStringSync(_cartFeature);
+
+      await buildController().generateFeatureTestCases();
+
+      expect(File('$testDir/shared_steps.dart').existsSync(), isFalse);
+      expect(read('cart_steps.dart'), isNot(contains('SharedSteps')));
+    });
+  });
+
   group('MigrateController.migrate', () {
     MigrateController migrateController() {
       return MigrateController(

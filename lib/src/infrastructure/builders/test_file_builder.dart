@@ -28,7 +28,7 @@ class TestFileBuilder {
   String build(FeatureFiles files, StepsCatalog catalog) {
     final writer = _TestWriter(files, catalog, widgetTestsByDefault);
     final feature = files.feature;
-    final buffer = StringBuffer(generatedHeader(feature))
+    final buffer = StringBuffer(generatedHeader('${feature.fileName}.feature'))
       ..writeln("import 'package:flutter_test/flutter_test.dart';\n")
       ..writeln("import '${files.stepsFileName}';\n")
       ..writeln('void main() {')
@@ -158,7 +158,7 @@ class _TestWriter {
     Map<String, ValueType> columns = const {},
   }) {
     final pattern = catalog.patternOf(step, columns: columns);
-    final method = catalog.methodOf(pattern);
+    final method = catalog.methodOf(files.feature, pattern);
     final arguments = stepArguments(step, pattern, row: row).join(', ');
     buffer
       ..writeln('    // ${step.message}')

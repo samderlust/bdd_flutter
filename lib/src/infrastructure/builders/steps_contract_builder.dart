@@ -1,3 +1,4 @@
+import '../../domain/feature.dart';
 import '../../domain/feature_files.dart';
 import '../../domain/step_method.dart';
 import '../steps/steps_catalog.dart';
@@ -15,7 +16,7 @@ class StepsContractBuilder {
   /// Builds the contract for [files], with a `tester` field when
   /// [needsTester] is true.
   String build(FeatureFiles files, StepsCatalog catalog, {required bool needsTester}) {
-    final buffer = StringBuffer(generatedHeader(files.feature));
+    final buffer = StringBuffer(generatedHeader('${files.feature.fileName}.feature'));
     if (needsTester) {
       buffer.writeln("import 'package:flutter_test/flutter_test.dart';\n");
     }
@@ -29,16 +30,29 @@ class StepsContractBuilder {
         ..writeln('  /// The tester of the running widget test, set before its first step.')
         ..writeln('  abstract WidgetTester tester;\n');
     }
-    for (final method in catalog.methods) {
-      _writeMethod(buffer, method);
+    for (final method in catalog.methodsFor(files.feature)) {
+      _writeMethod(buffer, method, _otherFeatures(catalog, method, files.feature.path));
     }
     buffer.writeln('}');
     return buffer.toString();
   }
 
-  void _writeMethod(StringBuffer buffer, StepMethod method) {
+  /// File names of the other features that use [method].
+  List<String> _otherFeatures(StepsCatalog catalog, StepMethod method, String path) {
+    return [
+      for (final other in catalog.featuresUsing(method))
+        if (other != path) other.split(RegExp(r'[/\\]')).last,
+    ];
+  }
+
+  void _writeMethod(StringBuffer buffer, StepMethod method, List<String> otherFeatures) {
     for (final message in method.stepMessages) {
       buffer.writeln('  /// `$message`');
+    }
+    if (otherFeatures.isNotEmpty) {
+      buffer
+        ..writeln('  ///')
+        ..writeln('  /// Also used by ${otherFeatures.join(', ')}.');
     }
     buffer.writeln('  ${method.signature};\n');
   }

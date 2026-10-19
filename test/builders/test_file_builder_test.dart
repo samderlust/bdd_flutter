@@ -12,7 +12,7 @@ import 'package:test/test.dart';
 
 String _build(Feature feature, {bool widgetTestsByDefault = true}) {
   final builder = TestFileBuilder(widgetTestsByDefault: widgetTestsByDefault);
-  return builder.build(FeatureFiles(feature), StepsCatalog.of(feature));
+  return builder.build(FeatureFiles(feature), StepsCatalog.of([feature]));
 }
 
 Feature _feature(

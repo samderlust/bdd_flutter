@@ -33,6 +33,7 @@ A beta of 2.0: please try it, including `migrate` on a 1.x project, and report a
 - Generated files are formatted with the SDK's `dart format`, using your package's style and page width
 - `build` reports steps your `_steps.dart` lacks and steps it overrides that the feature no longer has
 - New `migrate` command carries 1.x step code into the new steps files
+- Steps used by several features can be written once in `mixin SharedSteps` (`test/shared_steps.dart`), created with stubs the first time steps are shared and then yours. New steps classes mix it in. A step becoming shared later only prints a tip, and method names are worked out per feature, so a change to one feature never breaks another
 - `bdd_flutter test` report: Scenario Outline rows and Rules are nested, skipped tests are shown and counted, failures point at the line in your steps file, features are sorted by path, durations appear only for failed and slow tests, and colors follow `NO_COLOR` and the terminal
 - Accented letters are folded in generated names (`Incrémenter` → `Incrementer`, Vietnamese included); text with no Latin letters gets a stable hashed name. No extra dependency: the folding table is built in. Names never collide with Dart keywords or `Object` members
 - Invalid `.feature` files are reported with line and column and skipped; `build` exits with code 1 so CI catches them

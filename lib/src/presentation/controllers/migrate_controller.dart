@@ -7,7 +7,6 @@ import '../../infrastructure/formatting/code_formatter.dart';
 import '../../infrastructure/migration/legacy_code_mapper.dart';
 import '../../infrastructure/migration/legacy_scenarios_file.dart';
 import '../../infrastructure/parsers/config_parser.dart';
-import '../../infrastructure/parsers/feature_parse_exception.dart';
 import '../../infrastructure/parsers/feature_parser.dart';
 import '../../infrastructure/steps/steps_catalog.dart';
 import 'bdd_controller.dart';
@@ -22,14 +21,12 @@ import 'build_report.dart';
 class MigrateController {
   static const String _legacyManifest = '.bdd_flutter/manifest.yaml';
 
-  final FeatureParser _featureParser;
   final ConfigParser _configParser;
   final CodeFormatter _formatter;
   final BDDController _buildController;
 
   MigrateController({FeatureParser? featureParser, ConfigParser? configParser, CodeFormatter? formatter})
-    : _featureParser = featureParser ?? const FeatureParser(),
-      _configParser = configParser ?? ConfigParser(),
+    : _configParser = configParser ?? ConfigParser(),
       _formatter = formatter ?? const DartFormatCommand(),
       _buildController = BDDController(
         featureParser: featureParser,
@@ -44,9 +41,11 @@ class MigrateController {
     if (paths == null) return 0;
 
     final report = BuildReport();
+    final features = await _buildController.parseFeatures(paths, config, report);
+    final catalog = StepsCatalog.of(features);
     var migrated = 0;
-    for (final path in paths) {
-      if (await _migrateFeature(path, config, report)) migrated++;
+    for (final feature in features) {
+      if (await _migrateFeature(feature, catalog, config, report)) migrated++;
     }
     await _formatter.formatFiles(report.writtenFiles);
     _removeLegacyManifest();
@@ -58,14 +57,10 @@ class MigrateController {
     return report.failed;
   }
 
-  Future<bool> _migrateFeature(String path, BDDConfig config, BuildReport report) async {
-    final Feature feature;
-    try {
-      feature = await _featureParser.parseFeature(path);
-    } on FeatureParseException catch (e) {
-      report.fail('Failed: $e');
-      return false;
-    }
+  /// Migrates [feature] if it has a 1.x file and no steps file yet. The new
+  /// steps class declares every step itself, shared ones included, so it
+  /// compiles before any shared steps are moved into the shared mixin.
+  Future<bool> _migrateFeature(Feature feature, StepsCatalog catalog, BDDConfig config, BuildReport report) async {
     final files = FeatureFiles(feature, stepsSuffix: config.stepsSuffix);
     final legacyFile = File(files.legacyScenariosPath);
     if (!legacyFile.existsSync() || File(files.stepsPath).existsSync()) {
@@ -74,8 +69,8 @@ class MigrateController {
 
     final legacy = LegacyScenariosFile.parse(legacyFile.readAsStringSync());
     final mapper = LegacyCodeMapper(scenarioSuffix: config.legacyScenarioSuffix);
-    final mapping = mapper.map(feature, StepsCatalog.of(feature), legacy);
-    await _buildController.writeGeneratedFiles(files, config, report: report, stubContent: mapping.content);
+    final mapping = mapper.map(feature, catalog, legacy);
+    await _buildController.writeGeneratedFiles(files, config, catalog, report: report, stubContent: mapping.content);
     legacyFile.renameSync('${files.legacyScenariosPath}.bak');
     stdout.writeln(
       '  Migrated ${files.legacyScenariosPath}: ${mapping.copied} step(s) copied, '
