@@ -30,3 +30,6 @@ migrate_working_dir/
 .flutter-plugins-dependencies
 build/
 .cursor/
+# AI assistant files, kept local
+CLAUDE.md
+.claude/
