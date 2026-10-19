@@ -1,39 +1,52 @@
 ## 2.0.0
 
+2.0 changes the shape of the generated code. Run `dart run bdd_flutter migrate` once to move a 1.x project; see "Upgrading from 1.x" in the README.
+
 ### Breaking
 
-- Minimum Dart SDK is now 3.8.0 (required by `cucumber_gherkin`)
+- Step code moves from `.bdd_scenarios.dart` (one class per scenario, edited by you and appended to by the tool) to three files per feature:
+  - `<name>.bdd_steps.g.dart`: a generated `abstract interface class <Feature>StepsContract`, rewritten on every build
+  - `<name>_steps.dart`: your `<Feature>Steps implements <Feature>StepsContract`, created once and never touched again
+  - `<name>.bdd_test.dart`: the generated tests
+- One steps class per feature, with one method per distinct step. Background, Rule background and scenario steps share it, so state lives in normal fields instead of top-level variables
+- Quoted text and standalone numbers in step text become typed parameters: `I add 2 "apple"` is `iAdd(num number, String text)` instead of `iAdd2Apple()`. Steps that differ only in these values share a method
+- Outline columns are typed: `num` when every value is a number Dart prints back unchanged, `bool` for `true`/`false`, otherwise `String`
+- Widget tests get the `WidgetTester` through a `tester` field set by the generated test, not as a method parameter
+- Unimplemented steps throw `UnimplementedError` instead of passing silently
+- Minimum Dart SDK is 3.8.0 (required by `cucumber_gherkin`)
+- Removed: the manifest (`.bdd_flutter/manifest.yaml`), incremental append and `build --force`; `build` always rewrites generated files and never touches yours
+- Tags that are not valid `dart test` tag names, such as 1.x's `@className("X")`, are ignored
+- Config: `scenario_suffix` is replaced by `steps_suffix` (default `Steps`); `scenario_suffix` is only read by `migrate`. `additional_imports` now go into new `_steps.dart` files
 
 ### Features
 
-- `.feature` files are now parsed by the official [`cucumber_gherkin`](https://pub.dev/packages/cucumber_gherkin) parser and mapped from [`cucumber_messages`](https://pub.dev/packages/cucumber_messages) types (#6)
+- `.feature` files are parsed by the official [`cucumber_gherkin`](https://pub.dev/packages/cucumber_gherkin) parser and mapped from [`cucumber_messages`](https://pub.dev/packages/cucumber_messages) types (#6)
 - Supports `But` and `*` steps, `Scenario Outline`, `Rule` (with its own `Background`), several `Examples` blocks, several tags on one line, comments, escaped `\|` in tables and non-English keywords (`# language: fr`)
-- Invalid `.feature` files are reported with line and column and skipped; other features still build
+- Scenario Outlines generate one test per example row, in a group named after the scenario; each row runs the Background with fresh state, and a failing row no longer hides the others
+- `Rule:` blocks become `group('Rule: …')`, and a Rule's Background runs after the feature's
+- Doc strings and data tables are passed as `String docString` and `List<List<String>> dataTable`, with `<column>` placeholders filled per row
+- Gherkin tags are passed to `test()`/`testWidgets()` as `tags:`, merged from feature, rule, scenario and Examples; `build` lists them for `dart_test.yaml`
+- `@skip` on a feature, rule, scenario or Examples block generates `skip: true`
+- `generate_widget_tests` now applies to scenarios without `@unitTest`/`@widgetTest`; the closest decorator wins (scenario, then rule, then feature)
+- Generated files are formatted with the SDK's `dart format`, using your package's style and page width
+- `build` reports steps your `_steps.dart` lacks and steps it overrides that the feature no longer has
+- New `migrate` command carries 1.x step code into the new steps files
+- Accented letters are folded in generated names (`Incrémenter` → `Incrementer`, Vietnamese included); text with no Latin letters gets a stable hashed name. No extra dependency: the folding table is built in. Names never collide with Dart keywords or `Object` members
+- Invalid `.feature` files are reported with line and column and skipped; `build` exits with code 1 so CI catches them
 - Steps carry a `keywordType` (context, action, outcome, conjunction)
-- Doc strings and data tables are passed to step methods as `String docString` and `List<List<String>> dataTable`; `<column>` placeholders inside them are filled from the current example row
 
 ### Bug Fixes
 
-- Fix example values being passed in table-column order instead of step-text order, which silently swapped arguments when the columns were ordered differently from the placeholders
-- Fix example values containing `'` or `$` producing invalid generated code
-- Remove a stray space in generated unit-test step calls (`scenario.step( value)`)
-- Fix duplicate method parameters (compile error) when a step uses the same placeholder twice, e.g. `from "<city>" and back to "<city>"`
-- Fix a crash (`Null check operator used on a null value`) when a Scenario Outline has several `Examples` blocks with different columns; a column missing from a block keeps its `<column>` text
-- Fix generated calls missing arguments (compile error) when a `<placeholder>` has no matching example column, or appears in a plain Scenario or Background; its literal `<name>` text is passed
-- Fix duplicate method declarations (compile error) when the same step text appears twice in a scenario or background
-- `build` now exits with code 1 when any `.feature` file fails to parse, so CI catches invalid Gherkin
-- Before regenerating a scenario file because a scenario changed, the old file is copied to `.bdd_scenarios.dart.bak` so step code can be recovered
+- Scenario Outline rows no longer share state set up by the Background
+- Example values containing `'` or `$` no longer produce invalid code, in arguments and test names
+- Numbers such as `1.50`, `02134` or `$10.00` are never turned into a different value
 
 ### Example
 
-- Add `test/cart/cart.feature`: Rule with its own Background, Scenario Outline with two Examples blocks, `But` and `*` steps, several tags on one line
-- Add `test/compteur/compteur.feature`: French keywords
-- Add `test/stress/stress.feature`: doc strings, data tables (including example placeholders inside them), repeated placeholders, tags on Examples, symbols in step text
-
-### Notes
-
-- Scenario hashes are unchanged, so existing manifests stay valid and no files are regenerated after upgrading. The exception is features that use a doc string or data table: those steps get new parameters, so the feature's whole `.bdd_scenarios.dart` file is regenerated once and the step code in it is overwritten. Commit before upgrading and copy your step code back
-- Non-ASCII letters are dropped from generated names (`Incrémenter` → `IncrMenterScenario`), since Dart identifiers are ASCII only
+- Every example feature now has working steps, and `login.feature` is a real widget test with `mocktail`
+- Add `test/cart/cart.feature` (Rule, two Examples blocks, `But` and `*`), `test/compteur/compteur.feature` (French keywords) and `test/stress/stress.feature` (doc strings, data tables, repeated placeholders, tags on Examples, symbols in step text)
+- Add `dart_test.yaml` declaring the example's tags
+- `test/complex/complex1.feature` is marked `@skip`: it shows generated names for long, real-world step text
 
 ## 1.1.1
 

@@ -48,62 +48,49 @@ void main() {
     });
   });
 
-  group('StringX.toClassName', () {
-    test('appends suffix', () {
-      expect('Increment'.toClassName('Scenario'), equals('IncrementScenario'));
+  group('StringX.name with accents and other scripts', () {
+    test('folds accents instead of splitting words', () {
+      expect('Incrémenter'.name, equals('Incrementer'));
     });
 
-    test('appends custom suffix', () {
-      expect('Increment'.toClassName('Steps'), equals('IncrementSteps'));
+    test('folds stacked Vietnamese diacritics', () {
+      expect('Tiếng Việt'.name, equals('TiengViet'));
     });
 
-    test('handles name starting with digit', () {
-      expect('123 test'.toClassName('Scenario'), equals('X123TestScenario'));
-    });
-  });
-
-  group('StringX.snakeCaseToCamelCase', () {
-    test('converts simple snake_case', () {
-      expect('first_name'.snakeCaseToCamelCase, equals('firstName'));
-    });
-
-    test('handles single word', () {
-      expect('name'.snakeCaseToCamelCase, equals('name'));
-    });
-
-    test('handles leading underscore', () {
-      expect('_value'.snakeCaseToCamelCase, equals('value'));
-    });
-
-    test('handles trailing underscore', () {
-      expect('value_'.snakeCaseToCamelCase, equals('value'));
-    });
-
-    test('handles multiple underscores', () {
-      expect('a__b'.snakeCaseToCamelCase, equals('aB'));
-    });
-
-    test('handles all underscores', () {
-      expect('___'.snakeCaseToCamelCase, equals('___'));
-    });
-
-    test('handles empty string', () {
-      expect(''.snakeCaseToCamelCase, equals(''));
-    });
-
-    test('converts multi-segment snake_case', () {
-      expect('my_long_variable_name'.snakeCaseToCamelCase,
-          equals('myLongVariableName'));
+    test('uses a stable hash for text without Latin letters', () {
+      expect('カウンター'.name, equals('X${'カウンター'.shortHash}'));
+      expect('カウンター'.name, matches(RegExp(r'^X[0-9a-f]{6}$')));
     });
   });
 
-  group('StringX.toSnakeCase', () {
-    test('converts space-separated to snake_case', () {
-      expect('Hello World'.toSnakeCase, equals('hello_world'));
+  group('StringX.toCamelIdentifier', () {
+    test('joins words in camelCase', () {
+      expect('I add an item'.toCamelIdentifier(), equals('iAddAnItem'));
     });
 
-    test('handles single word', () {
-      expect('Hello'.toSnakeCase, equals('hello'));
+    test('joins words around an apostrophe', () {
+      expect("j'incrémente le compteur".toCamelIdentifier(), equals('jincrementeLeCompteur'));
+    });
+
+    test('keeps inner capitals and lowers all-caps words', () {
+      expect('sends a syncNote request'.toCamelIdentifier(), equals('sendsASyncNoteRequest'));
+      expect('JSON payload'.toCamelIdentifier(), equals('jsonPayload'));
+    });
+
+    test('prefixes a leading digit', () {
+      expect('3rd refund'.toCamelIdentifier(), equals('step3rdRefund'));
+      expect('1st'.toCamelIdentifier(prefix: 'value'), equals('value1st'));
+    });
+
+    test('suffixes reserved words and Object members', () {
+      expect('return'.toCamelIdentifier(), equals('returnStep'));
+      expect('to string'.toCamelIdentifier(), equals('toStringStep'));
+      expect('tester'.toCamelIdentifier(), equals('testerStep'));
+    });
+
+    test('returns null when nothing is left', () {
+      expect('カウンター'.toCamelIdentifier(), isNull);
+      expect(' %% '.toCamelIdentifier(), isNull);
     });
   });
 

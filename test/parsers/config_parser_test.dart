@@ -26,7 +26,7 @@ void main() {
       expect(config.generateWidgetTests, isTrue);
       expect(config.ignoreFeatures, isEmpty);
       expect(config.additionalImports, isEmpty);
-      expect(config.scenarioSuffix, equals('Scenario'));
+      expect(config.stepsSuffix, equals('Steps'));
     });
 
     test('parses config file with all options', () async {
@@ -66,7 +66,7 @@ generate_widget_tests: false
       expect(config.generateWidgetTests, isFalse);
       expect(config.ignoreFeatures, isEmpty);
       expect(config.testDir, equals('test/'));
-      expect(config.scenarioSuffix, equals('Scenario'));
+      expect(config.stepsSuffix, equals('Steps'));
     });
 
     test('parses test_dir option', () async {
@@ -95,15 +95,17 @@ additional_imports:
       expect(config.additionalImports, contains('test/helpers/test_helpers.dart'));
     });
 
-    test('parses scenario_suffix option', () async {
+    test('parses steps_suffix and keeps scenario_suffix for migrate', () async {
       Directory('${tempDir.path}/.bdd_flutter').createSync();
       File('${tempDir.path}/.bdd_flutter/config.yaml').writeAsStringSync('''
+steps_suffix: "Definitions"
 scenario_suffix: "Steps"
 ''');
 
       final config = await parserInDir().loadConfig();
 
-      expect(config.scenarioSuffix, equals('Steps'));
+      expect(config.stepsSuffix, equals('Definitions'));
+      expect(config.legacyScenarioSuffix, equals('Steps'));
     });
   });
 }

@@ -39,7 +39,8 @@ class ConfigParser {
       generateWidgetTests: yaml['generate_widget_tests'] as bool? ?? true,
       ignoreFeatures: _parseStringList(yaml['ignore_features']),
       additionalImports: _parseStringList(yaml['additional_imports']),
-      scenarioSuffix: yaml['scenario_suffix'] as String? ?? 'Scenario',
+      stepsSuffix: yaml['steps_suffix'] as String? ?? 'Steps',
+      legacyScenarioSuffix: yaml['scenario_suffix'] as String? ?? 'Scenario',
     );
   }
 

@@ -4,22 +4,22 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What This Project Is
 
-bdd_flutter is a Dart CLI tool that generates Flutter/Dart test files from Gherkin `.feature` files. Users write BDD scenarios in `.feature` files, run `dart run bdd_flutter build`, and get `.bdd_scenarios.dart` (step stubs) and `.bdd_test.dart` (runnable tests) files generated alongside the feature file.
+bdd_flutter is a Dart CLI tool that generates Flutter/Dart test files from Gherkin `.feature` files. Users write BDD scenarios in `.feature` files, run `dart run bdd_flutter build`, and get three files next to each feature: a generated steps contract (`.bdd_steps.g.dart`), a steps file the user owns (`_steps.dart`, created once) and the generated tests (`.bdd_test.dart`).
 
 ## Common Commands
 
 ```bash
 # Run package tests (not example — example uses flutter_test)
-dart test test/parsers/ test/builders/
+dart test
 
 # Run the CLI locally against the example project
 cd example && dart run bdd_flutter build
 
+# Move a 1.x project (.bdd_scenarios.dart files) to 2.0
+cd example && dart run bdd_flutter migrate
+
 # Run BDD tests with formatted report
 cd example && dart run bdd_flutter test
-
-# Force regenerate all
-cd example && dart run bdd_flutter build --force
 
 # Analyze code
 dart analyze
@@ -36,80 +36,81 @@ Clean Architecture in `lib/src/`. The CLI entry point is `bin/bdd_flutter.dart`.
 
 ```
 BDDCLI.run(args)
-  → BDDController.generateFeatureTestCases(options)
-    → ConfigParser.loadConfig()                      # .bdd_flutter/config.yaml
-    → ManifestParser.loadManifest()                  # .bdd_flutter/manifest.yaml
+  → BDDController.generateFeatureTestCases()
+    → ConfigParser.loadConfig()                       # .bdd_flutter/config.yaml
     → FeatureParser.parseFeature(filePath)            # cucumber_gherkin → GherkinDocument
       → GherkinMapper.toFeature(document, path)       # GherkinDocument → Feature model
-    → ScenariosFileBuilder.buildScenarioFile(feature) # Feature → .bdd_scenarios.dart
-    → TestFileBuilder.buildTestFile(feature)          # Feature → .bdd_test.dart
-    → ManifestParser.saveManifest()                  # update manifest
+    → StepsCatalog.of(feature)                        # distinct step patterns → StepMethods
+    → StepsContractBuilder.build(...)                 # → .bdd_steps.g.dart (always rewritten)
+    → TestFileBuilder.build(...)                      # → .bdd_test.dart (always rewritten)
+    → StepsStubBuilder.build(...)                     # → _steps.dart (only if missing)
+    → checkStepsFile(...)                             # warn about missing/unused steps
+    → DartFormatCommand.formatFiles(...)              # SDK `dart format`, no dart_style dependency
 ```
+
+`MigrateController.migrate()` reads a 1.x `.bdd_scenarios.dart` (`LegacyScenariosFile`, a brace/string-aware reader, no analyzer), maps its method bodies onto the new methods (`LegacyCodeMapper`, using 1.x naming in `LegacyNames`), writes the steps file with that code and renames the old file to `.bak`.
 
 ### Layers
 
-- **`domain/`** — Core models: Feature, Scenario, Step, Decorator, Background, BDDConfig, Manifest, BuildOptions
-- **`infrastructure/parsers/`** — FeatureParser (wraps `cucumber_gherkin`), GherkinMapper (the only code that touches `cucumber_messages` types), ConfigParser, ManifestParser
-- **`infrastructure/builders/`** — ScenariosFileBuilder, TestFileBuilder (domain models → Dart code)
+- **`domain/`** — Feature, Rule, Scenario, ExamplesTable, Step, Background, Decorator, ValueType, StepPattern/StepSlot, StepMethod, FeatureFiles (paths and class names), BDDConfig
+- **`infrastructure/parsers/`** — FeatureParser (wraps `cucumber_gherkin`), GherkinMapper (the only code that touches `cucumber_messages` types), ConfigParser
+- **`infrastructure/steps/`** — StepPatternParser (takes quoted text, standalone numbers and `<column>` placeholders out of step text), columnTypes, StepsCatalog (one method per pattern key, names and parameters)
+- **`infrastructure/builders/`** — StepsContractBuilder, StepsStubBuilder, TestFileBuilder, ScenarioSettings (test kind, skip, tags), stepArguments
+- **`infrastructure/migration/`** — 1.x → 2.0 migration
+- **`infrastructure/formatting/`** — CodeFormatter (`DartFormatCommand`, `NoFormatting` for tests)
 - **`presentation/cli/`** — BDDCLI entry point, argument parsing
-- **`presentation/controllers/`** — BDDController orchestrates config, manifest, parsing, building
-- **`presentation/reporter/`** — BDDTestRunner (CLI `test` command), BDDReportFormatter (output formatting), BDDTestReporter (legacy, exported)
+- **`presentation/controllers/`** — BDDController (build), MigrateController, BuildReport, steps file check
+- **`presentation/reporter/`** — BDDTestRunner (CLI `test` command), BDDReportFormatter
 
-### Domain Models
+### Step patterns
 
-- **Feature** — name, path, scenarios, decorators, optional background
-- **Scenario** — name, steps, optional examples table, decorators, optional customClassName
-- **Step** — keyword (Given/When/Then/And) + text with `<param>` placeholders
-- **Decorator** — enum: `unitTest`, `widgetTest`
-- **Background** — shared setup steps applied to all scenarios in a feature
-- **BDDConfig** — generate_widget_tests, enable_reporter, ignore_features
-- **Manifest** — tracks generated features, scenario hashes for incremental builds
-- **BuildOptions** — CLI flags: widgetTest, reporter, force, newOnly
+A step's pattern key is its text with slots replaced by type markers, plus `+docString`/`+dataTable`. Slots: `"quoted text"` → String; a bare `<column>` with a matching Examples column → type from the column; a standalone number that `num.parse(v).toString() == v` → num. Numbers next to letters, `:`, `$`, `%`, `,`, `/`, `-` stay text. Steps with the same key share one method regardless of keyword.
 
 ### Generated Code Pattern
 
-Scenario classes use **instance methods** (not static), so users can add `late` fields for shared state between steps:
-
 ```dart
-// .bdd_scenarios.dart
-class IncrementScenario {
-  Future<void> iHaveACounter(WidgetTester tester) async { ... }
-  Future<void> iIncrementIt(WidgetTester tester) async { ... }
+// cart.bdd_steps.g.dart (generated)
+abstract interface class ShoppingCartStepsContract {
+  Future<void> iAddAtEach(num quantity, String item, num price);
 }
 
-// .bdd_test.dart
-final scenario = IncrementScenario();
-await scenario.iHaveACounter(tester);
+// cart_steps.dart (user-owned)
+class ShoppingCartSteps implements ShoppingCartStepsContract {
+  late Cart cart;
+  @override
+  Future<void> iAddAtEach(num quantity, String item, num price) async => ...;
+}
+
+// cart.bdd_test.dart (generated)
+test('Add', () async {
+  final steps = ShoppingCartSteps();          // widget tests: ..tester = tester
+  await steps.iAddAtEach(2, 'apple', 1.5);
+});
 ```
 
-### Generation Modes
+Scenario Outlines generate a `group(scenarioName)` with one test per row; Rules generate `group('Rule: name')`.
 
-- **Incremental (default)** — compares scenario hashes against manifest, skips unchanged, appends new scenarios
-- **Force (`--force`)** — regenerates everything
+### Decorators and tags
 
-### Decorators
-
-- `@unitTest` / `@widgetTest` — on feature or scenario (scenario overrides feature)
-- Feature files only contain behavior-relevant tags; tooling config lives in `.bdd_flutter/config.yaml`
+- `@unitTest` / `@widgetTest` — closest wins: scenario, rule, feature, then `generate_widget_tests`
+- `@skip` — `skip: true`, also on Examples blocks
+- Any other tag → `tags:` on the test (invalid `dart test` tag names are dropped)
 
 ### CLI Commands
 
-- `build` — Generate test files (incremental by default)
-- `build --force` — Regenerate all files regardless of changes
-- `test` — Run BDD tests with formatted Feature/Scenario report
+- `build` — Rewrite generated files; create missing `_steps.dart`; skip features that still have a 1.x `.bdd_scenarios.dart` and no `_steps.dart`
+- `migrate` — 1.x → 2.0
+- `test` — Run tests with formatted Feature/Scenario report
 
 ### Config File
 
 `.bdd_flutter/config.yaml`:
 - `test_dir` (string, default `test/`) — where to scan for `.feature` files
-- `generate_widget_tests` (bool, default true)
+- `generate_widget_tests` (bool, default true) — test kind for scenarios without a decorator
 - `ignore_features` (list of paths to skip)
-- `additional_imports` (list of imports added to every generated `_scenarios.dart`)
-- `scenario_suffix` (string, default `Scenario`) — class name suffix (e.g., `Steps`)
-
-### Manifest File
-
-`.bdd_flutter/manifest.yaml` — auto-generated, tracks per-feature paths, timestamps, and scenario hashes for incremental builds.
+- `additional_imports` (list of imports added to new `_steps.dart` files)
+- `steps_suffix` (string, default `Steps`) — steps class suffix
+- `scenario_suffix` — 1.x only, read by `migrate`
 
 ## Coding Conventions
 

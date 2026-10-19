@@ -1,6 +1,6 @@
-/// Gherkin tag decorators that control test generation behavior.
+/// Gherkin tags that control test generation.
 ///
-/// Decorators are placed above `Feature:` or `Scenario:` lines in `.feature` files:
+/// Decorators are placed above `Feature:`, `Rule:` or `Scenario:` lines:
 ///
 /// ```gherkin
 /// @unitTest
@@ -9,7 +9,8 @@
 ///   Scenario: Increment
 /// ```
 ///
-/// Scenario-level decorators override feature-level ones.
+/// The closest decorator wins: scenario over rule over feature. Every other
+/// tag is passed to the generated test as a `dart test` tag.
 enum Decorator {
   /// Generate a unit test using `test()` without `WidgetTester`.
   unitTest,
@@ -17,15 +18,18 @@ enum Decorator {
   /// Generate a widget test using `testWidgets()` with `WidgetTester`.
   widgetTest,
 
-  /// Unrecognized decorator tag.
+  /// Generate the test with `skip: true`.
+  skip,
+
+  /// Any other tag.
   unknown;
 
-  /// Parses a decorator string (e.g., `@unitTest`) into a [Decorator] value.
+  /// Parses a tag (e.g. `@unitTest`) into a [Decorator].
   static Decorator fromString(String text) {
-    final trimmed = text.trim();
-    return switch (trimmed) {
+    return switch (text.trim()) {
       '@unitTest' => Decorator.unitTest,
       '@widgetTest' => Decorator.widgetTest,
+      '@skip' => Decorator.skip,
       _ => Decorator.unknown,
     };
   }
@@ -41,4 +45,13 @@ extension DecoratorX on Decorator {
 extension DecoratorSetX on Set<Decorator> {
   bool get hasUnitTest => any((e) => e.isUnitTest);
   bool get hasWidgetTest => any((e) => e.isWidgetTest);
+  bool get hasSkip => contains(Decorator.skip);
+
+  /// Whether these decorators pick a test kind: `true` for a unit test,
+  /// `false` for a widget test, `null` when they say nothing.
+  bool? get unitTestChoice {
+    if (hasUnitTest) return true;
+    if (hasWidgetTest) return false;
+    return null;
+  }
 }

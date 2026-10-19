@@ -1,334 +1,181 @@
 import 'dart:io';
 
-import 'package:bdd_flutter/src/domain/build_options.dart';
+import 'package:bdd_flutter/src/infrastructure/formatting/code_formatter.dart';
 import 'package:bdd_flutter/src/infrastructure/parsers/config_parser.dart';
-import 'package:bdd_flutter/src/infrastructure/parsers/manifest_parser.dart';
 import 'package:bdd_flutter/src/presentation/controllers/bdd_controller.dart';
+import 'package:bdd_flutter/src/presentation/controllers/migrate_controller.dart';
 import 'package:test/test.dart';
+
+const String _cartFeature = '''
+@unitTest
+Feature: Shopping cart
+  Background:
+    Given an empty cart
+
+  Scenario: Add
+    When I add 2 "apple"
+    Then the cart has 2 items
+
+  Scenario: Remove
+    When I remove "apple"
+''';
+
+const String _legacyCartScenarios = '''
+import 'package:flutter_test/flutter_test.dart';
+import 'package:example/cart.dart';
+
+/// Shared between classes.
+late Cart cart;
+
+class ShoppingCartBackground {
+  Future<void> anEmptyCart() async {
+    // Braces in strings and comments must not confuse the reader: '}' "{"
+    cart = Cart(label: '\${'}'}');
+  }
+}
+
+class AddScenario {
+  int added = 0;
+
+  AddScenario();
+
+  Future<void> iAdd2Apple() async {
+    cart.add('apple', 2);
+  }
+
+  Future<void> theCartHas2Items() async {
+    // TODO: Implement Then the cart has 2 items
+  }
+}
+
+class RemoveScenario {
+  Future<void> iRemoveApple() async {
+    cart.remove('apple');
+  }
+}
+''';
 
 void main() {
   late Directory tempDir;
   late String testDir;
-  late String configDir;
   late String configFile;
-  late String manifestFile;
 
   setUp(() {
     tempDir = Directory.systemTemp.createTempSync('bdd_controller_test_');
     testDir = '${tempDir.path}/test';
-    configDir = '${tempDir.path}/.bdd_flutter';
-    configFile = '$configDir/config.yaml';
-    manifestFile = '$configDir/manifest.yaml';
-
+    configFile = '${tempDir.path}/.bdd_flutter/config.yaml';
     Directory(testDir).createSync(recursive: true);
-    Directory(configDir).createSync(recursive: true);
-
-    File(configFile).writeAsStringSync('test_dir: "$testDir/"');
+    File(configFile)
+      ..createSync(recursive: true)
+      ..writeAsStringSync('test_dir: "$testDir/"');
   });
 
   tearDown(() {
     tempDir.deleteSync(recursive: true);
   });
 
-  BDDController createController() {
+  BDDController buildController() {
     return BDDController(
       configParser: ConfigParser(configFile: configFile),
-      manifestParser: ManifestParser(
-        manifestDir: configDir,
-        manifestFile: manifestFile,
-      ),
+      formatter: const NoFormatting(),
     );
   }
 
-  void writeFeatureFile(String name, String content) {
-    File('$testDir/$name').writeAsStringSync(content);
-  }
+  String read(String name) => File('$testDir/$name').readAsStringSync();
 
-  group('BDDController incremental build', () {
-    test('first build generates scenario and test files', () async {
-      writeFeatureFile('login.feature', '''
-Feature: Login
-  Scenario: Successful login
-    Given I am on the login page
-    When I enter valid credentials
-    Then I should see the home page
-''');
+  group('BDDController.generateFeatureTestCases', () {
+    test('creates the contract, the test file and the user steps file', () async {
+      File('$testDir/cart.feature').writeAsStringSync(_cartFeature);
 
-      final controller = createController();
-      await controller.generateFeatureTestCases();
+      final failed = await buildController().generateFeatureTestCases();
 
-      expect(File('$testDir/login.bdd_scenarios.dart').existsSync(), isTrue);
-      expect(File('$testDir/login.bdd_test.dart').existsSync(), isTrue);
+      expect(failed, 0);
+      expect(read('cart.bdd_steps.g.dart'), contains('abstract interface class ShoppingCartStepsContract'));
+      expect(read('cart.bdd_test.dart'), contains("await steps.iAdd(2, 'apple');"));
+      expect(read('cart_steps.dart'), contains('class ShoppingCartSteps implements ShoppingCartStepsContract'));
     });
 
-    test('unchanged feature is skipped on second build', () async {
-      writeFeatureFile('login.feature', '''
-Feature: Login
-  Scenario: Successful login
-    Given I am on the login page
-    When I enter valid credentials
-    Then I should see the home page
-''');
+    test('never overwrites the user steps file, but rewrites generated files', () async {
+      File('$testDir/cart.feature').writeAsStringSync(_cartFeature);
+      await buildController().generateFeatureTestCases();
+      File('$testDir/cart_steps.dart').writeAsStringSync('// my code');
 
-      final controller = createController();
-      await controller.generateFeatureTestCases();
+      File('$testDir/cart.feature').writeAsStringSync('$_cartFeature\n  Scenario: Clear\n    When I clear the cart\n');
+      await buildController().generateFeatureTestCases();
 
-      final scenarioModified =
-          File('$testDir/login.bdd_scenarios.dart').lastModifiedSync();
-
-      // Small delay to detect timestamp change
-      await Future.delayed(const Duration(milliseconds: 50));
-      await controller.generateFeatureTestCases();
-
-      final scenarioModifiedAfter =
-          File('$testDir/login.bdd_scenarios.dart').lastModifiedSync();
-      expect(scenarioModifiedAfter, equals(scenarioModified));
+      expect(read('cart_steps.dart'), '// my code');
+      expect(read('cart.bdd_steps.g.dart'), contains('Future<void> iClearTheCart();'));
+      expect(read('cart.bdd_test.dart'), contains("test('Clear', () async {"));
     });
 
-    test('adding a new scenario appends to scenario file', () async {
-      writeFeatureFile('login.feature', '''
-Feature: Login
-  Scenario: Successful login
-    Given I am on the login page
-    When I enter valid credentials
-    Then I should see the home page
-''');
+    test('skips a feature that still has a 1.x scenarios file', () async {
+      File('$testDir/cart.feature').writeAsStringSync(_cartFeature);
+      File('$testDir/cart.bdd_scenarios.dart').writeAsStringSync(_legacyCartScenarios);
 
-      final controller = createController();
-      await controller.generateFeatureTestCases();
+      await buildController().generateFeatureTestCases();
 
-      final originalContent =
-          File('$testDir/login.bdd_scenarios.dart').readAsStringSync();
-      expect(originalContent, contains('SuccessfulLoginScenario'));
-
-      // Add a new scenario
-      writeFeatureFile('login.feature', '''
-Feature: Login
-  Scenario: Successful login
-    Given I am on the login page
-    When I enter valid credentials
-    Then I should see the home page
-  Scenario: Failed login
-    Given I am on the login page
-    When I enter invalid credentials
-    Then I should see an error message
-''');
-
-      await controller.generateFeatureTestCases();
-
-      final updatedContent =
-          File('$testDir/login.bdd_scenarios.dart').readAsStringSync();
-      expect(updatedContent, contains('SuccessfulLoginScenario'));
-      expect(updatedContent, contains('FailedLoginScenario'));
+      expect(File('$testDir/cart_steps.dart').existsSync(), isFalse);
+      expect(File('$testDir/cart.bdd_test.dart').existsSync(), isFalse);
     });
 
-    test('renaming a scenario regenerates both files', () async {
-      writeFeatureFile('login.feature', '''
-Feature: Login
-  Scenario: Successful login
-    Given I am on the login page
-    When I enter valid credentials
-    Then I should see the home page
-''');
+    test('counts features that fail to parse and builds the others', () async {
+      File('$testDir/broken.feature').writeAsStringSync('Feature: Broken\n  Scenario: A\n    Given b\n  not Gherkin\n');
+      File('$testDir/cart.feature').writeAsStringSync(_cartFeature);
 
-      final controller = createController();
-      await controller.generateFeatureTestCases();
+      final failed = await buildController().generateFeatureTestCases();
 
-      // Rename scenario
-      writeFeatureFile('login.feature', '''
-Feature: Login
-  Scenario: Valid login
-    Given I am on the login page
-    When I enter valid credentials
-    Then I should see the home page
-''');
-
-      await controller.generateFeatureTestCases();
-
-      final scenarioContent =
-          File('$testDir/login.bdd_scenarios.dart').readAsStringSync();
-      final testContent =
-          File('$testDir/login.bdd_test.dart').readAsStringSync();
-
-      // Old class should be gone, new class should be present
-      expect(scenarioContent, isNot(contains('SuccessfulLoginScenario')));
-      expect(scenarioContent, contains('ValidLoginScenario'));
-
-      // Test file should reference the new class
-      expect(testContent, contains('ValidLoginScenario'));
-      expect(testContent, isNot(contains('SuccessfulLoginScenario')));
+      expect(failed, 1);
+      expect(File('$testDir/cart.bdd_test.dart').existsSync(), isTrue);
     });
 
-    test('removing a scenario regenerates both files', () async {
-      writeFeatureFile('login.feature', '''
-Feature: Login
-  Scenario: Successful login
-    Given I am on the login page
-    When I enter valid credentials
-    Then I should see the home page
-  Scenario: Failed login
-    Given I am on the login page
-    When I enter invalid credentials
-    Then I should see an error message
-''');
+    test('skips features listed in ignore_features', () async {
+      File(configFile).writeAsStringSync('test_dir: "$testDir/"\nignore_features:\n  - cart.feature\n');
+      File('$testDir/cart.feature').writeAsStringSync(_cartFeature);
 
-      final controller = createController();
-      await controller.generateFeatureTestCases();
+      await buildController().generateFeatureTestCases();
 
-      final originalContent =
-          File('$testDir/login.bdd_scenarios.dart').readAsStringSync();
-      expect(originalContent, contains('SuccessfulLoginScenario'));
-      expect(originalContent, contains('FailedLoginScenario'));
-
-      // Remove second scenario
-      writeFeatureFile('login.feature', '''
-Feature: Login
-  Scenario: Successful login
-    Given I am on the login page
-    When I enter valid credentials
-    Then I should see the home page
-''');
-
-      await controller.generateFeatureTestCases();
-
-      final updatedContent =
-          File('$testDir/login.bdd_scenarios.dart').readAsStringSync();
-      expect(updatedContent, contains('SuccessfulLoginScenario'));
-      expect(updatedContent, isNot(contains('FailedLoginScenario')));
-    });
-
-    test('modifying a step regenerates both files', () async {
-      writeFeatureFile('login.feature', '''
-Feature: Login
-  Scenario: Successful login
-    Given I am on the login page
-    When I enter valid credentials
-    Then I should see the home page
-''');
-
-      final controller = createController();
-      await controller.generateFeatureTestCases();
-
-      // Modify a step
-      writeFeatureFile('login.feature', '''
-Feature: Login
-  Scenario: Successful login
-    Given I am on the login page
-    When I enter valid credentials
-    Then I should see the dashboard
-''');
-
-      await controller.generateFeatureTestCases();
-
-      final scenarioContent =
-          File('$testDir/login.bdd_scenarios.dart').readAsStringSync();
-      expect(scenarioContent, contains('iShouldSeeTheDashboard'));
-      expect(scenarioContent, isNot(contains('iShouldSeeTheHomePage')));
-    });
-
-    test('backs up the scenario file before regenerating a changed scenario', () async {
-      writeFeatureFile('login.feature', '''
-Feature: Login
-  Scenario: Successful login
-    Given I am on the login page
-''');
-      final controller = createController();
-      await controller.generateFeatureTestCases();
-      final scenarioFile = File('$testDir/login.bdd_scenarios.dart');
-      scenarioFile.writeAsStringSync('// my step code');
-
-      writeFeatureFile('login.feature', '''
-Feature: Login
-  Scenario: Successful login
-    Given I am on the sign-in page
-''');
-      await controller.generateFeatureTestCases();
-
-      final backup = File('$testDir/login.bdd_scenarios.dart.bak');
-      expect(backup.readAsStringSync(), '// my step code');
-      expect(scenarioFile.readAsStringSync(), contains('iAmOnTheSignInPage'));
-    });
-
-    test('deleted generated files are regenerated', () async {
-      writeFeatureFile('login.feature', '''
-Feature: Login
-  Scenario: Successful login
-    Given I am on the login page
-    When I enter valid credentials
-    Then I should see the home page
-''');
-
-      final controller = createController();
-      await controller.generateFeatureTestCases();
-
-      // Delete generated files
-      File('$testDir/login.bdd_scenarios.dart').deleteSync();
-      File('$testDir/login.bdd_test.dart').deleteSync();
-
-      await controller.generateFeatureTestCases();
-
-      expect(File('$testDir/login.bdd_scenarios.dart').existsSync(), isTrue);
-      expect(File('$testDir/login.bdd_test.dart').existsSync(), isTrue);
-    });
-
-    test('force regenerates even when unchanged', () async {
-      writeFeatureFile('login.feature', '''
-Feature: Login
-  Scenario: Successful login
-    Given I am on the login page
-    When I enter valid credentials
-    Then I should see the home page
-''');
-
-      final controller = createController();
-      await controller.generateFeatureTestCases();
-
-      // Corrupt the file to prove force overwrites it
-      File('$testDir/login.bdd_scenarios.dart')
-          .writeAsStringSync('corrupted');
-
-      await controller.generateFeatureTestCases(
-        options: const BuildOptions(force: true),
-      );
-
-      final content =
-          File('$testDir/login.bdd_scenarios.dart').readAsStringSync();
-      expect(content, contains('SuccessfulLoginScenario'));
-      expect(content, isNot(contains('corrupted')));
+      expect(File('$testDir/cart.bdd_test.dart').existsSync(), isFalse);
     });
   });
 
-  group('BDDController invalid feature files', () {
-    test('skips an invalid file and still builds the others', () async {
-      writeFeatureFile('broken.feature', '''
-Feature: Broken
-  Scenario: A
-    Given b
-  this line is not Gherkin
-''');
-      writeFeatureFile('login.feature', '''
-Feature: Login
-  Scenario: Successful login
-    Given I am on the login page
-''');
+  group('MigrateController.migrate', () {
+    MigrateController migrateController() {
+      return MigrateController(
+        configParser: ConfigParser(configFile: configFile),
+        formatter: const NoFormatting(),
+      );
+    }
 
-      final failed = await createController().generateFeatureTestCases();
+    test('carries 1.x code into the new steps file and keeps the old file as .bak', () async {
+      File('$testDir/cart.feature').writeAsStringSync(_cartFeature);
+      File('$testDir/cart.bdd_scenarios.dart').writeAsStringSync(_legacyCartScenarios);
 
-      expect(failed, 1);
-      expect(File('$testDir/login.bdd_test.dart').existsSync(), isTrue);
-      expect(File('$testDir/broken.bdd_test.dart').existsSync(), isFalse);
-    });
-
-    test('returns zero when every file parses', () async {
-      writeFeatureFile('login.feature', '''
-Feature: Login
-  Scenario: Successful login
-    Given I am on the login page
-''');
-
-      final failed = await createController().generateFeatureTestCases();
+      final failed = await migrateController().migrate();
+      final steps = read('cart_steps.dart');
 
       expect(failed, 0);
+      expect(File('$testDir/cart.bdd_scenarios.dart').existsSync(), isFalse);
+      expect(File('$testDir/cart.bdd_scenarios.dart.bak').existsSync(), isTrue);
+      expect(steps, contains("import 'package:example/cart.dart';"));
+      expect(steps, contains('late Cart cart;'));
+      expect(steps, contains('int added = 0;'));
+      expect(steps, isNot(contains('AddScenario()')));
+      expect(steps, contains("    cart = Cart(label: '\${'}'}');"));
+      expect(steps, contains("    //   cart.add('apple', 2);"));
+      expect(steps, contains("    //   cart.remove('apple');"));
+      expect(steps, contains("throw UnimplementedError('Then the cart has 2 items');"));
+      expect(read('cart.bdd_test.dart'), contains("await steps.iAdd(2, 'apple');"));
+    });
+
+    test('leaves features that already have a steps file alone', () async {
+      File('$testDir/cart.feature').writeAsStringSync(_cartFeature);
+      File('$testDir/cart.bdd_scenarios.dart').writeAsStringSync(_legacyCartScenarios);
+      File('$testDir/cart_steps.dart').writeAsStringSync('// my code');
+
+      await migrateController().migrate();
+
+      expect(read('cart_steps.dart'), '// my code');
+      expect(File('$testDir/cart.bdd_scenarios.dart').existsSync(), isTrue);
     });
   });
 }

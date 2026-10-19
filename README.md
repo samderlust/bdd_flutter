@@ -3,19 +3,17 @@
 [![pub package](https://img.shields.io/pub/v/bdd_flutter.svg)](https://pub.dev/packages/bdd_flutter)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A Flutter package that simplifies Behavior Driven Development (BDD) by automatically generating test files from Gherkin feature files. Write expressive tests in plain English using Given/When/Then scenarios and let BDD Flutter handle the boilerplate code generation.
+Write Flutter tests as Gherkin scenarios in plain English. BDD Flutter generates the test code from your `.feature` files; you write each step once, as a typed Dart method.
 
 ## Features
 
 - Parses `.feature` files with the official Cucumber parser ([`cucumber_gherkin`](https://pub.dev/packages/cucumber_gherkin)), so the full Gherkin syntax and 70+ spoken languages work
-- Generate boilerplate test files automatically
-- Support for both widget tests and unit tests
-- Incremental generation — new scenarios are appended without overwriting existing implementations
-- Instance-based scenario classes for shared state between steps
-- Background support for shared setup steps
-- Examples tables for parameterized scenarios
-- Configurable via `.bdd_flutter/config.yaml`
-- Manifest tracking in `.bdd_flutter/manifest.yaml`
+- **One method per step, reused everywhere.** Quoted text and numbers become typed parameters, so `I add 2 "apple"` and `I add <qty> "<item>"` share `iAdd(num qty, String item)`
+- **The analyzer tracks your steps.** A generated interface lists every step; your class implements it, so a missing or outdated step is a compile error, not a silent pass
+- **Your code is never overwritten.** Generated files and your steps file are separate
+- One test per Scenario Outline row, each with fresh state
+- Widget tests and unit tests, `@skip`, and Gherkin tags passed to `dart test --tags`
+- Generated code is run through `dart format`
 
 ## Installation
 
@@ -23,162 +21,274 @@ Requires Dart 3.8 or later. Add to your `pubspec.yaml`:
 
 ```yaml
 dev_dependencies:
-  bdd_flutter: latest
+  bdd_flutter: ^2.0.0
 ```
 
 ## Quick Start
 
-1. Create a `.feature` file in your test folder:
+1. Create `test/cart/cart.feature`:
 
 ```gherkin
-Feature: Counter
-  Scenario: Increment
-    Given I have a counter with value 0
-    When I increment the counter by <value>
-    Then the counter should have value <expected_value>
-    Examples:
-      | value | expected_value |
-      | 1     | 1              |
-      | 2     | 2              |
-      | 3     | 3              |
+@unitTest
+Feature: Shopping cart
+  Background:
+    Given an empty cart
+
+  Scenario: Add and remove items
+    When I add 2 "apple" at 1.5 each
+    But I remove "apple"
+    Then the cart has 0 item
+
+  Scenario Outline: Total for several items
+    When I add <quantity> "<item>" at <price> each
+    Then the total for "<item>" is <total>
+
+    Examples: Small orders
+      | item  | quantity | price | total |
+      | apple | 1        | 1.5   | 1.5   |
+      | pear  | 2        | 2     | 4     |
 ```
 
-2. Generate test files:
+2. Generate the files:
 
 ```bash
 dart run bdd_flutter build
 ```
 
-3. Implement the generated step methods in `counter.bdd_scenarios.dart`
+3. Implement the steps in `test/cart/cart_steps.dart`. The analyzer tells you which ones are missing.
 
-4. Run your tests with BDD report:
+4. Run the tests:
 
 ```bash
-dart run bdd_flutter test
+flutter test
 ```
 
-Or run normally with `flutter test`.
+or `dart run bdd_flutter test` for a Feature/Scenario report.
 
 ## Generated Files
 
-The generator creates two files per `.feature` file:
+For `test/cart/cart.feature`, `build` writes three files next to it:
 
-- **`.bdd_scenarios.dart`** — Scenario classes with step method stubs (your implementation goes here)
-- **`.bdd_test.dart`** — Test orchestration file (auto-generated, do not edit)
+| File | Owner | What it holds |
+| --- | --- | --- |
+| `cart.bdd_steps.g.dart` | bdd_flutter, rewritten on every build | `ShoppingCartStepsContract`: one method per distinct step |
+| `cart_steps.dart` | **you**; created once, never touched again | `ShoppingCartSteps implements ShoppingCartStepsContract` |
+| `cart.bdd_test.dart` | bdd_flutter, rewritten on every build | The tests |
 
-### How It Works
-
-- Scenario classes use **instance methods**, so you can add `late` fields for shared state (mocks, widgets, etc.)
-- Each test instantiates a **fresh scenario** for proper test isolation
-- When you add a new scenario to a `.feature` file, only the new scenario class is **appended** — existing implementations are preserved
-- The test file is **always regenerated** (it contains no user code)
-
-### Example Output
-
-#### `counter.bdd_scenarios.dart`
+### `cart.bdd_steps.g.dart`
 
 ```dart
-import 'package:flutter_test/flutter_test.dart';
+abstract interface class ShoppingCartStepsContract {
+  /// `Given an empty cart`
+  Future<void> anEmptyCart();
 
-class IncrementScenario {
-  Future<void> iHaveACounterWithValue0(WidgetTester tester) async {
-    // TODO: Implement Given I have a counter with value 0
-  }
+  /// `When I add 2 "apple" at 1.5 each`
+  /// `When I add <quantity> "<item>" at <price> each`
+  Future<void> iAddAtEach(num quantity, String item, num price);
 
-  Future<void> iIncrementTheCounterByValue(WidgetTester tester, String value) async {
-    // TODO: Implement When I increment the counter by <value>
-  }
+  /// `But I remove "apple"`
+  Future<void> iRemove(String text);
 
-  Future<void> theCounterShouldHaveValueExpectedValue(WidgetTester tester, String expectedValue) async {
-    // TODO: Implement Then the counter should have value <expected_value>
-  }
+  /// `Then the cart has 0 item`
+  Future<void> theCartHasItem(num number);
+
+  /// `Then the total for "<item>" is <total>`
+  Future<void> theTotalForIs(String item, num total);
 }
 ```
 
-#### `counter.bdd_test.dart`
+### `cart_steps.dart` (yours)
+
+The first build creates it with every method throwing `UnimplementedError`. Replace the bodies; keep state in fields.
 
 ```dart
-import 'package:flutter_test/flutter_test.dart';
-import 'counter.bdd_scenarios.dart';
+class ShoppingCartSteps implements ShoppingCartStepsContract {
+  late Cart cart;
 
+  @override
+  Future<void> anEmptyCart() async => cart = Cart();
+
+  @override
+  Future<void> iAddAtEach(num quantity, String item, num price) async =>
+      cart.add(item, price.toDouble(), quantity.toInt());
+
+  @override
+  Future<void> iRemove(String text) async => cart.remove(text);
+
+  @override
+  Future<void> theCartHasItem(num number) async => expect(cart.itemCount, number);
+
+  @override
+  Future<void> theTotalForIs(String item, num total) async => expect(cart.totalFor(item), total);
+}
+```
+
+When you add a step to the feature and run `build`, the contract gains a method and the analyzer reports it missing in your class; the IDE's "Create missing overrides" quick fix writes the stub. When you remove or reword a step, your old method gets an `override_on_non_overriding_member` warning. `build` prints both lists too.
+
+### `cart.bdd_test.dart`
+
+```dart
 void main() {
-  group('Counter', () {
-    testWidgets('Increment', (tester) async {
-      final scenario = IncrementScenario();
-      final examples = [
-        {'value': '1', 'expectedValue': '1'},
-        {'value': '2', 'expectedValue': '2'},
-        {'value': '3', 'expectedValue': '3'},
-      ];
-      for (var example in examples) {
-        await scenario.iIncrementTheCounterByValue(tester, example['value']!);
-        await scenario.theCounterShouldHaveValueExpectedValue(tester, example['expectedValue']!);
-      }
+  group('Shopping cart', () {
+    test('Add and remove items', () async {
+      final steps = ShoppingCartSteps();
+      // Background
+      // Given an empty cart
+      await steps.anEmptyCart();
+      // Scenario
+      // When I add 2 "apple" at 1.5 each
+      await steps.iAddAtEach(2, 'apple', 1.5);
+      // But I remove "apple"
+      await steps.iRemove('apple');
+      // Then the cart has 0 item
+      await steps.theCartHasItem(0);
+    });
+    group('Total for several items', () {
+      test('Small orders #1 (item: apple, quantity: 1, price: 1.5, total: 1.5)', () async {
+        final steps = ShoppingCartSteps();
+        await steps.anEmptyCart();
+        await steps.iAddAtEach(1, 'apple', 1.5);
+        await steps.theTotalForIs('apple', 1.5);
+      });
+      // ... one test per row
     });
   });
 }
 ```
 
+Every test creates a fresh `ShoppingCartSteps`, so tests never share state.
+
+## Steps and Parameters
+
+Values are taken out of the step text and passed as parameters:
+
+| In the step | Becomes |
+| --- | --- |
+| `"quoted text"`, including `"<column>"` | `String` |
+| A number on its own: `2`, `-1`, `1.5` | `num` |
+| A bare `<column>` in a Scenario Outline | `num` if every value in the column is a number, `bool` if all are `true`/`false`, else `String` |
+| A doc string (`"""`) | `String docString` |
+| A data table | `List<List<String>> dataTable` (header row included) |
+
+Steps with the same text once values are taken out share one method, whatever their keyword. Parameters are named after the placeholder (`<first_name>` → `firstName`), or `text`, `number`, `flag` otherwise.
+
+To avoid losing data, a number stays part of the method name when it is part of something else: `3rd`, `09:00`, `$10.00`, `15%`, `1-second`. A number Dart would print differently (`007`, `1.50`) also stays as text, and an Examples column with such a value is passed as `String`.
+
+Accented letters are folded for names (`j'incrémente` → `jincremente`, `Tiếng Việt` → `tiengViet`). Steps with no Latin letters get a stable name like `stepA1b2c3`; the doc comment shows the original text.
+
+### Widget tests
+
+In widget tests the steps class gets a `tester` field, set before the first step:
+
+```dart
+class LoginSteps implements LoginStepsContract {
+  @override
+  late WidgetTester tester;
+
+  @override
+  Future<void> iTapTheLoginButton() async {
+    await tester.tap(find.text('Login'));
+    await tester.pumpAndSettle();
+  }
+}
+```
+
+A step used by both unit and widget scenarios has one signature.
+
+## Tags
+
+| Tag | Scope | Effect |
+| --- | --- | --- |
+| `@unitTest` | Feature, Rule, Scenario | Generate `test()` |
+| `@widgetTest` | Feature, Rule, Scenario | Generate `testWidgets()` |
+| `@skip` | Feature, Rule, Scenario, Examples | Generate the test with `skip: true` |
+| any other, e.g. `@smoke` | Feature, Rule, Scenario, Examples | Passed to the test as `tags: ['smoke']` |
+
+The closest `@unitTest`/`@widgetTest` wins; with none, `generate_widget_tests` in the config decides. Run tagged tests with `flutter test --tags smoke`. `build` lists the tags it saw; declare them in `dart_test.yaml` to avoid warnings. Tags that are not valid `dart test` tag names are left out.
+
+## Gherkin Support
+
+| Syntax | How bdd_flutter uses it |
+| --- | --- |
+| `Given` / `When` / `Then` / `And` / `But` / `*` | One call each; the keyword does not affect the method |
+| `Background:` | Runs at the start of every test in the feature |
+| `Rule:` | A `group('Rule: …')`; its own `Background:` runs after the feature's |
+| `Scenario Outline:` / `Examples:` | A group with one test per row, named after the Examples block and row values |
+| Several `Examples:` blocks | Each keeps its name and tags; a column missing from a block keeps its `<column>` text |
+| `<column>` in doc strings and tables | Filled with the row's value |
+| `# comments`, descriptions, `\|` in tables | Supported |
+| `# language: fr` | Keywords in any [Gherkin language](https://cucumber.io/docs/gherkin/languages/) |
+
+Invalid Gherkin is reported with line and column; that file is skipped and `build` exits with code 1:
+
+```
+Failed: Invalid Gherkin in test/login/login.feature:
+  (4:3): expected: #EOF, #TableRow, #DocStringSeparator, #StepLine, ..., got 'this line is not Gherkin'
+```
+
 ## Configuration
 
-Configure the generator in `.bdd_flutter/config.yaml`:
+`.bdd_flutter/config.yaml`:
 
 ```yaml
 # Where to scan for .feature files
 test_dir: "test/"
 
-# Generate widget tests or unit tests
+# For scenarios without @unitTest or @widgetTest
 generate_widget_tests: true
 
-# Feature files to skip during generation
+# Feature files to skip
 ignore_features:
   - test/features/login.feature
-  - test/features/registration.feature
 
-# Imports added to every generated .bdd_scenarios.dart file
+# Imports added to each new _steps.dart file
 additional_imports:
   - "package:mocktail/mocktail.dart"
-  - "test/helpers/test_helpers.dart"
 
-# Suffix for generated scenario class names (default: "Scenario")
-# e.g., "Steps" → IncrementSteps instead of IncrementScenario
-scenario_suffix: "Scenario"
+# Steps class suffix: CartSteps, CartStepsContract
+steps_suffix: "Steps"
 ```
 
-Or use `--force` to regenerate everything:
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `test_dir` | String | `test/` | Directory to scan for `.feature` files |
+| `generate_widget_tests` | bool | `true` | Default test kind for scenarios without a decorator |
+| `ignore_features` | List | `[]` | Feature file paths to skip |
+| `additional_imports` | List | `[]` | Imports added to new `_steps.dart` files |
+| `steps_suffix` | String | `Steps` | Suffix of the steps class name |
+
+## Commands
+
+| Command | Description |
+| --- | --- |
+| `build` | Rewrite the generated files for every feature; create missing `_steps.dart` files |
+| `migrate` | Move a 1.x project to 2.0 (see below) |
+| `test` | Run all tests with a Feature/Scenario report |
+
+## Upgrading from 1.x
+
+1.x put your step code in `.bdd_scenarios.dart`, one class per scenario, with literal values in method names. 2.0 uses one steps class per feature with typed parameters. Commit your work, then run:
 
 ```bash
-dart run bdd_flutter build --force
+dart run bdd_flutter migrate
 ```
 
-### Config Options
+For each feature with a `.bdd_scenarios.dart` file, `migrate`:
 
-| Option                  | Type   | Default      | Description                                              |
-| ----------------------- | ------ | ------------ | -------------------------------------------------------- |
-| `test_dir`              | String | `test/`      | Directory to scan for `.feature` files                   |
-| `generate_widget_tests` | bool   | true         | Generate widget tests when true, unit tests when false   |
-| `ignore_features`       | List   | []           | Feature file paths to skip during generation             |
-| `additional_imports`    | List   | []           | Imports added to every generated scenario file           |
-| `scenario_suffix`       | String | `Scenario`   | Class name suffix (e.g., `Steps` for `IncrementSteps`)  |
+- creates `_steps.dart` with your imports, top-level declarations and fields carried over;
+- copies a 1.x method body as working code when the 2.0 method takes no values and every 1.x version of it was the same;
+- otherwise puts each 1.x body above the new method as a comment, followed by a `throw`, for you to adapt to the new parameters;
+- generates the 2.0 contract and test file;
+- renames the old file to `.bdd_scenarios.dart.bak` and removes `.bdd_flutter/manifest.yaml`, which 2.0 does not use.
 
-### CLI Flags
-
-### Commands
-
-| Command         | Description                                          |
-| --------------- | ---------------------------------------------------- |
-| `build`         | Generate test files from `.feature` files                        |
-| `build --force` | Force regenerate all files (overwrites existing)                 |
-| `test`          | Run all tests with formatted BDD and non-BDD reports             |
+`build` skips any feature that still has a `.bdd_scenarios.dart` file and no `_steps.dart` file. Search for `UnimplementedError` to find what is left, then delete the `.bak` files. If you had set `scenario_suffix`, keep it in the config until you have migrated: `migrate` uses it to find your 1.x classes.
 
 ## Test Report
 
-Running `dart run bdd_flutter test` discovers all test files in your project and produces a formatted report with two sections:
+`dart run bdd_flutter test` runs every test file and prints:
 
-- **BDD Test Report** — `.bdd_test.dart` files grouped by Feature with Scenario pass/fail
-- **Non-BDD Test Report** — regular `_test.dart` files grouped by file name and test group
-
-### Example Output
+- **BDD Test Report**: `.bdd_test.dart` files grouped by Feature with Scenario pass/fail
+- **Non-BDD Test Report**: other `_test.dart` files grouped by file and group
 
 ```
 Running 8 BDD + 1 regular test file(s)...
@@ -186,155 +296,35 @@ Running 8 BDD + 1 regular test file(s)...
 BDD Test Report
 ==================================================
 
-  Feature: Calculator
-    ✓ Add two numbers (170ms)
-    ✓ Subtract two numbers (7ms)
-    ✓ Multiply two numbers (4ms)
-    ✓ Divide two numbers (4ms)
-
-  Feature: Counter
-    ✓ Increment (152ms)
-    ✓ Decrement (6ms)
+  Feature: Shopping cart
+    ✓ Add and remove items (170ms)
+    ✓ Total for several items Small orders #1 (item: apple, quantity: 1, price: 1.5, total: 1.5) (7ms)
 
   Feature: Login
     ✓ Successful login (150ms)
     ✓ Failed login shows error (8ms)
-    ✓ Logout after login (4ms)
-
-Non-BDD Test Report
-==================================================
-
-  Test File: string_utils_test.dart
-    capitalize
-      ✓ capitalizes first letter (19ms)
-      ✓ returns empty string for empty input (2ms)
-      ✓ handles single character (1ms)
-    add
-      ✓ adds two positive numbers (2ms)
-      ✓ adds negative numbers (3ms)
-      ✓ adds zero (2ms)
 
 ──────────────────────────────────────────────────
   15 tests: 15 passed, 0 failed
   Time: 2781ms
 ```
 
-## Gherkin Support
-
-`.feature` files are parsed by [`cucumber_gherkin`](https://pub.dev/packages/cucumber_gherkin), the official Cucumber parser, and read through the [`cucumber_messages`](https://pub.dev/packages/cucumber_messages) data model.
-
-| Syntax | How bdd_flutter uses it |
-| --- | --- |
-| `Given` / `When` / `Then` / `And` / `But` / `*` | One step method each |
-| `Background:` | A `<Feature>Background` class, run before every scenario |
-| `Scenario Outline:` and `Examples:` | One test that loops over every example row |
-| Several `Examples:` blocks | Rows from all blocks are combined; columns can be in any order |
-| `Rule:` | Its scenarios are generated like any other; a `Background:` inside a Rule runs as the first steps of each scenario in that Rule |
-| Tags (`@unitTest @smoke`) | Several per line; tags on a Rule apply to its scenarios |
-| Doc strings (`"""`) | Passed to the step method as `String docString` |
-| Data tables | Passed to the step method as `List<List<String>> dataTable` (all rows, header row included) |
-| `<column>` inside doc strings and tables | Replaced with the current example row's value |
-| `# comments`, descriptions, `\|` in tables | Supported |
-| `# language: fr` | Keywords in any [Gherkin language](https://cucumber.io/docs/gherkin/languages/) |
-
-Invalid Gherkin is reported with line and column, and that file is skipped:
-
-```
-Failed: Invalid Gherkin in test/login/login.feature:
-  (4:3): expected: #EOF, #TableRow, #DocStringSeparator, #StepLine, ..., got 'this line is not Gherkin'
-```
-
-**Not yet supported:**
-
-- Dart identifiers are ASCII only, so letters such as `é` are dropped from generated names (`Incrémenter` → `IncrMenterScenario`).
-- The Background runs once per test, so in a Scenario Outline all example rows share the state it sets up.
-
-### Doc Strings and Data Tables
-
-```gherkin
-Scenario Outline: Send an order
-  When I send the payload:
-    """
-    {"item": "<item>"}
-    """
-  Then the table shows:
-    | item   | price   |
-    | <item> | <price> |
-
-  Examples:
-    | item  | price |
-    | apple | 1.50  |
-```
-
-generates
-
-```dart
-Future<void> iSendThePayload(String docString) async { ... }
-Future<void> theTableShows(List<List<String>> dataTable) async { ... }
-```
-
-and the test file passes the values, with `<item>` and `<price>` filled in for each example row. Parameters come in this order: `tester` (widget tests), step placeholders, `docString`, `dataTable`.
-
-## Decorators
-
-Control test type with standard Gherkin tags:
-
-| Decorator     | Scope             | Description                             |
-| ------------- | ----------------- | --------------------------------------- |
-| `@unitTest`   | Feature, Scenario | Generate unit test (overrides config)   |
-| `@widgetTest` | Feature, Scenario | Generate widget test (overrides config) |
-
-Scenario-level decorators override Feature-level ones.
-
-To skip generation for specific features, use `ignore_features` in config.
-
-## Generation Modes
-
-### Incremental (Default)
-
-```bash
-dart run bdd_flutter build
-```
-
-- Skips unchanged features (tracked via manifest)
-- New scenarios are **appended** to existing scenario files — implementations are preserved
-- Test files are regenerated to include all scenarios
-
-### Force Regenerate
-
-```bash
-dart run bdd_flutter build --force
-```
-
-- Regenerates all files from scratch
-- **Overwrites** existing scenario implementations — use with caution
-
 ## Project Structure
 
 ```
 your_project/
 ├── .bdd_flutter/
-│   ├── config.yaml     # Configuration (commit to version control)
-│   └── manifest.yaml   # Generation tracking (commit to version control)
+│   └── config.yaml                 # optional
 ├── test/
-│   └── login/
-│       ├── login.feature
-│       ├── login.bdd_scenarios.dart   # Your implementations
-│       └── login.bdd_test.dart        # Auto-generated orchestration
+│   └── cart/
+│       ├── cart.feature
+│       ├── cart_steps.dart         # yours
+│       ├── cart.bdd_steps.g.dart   # generated
+│       └── cart.bdd_test.dart      # generated
 └── pubspec.yaml
 ```
 
-## Best Practices
-
-1. **Version Control** — Keep both `config.yaml` and `manifest.yaml` in version control. The manifest prevents incremental builds from overwriting implemented code on fresh clones.
-
-2. **Scenario Files** — Implement your test logic in `.bdd_scenarios.dart`. Use `late` fields for shared state between steps (mocks, providers, widgets).
-
-3. **Test Files** — Do not edit `.bdd_test.dart` files. They are regenerated automatically and contain no user code.
-
-4. **Adding Scenarios** — When you add new scenarios to a `.feature` file, run `build` — new scenario classes are appended without touching existing ones.
-
-5. **Feature Files** — Keep feature files about behavior. `@unitTest`/`@widgetTest` are the only tags bdd_flutter acts on; other tags are allowed and ignored. Tooling configuration belongs in `.bdd_flutter/config.yaml`.
+Commit the generated files so `flutter test` works on a fresh clone without running `build`, or add them to `.gitignore` and run `build` in CI.
 
 ## License
 

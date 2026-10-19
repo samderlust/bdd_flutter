@@ -1,3 +1,6 @@
+# A long feature that shows generated names for real-world step text.
+# Its steps are not implemented, so @skip keeps its tests from running.
+@skip
 Feature: Note auto-sync
 
   Background:

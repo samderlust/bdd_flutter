@@ -2,7 +2,9 @@ import 'package:cucumber_messages/cucumber_messages.dart' as cm;
 
 import '../../domain/background.dart';
 import '../../domain/decorator.dart';
+import '../../domain/examples_table.dart';
 import '../../domain/feature.dart';
+import '../../domain/rule.dart';
 import '../../domain/scenario.dart';
 import '../../domain/step.dart';
 import '../../domain/step_keyword_type.dart';
@@ -21,60 +23,41 @@ class GherkinMapper {
       return Feature(name: 'Unnamed Feature', path: path, scenarios: const [], decorators: const {});
     }
 
-    final background = feature.children.map((c) => c.background).whereType<cm.Background>().firstOrNull;
-
     return Feature(
       name: feature.name,
       path: path,
-      scenarios: _scenarios(feature),
+      scenarios: feature.children.map((c) => c.scenario).whereType<cm.Scenario>().map(_scenario).toList(),
+      rules: feature.children.map((c) => c.rule).whereType<cm.Rule>().map(_rule).toList(),
+      background: _firstBackground(feature.children.map((c) => c.background)),
       decorators: _decorators(feature.tags),
-      background: background == null ? null : _background(background),
+      tags: _tags(feature.tags),
     );
   }
 
-  /// Collects scenarios at feature level and inside every `Rule:`.
-  List<Scenario> _scenarios(cm.Feature feature) {
-    final scenarios = <Scenario>[];
-    for (final child in feature.children) {
-      final scenario = child.scenario;
-      final rule = child.rule;
-      if (scenario != null) scenarios.add(_scenario(scenario));
-      if (rule != null) scenarios.addAll(_ruleScenarios(rule));
-    }
-    return scenarios;
+  Rule _rule(cm.Rule rule) {
+    return Rule(
+      name: rule.name,
+      background: _firstBackground(rule.children.map((c) => c.background)),
+      scenarios: rule.children.map((c) => c.scenario).whereType<cm.Scenario>().map(_scenario).toList(),
+      decorators: _decorators(rule.tags),
+      tags: _tags(rule.tags),
+    );
   }
 
-  /// Maps a rule's scenarios, prepending the rule's own background steps.
-  ///
-  /// bdd_flutter generates one background per feature, so a rule background
-  /// runs as the first steps of each scenario in that rule.
-  List<Scenario> _ruleScenarios(cm.Rule rule) {
-    final ruleBackground = rule.children.map((c) => c.background).whereType<cm.Background>().firstOrNull;
-    final backgroundSteps = ruleBackground?.steps ?? const <cm.Step>[];
-    final ruleDecorators = _decorators(rule.tags);
-
-    return rule.children
-        .map((c) => c.scenario)
-        .whereType<cm.Scenario>()
-        .map((s) => _scenario(s, leadingSteps: backgroundSteps, inheritedDecorators: ruleDecorators))
-        .toList();
+  Background? _firstBackground(Iterable<cm.Background?> backgrounds) {
+    final background = backgrounds.whereType<cm.Background>().firstOrNull;
+    if (background == null) return null;
+    return Background(description: background.name, steps: background.steps.map(_step).toList());
   }
 
-  Scenario _scenario(
-    cm.Scenario scenario, {
-    List<cm.Step> leadingSteps = const [],
-    Set<Decorator> inheritedDecorators = const {},
-  }) {
+  Scenario _scenario(cm.Scenario scenario) {
     return Scenario(
       scenario.name,
-      [...leadingSteps, ...scenario.steps].map(_step).toList(),
-      examples: _examples(scenario.examples),
-      decorators: {...inheritedDecorators, ..._decorators(scenario.tags)},
+      scenario.steps.map(_step).toList(),
+      examples: scenario.examples.map(_examples).where((t) => t.rows.isNotEmpty).toList(),
+      decorators: _decorators(scenario.tags),
+      tags: _tags(scenario.tags),
     );
-  }
-
-  Background _background(cm.Background background) {
-    return Background(description: background.name, steps: background.steps.map(_step).toList());
   }
 
   Step _step(cm.Step step) {
@@ -97,24 +80,25 @@ class GherkinMapper {
     };
   }
 
-  /// Flattens every `Examples:` block into header-to-value maps.
-  ///
-  /// Returns `null` when the scenario has no example rows, matching scenarios
-  /// without an Examples table.
-  List<Map<String, String>>? _examples(List<cm.Examples> examples) {
-    final rows = <Map<String, String>>[];
-    for (final block in examples) {
-      final header = block.tableHeader;
-      if (header == null) continue;
-      final keys = header.cells.map((c) => c.value).toList();
-      for (final row in block.tableBody) {
-        rows.add(Map.fromIterables(keys, row.cells.map((c) => c.value)));
-      }
-    }
-    return rows.isEmpty ? null : rows;
+  /// One `Examples:` block as header-to-value maps.
+  ExamplesTable _examples(cm.Examples block) {
+    final header = block.tableHeader;
+    final keys = header?.cells.map((c) => c.value).toList() ?? const <String>[];
+    return ExamplesTable(
+      name: block.name,
+      rows: [for (final row in block.tableBody) Map.fromIterables(keys, row.cells.map((c) => c.value))],
+      decorators: _decorators(block.tags),
+      tags: _tags(block.tags),
+    );
   }
 
+  /// The tags that bdd_flutter acts on, e.g. `@unitTest`.
   Set<Decorator> _decorators(List<cm.Tag> tags) {
-    return tags.map((t) => Decorator.fromString(t.name)).toSet();
+    return tags.map((t) => Decorator.fromString(t.name)).where((d) => d != Decorator.unknown).toSet();
+  }
+
+  /// Every other tag, without the leading `@`.
+  Set<String> _tags(List<cm.Tag> tags) {
+    return tags.where((t) => Decorator.fromString(t.name) == Decorator.unknown).map((t) => t.name.substring(1)).toSet();
   }
 }
