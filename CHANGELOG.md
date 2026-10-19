@@ -31,12 +31,14 @@
 - Generated files are formatted with the SDK's `dart format`, using your package's style and page width
 - `build` reports steps your `_steps.dart` lacks and steps it overrides that the feature no longer has
 - New `migrate` command carries 1.x step code into the new steps files
+- `bdd_flutter test` report: Scenario Outline rows and Rules are nested, skipped tests are shown and counted, failures point at the line in your steps file, features are sorted by path, durations appear only for failed and slow tests, and colors follow `NO_COLOR` and the terminal
 - Accented letters are folded in generated names (`Incrémenter` → `Incrementer`, Vietnamese included); text with no Latin letters gets a stable hashed name. No extra dependency: the folding table is built in. Names never collide with Dart keywords or `Object` members
 - Invalid `.feature` files are reported with line and column and skipped; `build` exits with code 1 so CI catches them
 - Steps carry a `keywordType` (context, action, outcome, conjunction)
 
 ### Bug Fixes
 
+- Skipped tests were listed in the test report as nameless passing tests under an empty "Test File:" heading, and counted as passed
 - Scenario Outline rows no longer share state set up by the Background
 - Example values containing `'` or `$` no longer produce invalid code, in arguments and test names
 - Numbers such as `1.50`, `02134` or `$10.00` are never turned into a different value

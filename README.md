@@ -312,29 +312,38 @@ For each feature with a `.bdd_scenarios.dart` file, `migrate`:
 
 ## Test Report
 
-`dart run bdd_flutter test` runs every test file and prints:
-
-- **BDD Test Report**: `.bdd_test.dart` files grouped by Feature with Scenario pass/fail
-- **Non-BDD Test Report**: other `_test.dart` files grouped by file and group
+`dart run bdd_flutter test` runs every test file with `flutter test` and prints BDD tests by feature, then other tests by file:
 
 ```
-Running 8 BDD + 1 regular test file(s)...
+Shopping cart  test/cart/cart.feature
+  ✗ Add and remove items  25ms
+      Expected: <0>
+        Actual: <1>
+      at test/cart/cart_steps.dart 27:5 ShoppingCartSteps.theCartHasItem
+  Total for several items
+    ✓ Small orders #1 (item: apple, quantity: 1, price: 1.5, total: 1.5)
+    ✓ Small orders #2 (item: pear, quantity: 2, price: 2, total: 4)
+  Rule: A closed cart cannot change
+    ✓ Adding to a closed cart
 
-BDD Test Report
-==================================================
+Note auto-sync  test/complex/complex1.feature
+  ○ 10 scenarios skipped
 
-  Feature: Shopping cart
-    ✓ Add and remove items (170ms)
-    ✓ Total for several items Small orders #1 (item: apple, quantity: 1, price: 1.5, total: 1.5) (7ms)
-
-  Feature: Login
-    ✓ Successful login (150ms)
-    ✓ Failed login shows error (8ms)
+Other tests
+  string_utils_test.dart
+    capitalize
+      ✓ capitalizes first letter
 
 ──────────────────────────────────────────────────
-  15 tests: 15 passed, 0 failed
-  Time: 2781ms
+65 tests: 54 passed, 1 failed, 10 skipped   (4.4s)
 ```
+
+- Scenario Outline rows and Rules are nested under their scenario or rule
+- A failure shows its message and the line in your `_steps.dart` that failed
+- Durations are shown only for failed tests and tests slower than 500 ms
+- Features and files are sorted by path, so the report is the same on every run
+- Colors are used only in a terminal, and never when `NO_COLOR` is set
+- The command exits with `flutter test`'s exit code, so it works in CI
 
 ## Project Structure
 
