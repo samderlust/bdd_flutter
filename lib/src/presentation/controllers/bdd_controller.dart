@@ -14,6 +14,7 @@ import '../../infrastructure/parsers/feature_parse_exception.dart';
 import '../../infrastructure/parsers/feature_parser.dart';
 import '../../infrastructure/steps/steps_catalog.dart';
 import 'build_report.dart';
+import 'shared_mixin.dart';
 import 'steps_file_check.dart';
 
 /// Orchestrates the BDD test generation pipeline.
@@ -55,23 +56,21 @@ class BDDController {
     final report = BuildReport();
     final features = await parseFeatures(featurePaths, config, report);
     final catalog = StepsCatalog.of(features);
-    final shared = SharedFiles(config.testDir, stepsSuffix: config.stepsSuffix);
-    final sharedNeedsTester = _sharedNeedsTester(features, catalog, config);
-    final hasSharedSteps = await _writeSharedFiles(shared, catalog, config, report, needsTester: sharedNeedsTester);
+    report.addWarnings([for (final collision in catalog.nameCollisions) '$collision']);
+    final mixin = await _sharedMixin(
+      SharedFiles(config.testDir, stepsSuffix: config.stepsSuffix),
+      features,
+      catalog,
+      config,
+      report,
+    );
     for (final feature in features) {
       final files = FeatureFiles(feature, stepsSuffix: config.stepsSuffix);
       if (File(files.legacyScenariosPath).existsSync() && !File(files.stepsPath).existsSync()) {
         report.skip('Skipped (1.x scenarios file): ${feature.path}. Run `dart run bdd_flutter migrate` first.');
         continue;
       }
-      await writeGeneratedFiles(
-        files,
-        config,
-        catalog,
-        report: report,
-        shared: hasSharedSteps ? shared : null,
-        sharedNeedsTester: sharedNeedsTester,
-      );
+      await writeGeneratedFiles(files, config, catalog, report: report, mixin: mixin);
     }
     await _formatter.formatFiles(report.writtenFiles);
     report.printSummary();
@@ -114,50 +113,76 @@ class BDDController {
     return features;
   }
 
-  /// Whether a feature that uses shared steps runs widget tests.
-  bool _sharedNeedsTester(List<Feature> features, StepsCatalog catalog, BDDConfig config) {
-    final testBuilder = TestFileBuilder(widgetTestsByDefault: config.generateWidgetTests);
-    final sharedNames = catalog.sharedMethods.map((m) => m.name).toSet();
-    return features.any(
-      (f) => testBuilder.needsTester(f) && catalog.methodsFor(f).any((m) => sharedNames.contains(m.name)),
-    );
-  }
-
-  /// Writes the shared contract, and the shared mixin if missing. Returns
-  /// whether the shared mixin exists afterwards.
-  Future<bool> _writeSharedFiles(
-    SharedFiles shared,
+  /// The user's shared steps mixin: read if it exists, created with stubs
+  /// the first time steps are shared, `null` when there is none.
+  ///
+  /// Also suggests moving steps used by several features into the mixin,
+  /// and warns about mixin steps no feature uses any more.
+  Future<SharedMixin?> _sharedMixin(
+    SharedFiles files,
+    List<Feature> features,
     StepsCatalog catalog,
     BDDConfig config,
-    BuildReport report, {
-    required bool needsTester,
-  }) async {
-    final mixinFile = File(shared.stepsPath);
-    if (catalog.sharedMethods.isEmpty && !mixinFile.existsSync()) return false;
-    await _write(shared.contractPath, _sharedBuilder.buildContract(shared, catalog, needsTester: needsTester), report);
-    if (mixinFile.existsSync()) {
-      final names = catalog.sharedMethods.map((m) => m.name).toSet();
-      report.addWarnings(checkStepsFile(mixinFile.readAsStringSync(), shared.stepsPath, needed: {}, provided: names));
-      return true;
+    BuildReport report,
+  ) async {
+    final existing = SharedMixin.read(files);
+    if (existing == null && catalog.sharedMethods.isEmpty) return null;
+    if (existing == null) return _createSharedMixin(files, features, catalog, config, report);
+
+    final unused = existing.methods.difference(catalog.methods.map((m) => m.name).toSet()).toList()..sort();
+    if (unused.isNotEmpty) {
+      report.addWarnings(['${files.stepsPath} has steps no longer in any feature: ${unused.join(', ')}.']);
     }
-    final mixin = _sharedBuilder.buildMixin(shared, catalog, additionalImports: config.additionalImports);
-    await _write(shared.stepsPath, mixin, report, created: true);
-    return true;
+    for (final method in catalog.sharedMethods.where((m) => !existing.provides(m))) {
+      final users = catalog.featuresUsing(method).map((f) => f.split(RegExp(r'[/\\]')).last).join(', ');
+      report.addTip(
+        '`${method.stepMessages.first}` is used by $users. '
+        'Move ${method.name} into ${files.mixinName} (${files.stepsPath}) to write it once.',
+      );
+    }
+    return existing;
+  }
+
+  Future<SharedMixin> _createSharedMixin(
+    SharedFiles files,
+    List<Feature> features,
+    StepsCatalog catalog,
+    BDDConfig config,
+    BuildReport report,
+  ) async {
+    final testBuilder = TestFileBuilder(widgetTestsByDefault: config.generateWidgetTests);
+    final names = catalog.sharedMethods.map((m) => m.name).toSet();
+    final needsTester = features.any(
+      (f) => testBuilder.needsTester(f) && catalog.methodsFor(f).any((m) => names.contains(m.name)),
+    );
+    final source = _sharedBuilder.buildMixin(
+      files,
+      catalog.sharedMethods,
+      needsTester: needsTester,
+      additionalImports: config.additionalImports,
+    );
+    await _write(files.stepsPath, source, report, created: true);
+    return SharedMixin(
+      files,
+      signatures: {
+        for (final method in catalog.sharedMethods) method.name: [for (final p in method.parameters) p.dartType],
+      },
+      declaresTester: needsTester,
+    );
   }
 
   /// Writes the contract and test file for [files], and the steps file if
   /// it does not exist yet.
   ///
-  /// With [shared], a new steps file mixes in the shared steps instead of
-  /// declaring them.
+  /// With [mixin], a new steps file mixes in the shared steps it uses
+  /// instead of declaring them.
   Future<void> writeGeneratedFiles(
     FeatureFiles files,
     BDDConfig config,
     StepsCatalog catalog, {
     BuildReport? report,
     StepsStubContent stubContent = const StepsStubContent(),
-    SharedFiles? shared,
-    bool sharedNeedsTester = false,
+    SharedMixin? mixin,
   }) async {
     final buildReport = report ?? BuildReport();
     final testBuilder = TestFileBuilder(widgetTestsByDefault: config.generateWidgetTests);
@@ -167,27 +192,41 @@ class BDDController {
     await _write(files.testPath, testBuilder.build(files, catalog), buildReport);
     buildReport.addTags(files.feature);
 
-    final ownNames = catalog.methodsFor(files.feature).map((m) => m.name).toSet();
-    final sharedNames = ownNames.intersection(catalog.sharedMethods.map((m) => m.name).toSet());
+    final own = catalog.methodsFor(files.feature);
+    final ownNames = own.map((m) => m.name).toSet();
+    final clashes = [
+      for (final m in own)
+        if (mixin?.clashesWith(m) ?? false) m.name,
+    ];
+    final provided = {
+      for (final m in own)
+        if (mixin?.provides(m) ?? false) m.name,
+    };
+    if (clashes.isNotEmpty) {
+      buildReport.addWarnings([
+        '${files.stepsPath}: ${mixin!.files.mixinName} has ${clashes.join(', ')} with other parameter types '
+            'than ${files.feature.fileName}.feature needs. Rename the mixin method or reword the step.',
+      ]);
+    }
     final stepsFile = File(files.stepsPath);
     if (stepsFile.existsSync()) {
       final source = stepsFile.readAsStringSync();
-      final mixesIn = shared != null && source.contains('with ${shared.mixinName}');
-      final needed = mixesIn ? ownNames.difference(sharedNames) : ownNames;
-      buildReport.addWarnings(checkStepsFile(source, files.stepsPath, needed: needed, provided: sharedNames));
+      final mixesIn = mixin != null && source.contains('with ${mixin.files.mixinName}');
+      final needed = mixesIn ? ownNames.difference(provided) : ownNames;
+      buildReport.addWarnings(checkStepsFile(source, files.stepsPath, needed: needed, provided: provided));
       return;
     }
-    final use = shared == null || sharedNames.isEmpty
+    final use = mixin == null || provided.isEmpty || clashes.isNotEmpty
         ? null
         : SharedStepsUse(
-            mixinName: shared.mixinName,
-            importPath: SharedFiles.relativeImport(files.stepsPath, shared.stepsPath),
-            methodNames: sharedNames,
+            mixinName: mixin.files.mixinName,
+            importPath: SharedFiles.relativeImport(files.stepsPath, mixin.files.stepsPath),
+            methodNames: provided,
           );
     final stub = _stubBuilder.build(
       files,
       catalog,
-      needsTester: needsTester || (use != null && sharedNeedsTester),
+      needsTester: needsTester || (use != null && mixin!.declaresTester),
       additionalImports: config.additionalImports,
       content: stubContent,
       shared: use,

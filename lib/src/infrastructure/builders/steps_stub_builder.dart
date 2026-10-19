@@ -61,10 +61,7 @@ class StepsStubBuilder {
     SharedStepsUse? shared,
   }) {
     final buffer = StringBuffer();
-    _writeImports(buffer, files, additionalImports, [
-      ...content.imports,
-      if (shared != null) "import '${shared.importPath}';",
-    ]);
+    _writeImports(buffer, files, [...additionalImports.map((p) => "import '$p';"), ...content.imports], shared);
     for (final declaration in content.topLevel) {
       buffer.writeln('$declaration\n');
     }
@@ -87,14 +84,14 @@ class StepsStubBuilder {
     return buffer.toString();
   }
 
-  void _writeImports(StringBuffer buffer, FeatureFiles files, List<String> configImports, List<String> extra) {
-    final imports = <String>{
-      "import 'package:flutter_test/flutter_test.dart';",
-      for (final path in configImports) "import '$path';",
-      ...extra,
-    };
-    imports.forEach(buffer.writeln);
-    buffer.writeln("\nimport '${files.contractFileName}';\n");
+  /// Package imports first, then the shared mixin and the contract, which
+  /// sit next to the steps file.
+  void _writeImports(StringBuffer buffer, FeatureFiles files, List<String> imports, SharedStepsUse? shared) {
+    final packageImports = {"import 'package:flutter_test/flutter_test.dart';", ...imports};
+    packageImports.forEach(buffer.writeln);
+    buffer.writeln();
+    if (shared != null) buffer.writeln("import '${shared.importPath}';");
+    buffer.writeln("import '${files.contractFileName}';\n");
   }
 
   void _writeMethod(StringBuffer buffer, StepMethod method, String? body) {

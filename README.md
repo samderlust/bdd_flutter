@@ -208,21 +208,16 @@ Accented letters are folded for names (`j'incrémente` → `jincremente`, `Tiế
 
 ### Steps shared across features
 
-When the same step appears in two or more `.feature` files, `build` also writes two files at the root of your test directory:
+A step used by several features, like `Given I am logged in as "admin"`, can be written once in a mixin. The same step gets the same method name in every feature, because the name comes from the step's text.
 
-| File | Owner | What it holds |
-| --- | --- | --- |
-| `shared.bdd_steps.dart` | bdd_flutter, rewritten on every build | `SharedStepsContract`: every shared step, with the features that use it |
-| `shared_steps.dart` | **you**, created once | `mixin SharedSteps implements SharedStepsContract` |
-
-New steps classes mix it in and contain only their own steps:
+The first time `build` sees a step used by two or more features, it creates **`shared_steps.dart`** at the root of your test directory, with a stub for each shared step. It is your file: bdd_flutter never changes it again. New steps classes that use those steps mix it in and contain only their own steps:
 
 ```dart
-// test/shared_steps.dart
-mixin SharedSteps implements SharedStepsContract {
+// test/shared_steps.dart (yours)
+mixin SharedSteps {
   String? user;
 
-  @override
+  /// `Given I am logged in as "admin"`
   Future<void> iAmLoggedInAs(String text) async => user = text;
 }
 
@@ -233,9 +228,20 @@ class CartSteps with SharedSteps implements CartStepsContract {
 }
 ```
 
-Each test still creates a fresh `CartSteps`, so shared and feature steps work on the same object and its state, and nothing leaks between tests.
+**A step is shared when your mixin implements it**, with the same name and parameter types as in the feature contract. The mixin has no generated interface. Each feature contract still declares every step its feature uses, so the analyzer checks each class against its own feature:
 
-A feature contract still declares every step its feature uses, shared ones included. A steps class that implements a shared step itself, without the mixin, keeps compiling. So when a step becomes shared because a second feature starts using it, your existing classes don't break; move the step into the mixin when convenient. A class method overrides the mixin's, so both can exist while you move it.
+- When a step becomes shared later, because a new feature reuses it, nothing changes in your code. `build` prints a tip:
+  ```
+  Tip: `When I add 2 "apple"` is used by cart.feature, checkout.feature. Move iAdd into SharedSteps (test/shared_steps.dart) to write it once.
+  ```
+- To move a step, add the method to the mixin, add `with SharedSteps` to the classes that should use it, and delete their copies. A class's own method overrides the mixin's, so both can exist while you move it.
+- If a mixin step is no longer used by any feature, `build` warns about it.
+- If a new feature has a step with the same method name as a mixin step but different parameter types, its new class doesn't mix in the shared steps, and `build` warns.
+- To use the tester in shared steps, declare `WidgetTester get tester;` in the mixin; classes that mix it in then need a `tester` field. `build` adds both when it creates the mixin and a widget feature uses a shared step, and new steps classes get the field whenever the mixin declares `tester`.
+
+Each test still creates a fresh steps object, so the mixin's fields hold state for one test only.
+
+Method names are worked out per feature. Adding or editing one feature never renames methods in another. Two different steps in one feature that would get the same name (`the cart has 1 item` and `the cart has item`) get a number (`theCartHasItem2`), and `build` warns so you can reword one.
 
 ### Widget tests
 
@@ -387,7 +393,6 @@ your_project/
 │   └── config.yaml                 # optional
 ├── test/
 │   ├── shared_steps.dart           # yours: steps used by several features
-│   ├── shared.bdd_steps.dart       # generated
 │   └── cart/
 │       ├── cart.feature
 │       ├── cart_steps.dart         # yours

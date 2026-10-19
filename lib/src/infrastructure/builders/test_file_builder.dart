@@ -158,7 +158,7 @@ class _TestWriter {
     Map<String, ValueType> columns = const {},
   }) {
     final pattern = catalog.patternOf(step, columns: columns);
-    final method = catalog.methodOf(pattern);
+    final method = catalog.methodOf(files.feature, pattern);
     final arguments = stepArguments(step, pattern, row: row).join(', ');
     buffer
       ..writeln('    // ${step.message}')

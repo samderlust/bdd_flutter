@@ -33,7 +33,7 @@ BDDCLI.run(args)
       → FeatureParser.parseFeature(path)        # cucumber_gherkin → envelopes
         → GherkinMapper.fromEnvelopes(...)      # envelopes → Feature
     → StepsCatalog.of(features)                 # step patterns of all features → StepMethods
-    → SharedStepsBuilder                        # → shared.bdd_steps.dart, shared_steps.dart (only if missing)
+    → SharedMixin.read / SharedStepsBuilder     # read shared_steps.dart, or create it the first time steps are shared
     → StepsContractBuilder.build(...)           # → <name>.bdd_steps.dart (always rewritten)
     → TestFileBuilder.build(...)                # → <name>.bdd_test.dart (always rewritten)
     → StepsStubBuilder.build(...)               # → <name>_steps.dart (only if missing)
@@ -43,7 +43,10 @@ BDDCLI.run(args)
 
 The tool never writes to a `_steps.dart` file that already exists. That file belongs to the user.
 
-`StepsCatalog` names methods once for all features (in path order), so a step has the same name in every contract and in the shared mixin. A step used by two or more features is shared. Feature contracts still declare every step their feature uses: that keeps classes that implement shared steps themselves compiling, so a step becoming shared is never a breaking change.
+Shared steps follow two rules that keep any change to one feature from breaking another:
+
+- **Method names are per feature.** `StepsCatalog` names each feature's methods from its own steps only, so adding or editing a feature never renames another's methods. The same step text gives the same name everywhere, which is what lets a mixin method serve several features.
+- **The user's mixin defines what is shared.** `shared_steps.dart` is a plain `mixin` with no generated interface, created once and never rewritten. A step counts as provided when the mixin has a method with the same name and parameter types (`SharedMixin.provides`). Feature contracts still declare every step, so each class is checked against its own feature, whether it mixes the steps in or not. A step that becomes shared only produces a tip.
 
 `migrate` (`MigrateController`) moves 1.x projects: `LegacyScenariosFile` reads a 1.x `.bdd_scenarios.dart` with a brace- and string-aware scanner (no `analyzer`), `LegacyCodeMapper` maps its method bodies onto the 2.0 methods using the 1.x naming rules in `LegacyNames`, and the old file is renamed to `.bak`.
 

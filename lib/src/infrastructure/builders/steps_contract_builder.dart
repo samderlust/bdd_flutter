@@ -52,7 +52,7 @@ class StepsContractBuilder {
     if (otherFeatures.isNotEmpty) {
       buffer
         ..writeln('  ///')
-        ..writeln('  /// Shared with ${otherFeatures.join(', ')}: implement it once in the shared steps mixin.');
+        ..writeln('  /// Also used by ${otherFeatures.join(', ')}.');
     }
     buffer.writeln('  ${method.signature};\n');
   }

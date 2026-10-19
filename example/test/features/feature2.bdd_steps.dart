@@ -13,19 +13,16 @@ abstract interface class Feature2StepsContract {
 
   /// `Given I have a counter with value 0`
   ///
-  /// Shared with counter.feature, feature1.feature, feature3.feature: implement it once in the shared steps mixin.
+  /// Also used by counter.feature, feature1.feature, feature3.feature.
   Future<void> iHaveACounterWithValue(num number);
 
-  /// `When I increment the counter by <value>`
   /// `When I increment the counter by 1`
   ///
-  /// Shared with counter.feature, feature1.feature, feature3.feature: implement it once in the shared steps mixin.
-  Future<void> iIncrementTheCounterBy(num value);
+  /// Also used by counter.feature, feature1.feature, feature3.feature.
+  Future<void> iIncrementTheCounterBy(num number);
 
-  /// `Then the counter should have value <expected_value>`
-  /// `Then the counter should have value -1`
   /// `Then the counter should have value 1`
   ///
-  /// Shared with counter.feature, feature1.feature, feature3.feature: implement it once in the shared steps mixin.
-  Future<void> theCounterShouldHaveValue(num expectedValue);
+  /// Also used by counter.feature, feature1.feature, feature3.feature.
+  Future<void> theCounterShouldHaveValue(num number);
 }

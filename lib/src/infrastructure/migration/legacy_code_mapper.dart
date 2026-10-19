@@ -53,17 +53,17 @@ class LegacyCodeMapper {
       for (final step in steps) {
         final method = legacyClass.methods[LegacyNames.methodName(step.text)];
         if (method == null || !method.hasCode) continue;
-        final target = catalog.methodOf(catalog.patternOf(step, columns: columns));
+        final target = catalog.methodOf(feature, catalog.patternOf(step, columns: columns));
         sources.putIfAbsent(target.name, () => []).add(_Source(className, method));
       }
     }
-    return _mapping(catalog, legacy, sources);
+    return _mapping(catalog.methodsFor(feature), legacy, sources);
   }
 
-  LegacyMapping _mapping(StepsCatalog catalog, LegacyScenariosFile legacy, Map<String, List<_Source>> sources) {
+  LegacyMapping _mapping(List<StepMethod> methods, LegacyScenariosFile legacy, Map<String, List<_Source>> sources) {
     final bodies = <String, String>{};
     var copied = 0;
-    for (final method in catalog.methods) {
+    for (final method in methods) {
       final found = sources[method.name];
       if (found == null) continue;
       final live = _liveBody(method, found);

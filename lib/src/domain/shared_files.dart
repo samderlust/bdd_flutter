@@ -1,8 +1,8 @@
-/// The files and names for steps shared by several features.
+/// Where steps shared by several features live, and what they are called.
 ///
-/// Both files live at the root of the test directory:
-/// - `shared.bdd_steps.dart` holds `SharedStepsContract` (generated);
-/// - `shared_steps.dart` holds `mixin SharedSteps` (written by the user).
+/// `shared_steps.dart` sits at the root of the test directory and holds
+/// `mixin SharedSteps`, written by the user. A step is shared when that
+/// mixin implements it.
 class SharedFiles {
   /// The configured test directory, e.g. `test/`.
   final String testDir;
@@ -14,17 +14,11 @@ class SharedFiles {
 
   String get _directory => testDir.replaceAll(r'\', '/').replaceFirst(RegExp(r'/+$'), '');
 
-  /// Path of the generated shared contract, e.g. `test/shared.bdd_steps.dart`.
-  String get contractPath => '$_directory/shared.bdd_steps.dart';
-
   /// Path of the user's shared mixin, e.g. `test/shared_steps.dart`.
   String get stepsPath => '$_directory/shared_steps.dart';
 
-  /// The mixin the user implements, e.g. `SharedSteps`.
+  /// The mixin's name, e.g. `SharedSteps`.
   String get mixinName => 'Shared$stepsSuffix';
-
-  /// The generated interface, e.g. `SharedStepsContract`.
-  String get contractClass => '${mixinName}Contract';
 
   /// The import of [targetPath] as written in a file at [fromPath], e.g.
   /// `../shared_steps.dart` from `test/cart/cart_steps.dart`.
