@@ -11,8 +11,12 @@ void main() {
       expect(Decorator.fromString('@widgetTest'), equals(Decorator.widgetTest));
     });
 
+    test('parses @skip', () {
+      expect(Decorator.fromString('@skip'), equals(Decorator.skip));
+    });
+
     test('returns unknown for unrecognized tag', () {
-      expect(Decorator.fromString('@skip'), equals(Decorator.unknown));
+      expect(Decorator.fromString('@smoke'), equals(Decorator.unknown));
     });
 
     test('trims whitespace', () {

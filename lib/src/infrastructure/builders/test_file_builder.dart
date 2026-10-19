@@ -1,97 +1,167 @@
-import '../../constraints/file_constraint.dart';
+import '../../domain/background.dart';
+import '../../domain/examples_table.dart';
 import '../../domain/feature.dart';
+import '../../domain/feature_files.dart';
+import '../../domain/rule.dart';
 import '../../domain/scenario.dart';
 import '../../domain/step.dart';
+import '../../domain/value_type.dart';
 import '../../extensions/string_x.dart';
+import '../steps/column_types.dart';
+import '../steps/steps_catalog.dart';
+import 'generated_header.dart';
+import 'scenario_settings.dart';
+import 'step_arguments.dart';
 
-/// Generates `.bdd_test.dart` files containing test orchestration code.
+/// Generates `.bdd_test.dart` files: one test per scenario, and one test
+/// per example row of a Scenario Outline.
 ///
-/// The test file instantiates scenario classes and calls their step methods.
-/// This file is always fully regenerated — it contains no user code.
+/// Every test creates a fresh steps object, runs the Background, then the
+/// scenario's steps. This file is rewritten on every build.
 class TestFileBuilder {
-  /// Builds a test file for all scenarios in [feature].
-  Future<String> buildTestFile(
-    Feature feature, {
-    String scenarioSuffix = 'Scenario',
-  }) async {
-    final buffer = StringBuffer();
+  /// When a scenario has no `@unitTest`/`@widgetTest`, generate `testWidgets`.
+  final bool widgetTestsByDefault;
 
-    buffer.writeln("import 'package:flutter_test/flutter_test.dart';");
-    buffer.writeln("import '${feature.fileName}${FileConstraint.generatedScenarios}';");
-    buffer.writeln();
+  const TestFileBuilder({this.widgetTestsByDefault = true});
 
-    buffer.writeln("void main() {");
-    buffer.writeln("  group('${feature.name}', () {");
-
-    for (var scenario in feature.scenarios) {
-      final className = scenario.classNameWithSuffix(scenarioSuffix);
-      final isUnitTest = scenario.isUnitTestWithFeature(feature.decorators);
-      final testFunction = isUnitTest ? 'test' : 'testWidgets';
-
-      if (isUnitTest) {
-        buffer.writeln("    $testFunction('${scenario.name}', () async {");
-      } else {
-        buffer.writeln("    $testFunction('${scenario.name}', (tester) async {");
-      }
-
-      buffer.writeln("      final scenario = $className();");
-
-      if (feature.background != null) {
-        buffer.writeln("      final background = ${feature.name.name}Background();");
-        buffer.writeln("      //Background: ${feature.background!.description}");
-        for (var step in feature.background!.steps) {
-          final methodName = step.methodName;
-          buffer.writeln("      await background.$methodName();");
-        }
-      }
-
-      buffer.writeln("      //Scenario: ${scenario.name}");
-
-      if (scenario.examples != null && scenario.examples!.isNotEmpty) {
-        buffer.writeln("      final examples = [");
-
-        for (var example in scenario.examples!) {
-          buffer.write("        {");
-          for (var entry in example.entries) {
-            buffer.write("'${entry.key.snakeCaseToCamelCase}': '${entry.value}',");
-          }
-          buffer.write("},");
-          buffer.writeln();
-        }
-        buffer.writeln("      ];");
-
-        final exampleKeys = scenario.examples!.first.keys.toList();
-        buffer.writeln("      for (var example in examples) {");
-
-        for (var step in scenario.steps) {
-          final params = <String>[];
-          for (var key in exampleKeys) {
-            if (step.text.contains('<$key>')) {
-              params.add("example['${key.snakeCaseToCamelCase}']!");
-            }
-          }
-
-          buffer.writeln(_generateStepCall(step, isUnitTest, params));
-        }
-        buffer.writeln("      }");
-      } else {
-        for (var step in scenario.steps) {
-          buffer.writeln(_generateStepCall(step, isUnitTest, []));
-        }
-      }
-      buffer.writeln("    });");
+  /// Builds the test file for [files]'s feature.
+  String build(FeatureFiles files, StepsCatalog catalog) {
+    final writer = _TestWriter(files, catalog, widgetTestsByDefault);
+    final feature = files.feature;
+    final buffer = StringBuffer(generatedHeader(feature))
+      ..writeln("import 'package:flutter_test/flutter_test.dart';\n")
+      ..writeln("import '${files.stepsFileName}';\n")
+      ..writeln('void main() {')
+      ..writeln('  group(${feature.name.toDartStringLiteral}, () {');
+    for (final scenario in feature.scenarios) {
+      writer.writeScenario(buffer, scenario);
     }
-
-    buffer.writeln("  });");
-    buffer.writeln("}");
-
+    for (final rule in feature.rules) {
+      buffer.writeln('  group(${'Rule: ${rule.name}'.toDartStringLiteral}, () {');
+      for (final scenario in rule.scenarios) {
+        writer.writeScenario(buffer, scenario, rule: rule);
+      }
+      buffer.writeln('  });');
+    }
+    buffer
+      ..writeln('  });')
+      ..writeln('}');
     return buffer.toString();
+  }
+
+  /// Whether any scenario of [feature] becomes a widget test, so the steps
+  /// class needs a `tester` field.
+  bool needsTester(Feature feature) {
+    bool isWidget(Rule? rule, Scenario s) =>
+        !ScenarioSettings.of(feature, rule, s, widgetTestsByDefault: widgetTestsByDefault).isUnitTest;
+    return feature.scenarios.any((s) => isWidget(null, s)) ||
+        feature.rules.any((r) => r.scenarios.any((s) => isWidget(r, s)));
   }
 }
 
-String _generateStepCall(Step step, bool isUnitTest, List<String> params) {
-  final methodName = step.methodName;
-  return '''
-      // ${step.message}
-      await scenario.$methodName(${isUnitTest ? '' : 'tester'}${params.isNotEmpty ? "${isUnitTest ? '' : ','} ${params.join(', ')}" : ''});''';
+/// Writes the tests of one feature.
+class _TestWriter {
+  final FeatureFiles files;
+  final StepsCatalog catalog;
+  final bool widgetTestsByDefault;
+
+  _TestWriter(this.files, this.catalog, this.widgetTestsByDefault);
+
+  void writeScenario(StringBuffer buffer, Scenario scenario, {Rule? rule}) {
+    final settings = ScenarioSettings.of(files.feature, rule, scenario, widgetTestsByDefault: widgetTestsByDefault);
+    if (!scenario.isOutline) {
+      _writeTest(buffer, scenario.name, settings, settings.tagsFor(), settings.skip, () {
+        _writeSteps(buffer, scenario, rule, const {}, const {});
+      });
+      return;
+    }
+    final columns = columnTypes(scenario.examples);
+    buffer.writeln('  group(${scenario.name.toDartStringLiteral}, () {');
+    for (final table in scenario.examples) {
+      for (var i = 0; i < table.rows.length; i++) {
+        final row = table.rows[i];
+        _writeTest(buffer, _rowName(table, i), settings, settings.tagsFor(table), settings.skipFor(table), () {
+          _writeSteps(buffer, scenario, rule, row, columns);
+        });
+      }
+    }
+    buffer.writeln('  });');
+  }
+
+  /// `Small orders #1 (item: apple, quantity: 1)`.
+  String _rowName(ExamplesTable table, int index) {
+    final label = table.name.isEmpty ? 'Example' : table.name;
+    final values = table.rows[index].entries.map((e) => '${e.key}: ${e.value}').join(', ');
+    return '$label #${index + 1} ($values)';
+  }
+
+  void _writeTest(
+    StringBuffer buffer,
+    String name,
+    ScenarioSettings settings,
+    List<String> tags,
+    bool skip,
+    void Function() writeBody,
+  ) {
+    final literal = name.toDartStringLiteral;
+    if (settings.isUnitTest) {
+      buffer
+        ..writeln('  test($literal, () async {')
+        ..writeln('    final steps = ${files.stepsClass}();');
+    } else {
+      buffer
+        ..writeln('  testWidgets($literal, (tester) async {')
+        ..writeln('    final steps = ${files.stepsClass}()..tester = tester;');
+    }
+    writeBody();
+    buffer.writeln('  }${_options(tags, skip)});');
+  }
+
+  String _options(List<String> tags, bool skip) {
+    final options = [
+      if (tags.isNotEmpty) 'tags: [${tags.map((t) => t.toDartStringLiteral).join(', ')}]',
+      if (skip) 'skip: true',
+    ];
+    return options.isEmpty ? '' : ', ${options.join(', ')}';
+  }
+
+  void _writeSteps(
+    StringBuffer buffer,
+    Scenario scenario,
+    Rule? rule,
+    Map<String, String> row,
+    Map<String, ValueType> columns,
+  ) {
+    _writeBackground(buffer, files.feature.background, 'Background');
+    _writeBackground(buffer, rule?.background, 'Rule background');
+    if (files.feature.background != null || rule?.background != null) {
+      buffer.writeln('    // Scenario');
+    }
+    for (final step in scenario.steps) {
+      _writeStep(buffer, step, row: row, columns: columns);
+    }
+  }
+
+  void _writeBackground(StringBuffer buffer, Background? background, String label) {
+    if (background == null) return;
+    final description = background.description.isEmpty ? '' : ': ${background.description}';
+    buffer.writeln('    // $label$description');
+    for (final step in background.steps) {
+      _writeStep(buffer, step);
+    }
+  }
+
+  void _writeStep(
+    StringBuffer buffer,
+    Step step, {
+    Map<String, String> row = const {},
+    Map<String, ValueType> columns = const {},
+  }) {
+    final pattern = catalog.patternOf(step, columns: columns);
+    final method = catalog.methodOf(pattern);
+    final arguments = stepArguments(step, pattern, row: row).join(', ');
+    buffer
+      ..writeln('    // ${step.message}')
+      ..writeln('    await steps.${method.name}($arguments);');
+  }
 }

@@ -1,0 +1,7 @@
+# Tags used in .feature files; bdd_flutter build lists them.
+tags:
+  cart:
+  eu:
+  fast:
+  smoke:
+  us:

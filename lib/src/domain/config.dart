@@ -1,34 +1,38 @@
 /// Configuration loaded from `.bdd_flutter/config.yaml`.
 ///
 /// Controls how the generator finds feature files, generates test code,
-/// and names scenario classes.
+/// and names steps classes.
 class BDDConfig {
   /// Directory to scan for `.feature` files.
   final String testDir;
 
-  /// When true, generates `testWidgets` with `WidgetTester`.
-  /// When false, generates `test` without `WidgetTester`.
+  /// For scenarios without `@unitTest` or `@widgetTest`: when true,
+  /// generates `testWidgets`; when false, generates `test`.
   final bool generateWidgetTests;
 
   /// Feature file paths to skip during generation.
   final List<String> ignoreFeatures;
 
-  /// Import statements added to every generated `.bdd_scenarios.dart` file.
+  /// Imports added to each new `_steps.dart` file when it is created.
   ///
   /// Useful for shared test helpers, mock packages, etc.
   final List<String> additionalImports;
 
-  /// Suffix appended to scenario class names.
+  /// Suffix appended to the steps class name.
   ///
-  /// Default is `Scenario` (e.g., `IncrementScenario`).
-  /// Set to `Steps` for `IncrementSteps`.
-  final String scenarioSuffix;
+  /// Default is `Steps` (e.g. `CounterSteps`, implementing
+  /// `CounterStepsContract`).
+  final String stepsSuffix;
+
+  /// The 1.x `scenario_suffix`, read only by `migrate` to find 1.x classes.
+  final String legacyScenarioSuffix;
 
   const BDDConfig({
     this.testDir = 'test/',
     this.generateWidgetTests = true,
     this.ignoreFeatures = const [],
     this.additionalImports = const [],
-    this.scenarioSuffix = 'Scenario',
+    this.stepsSuffix = 'Steps',
+    this.legacyScenarioSuffix = 'Scenario',
   });
 }

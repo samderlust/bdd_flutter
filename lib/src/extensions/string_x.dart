@@ -1,50 +1,155 @@
+import 'dart:convert';
+
+import 'latin_fold.dart';
+
+/// Dart reserved words and built-in identifiers that cannot name a method,
+/// parameter or class, plus `tester`, which generated steps classes use as
+/// a field name, and the members every Dart object has.
+const Set<String> _reserved = {
+  'abstract',
+  'as',
+  'assert',
+  'async',
+  'await',
+  'base',
+  'break',
+  'case',
+  'catch',
+  'class',
+  'const', //
+  'continue',
+  'covariant',
+  'default',
+  'deferred',
+  'do',
+  'dynamic',
+  'else',
+  'enum',
+  'export',
+  'extends',
+  'extension',
+  'external',
+  'factory',
+  'false',
+  'final',
+  'finally',
+  'for',
+  'function',
+  'get',
+  'hide',
+  'if',
+  'implements',
+  'import',
+  'in',
+  'interface',
+  'is',
+  'late',
+  'library',
+  'mixin',
+  'new',
+  'null',
+  'of',
+  'on',
+  'operator',
+  'part',
+  'required',
+  'rethrow',
+  'return',
+  'sealed',
+  'set',
+  'show',
+  'static',
+  'super',
+  'switch',
+  'sync',
+  'this',
+  'throw',
+  'true',
+  'try',
+  'type',
+  'typedef',
+  'var',
+  'void',
+  'when',
+  'while',
+  'with',
+  'yield',
+  'tester', 'toString', 'hashCode', 'noSuchMethod', 'runtimeType',
+};
+
 /// String utilities for name conversion in code generation.
 extension StringX on String {
-  /// Converts a space-separated string to a valid PascalCase Dart identifier.
+  /// The ASCII words of this string, for building Dart identifiers.
   ///
-  /// Strips non-alphanumeric characters, removes leading digits,
-  /// and prefixes with `X` if the result would otherwise be empty or start with a digit.
+  /// Accents are folded (`é` → `e`, `ệ` → `e`) and apostrophes join words
+  /// (`j'incrémente` → `jincremente`). Everything else that is not a letter
+  /// or digit separates words.
+  List<String> get identifierWords {
+    final folded = foldLatin(this).replaceAll(RegExp("['’]"), '');
+    return folded.split(RegExp(r'[^a-zA-Z0-9]+')).where((word) => word.isNotEmpty).toList();
+  }
+
+  /// A short, stable hash of this string, for names of non-Latin text.
   ///
-  /// Example: `"successful login"` -> `"SuccessfulLogin"`.
-  /// Example: `"123 login"` -> `"X123Login"`.
+  /// The first 6 hex digits of its 32-bit FNV-1a hash over UTF-8 bytes. It
+  /// must give the same result on every machine and run, so generated
+  /// names stay stable; `String.hashCode` does not promise that.
+  String get shortHash {
+    var hash = 0x811c9dc5;
+    for (final byte in utf8.encode(this)) {
+      hash = ((hash ^ byte) * 0x01000193) & 0xffffffff;
+    }
+    return hash.toRadixString(16).padLeft(8, '0').substring(0, 6);
+  }
+
+  /// Converts this string to a PascalCase Dart class name.
+  ///
+  /// Example: `"successful login"` → `"SuccessfulLogin"`, `"123 login"` →
+  /// `"X123Login"`. Text with no Latin letters becomes `X` plus a hash.
   String get name {
-    final sanitized = replaceAll(RegExp(r'[^a-zA-Z0-9\s]'), ' ');
-    final words = sanitized.split(' ').where((word) => word.isNotEmpty).toList();
-    if (words.isEmpty) return 'Unnamed';
-    final result = words
-        .map((word) => word[0].toUpperCase() + word.substring(1).toLowerCase())
-        .join('');
-    if (RegExp(r'^[0-9]').hasMatch(result)) return 'X$result';
-    return result;
+    final words = identifierWords;
+    if (words.isEmpty) return trim().isEmpty ? 'Unnamed' : 'X$shortHash';
+    final result = words.map(_capitalize).join();
+    return RegExp(r'^[0-9]').hasMatch(result) ? 'X$result' : result;
   }
 
-  /// Converts to a scenario class name with the default "Scenario" suffix.
+  /// Converts this string to a camelCase Dart identifier for a method or
+  /// parameter.
   ///
-  /// Example: `"Increment"` -> `"IncrementScenario"`.
-  String get toScenarioClassName => toClassName('Scenario');
-
-  /// Converts to a class name with a custom [suffix].
-  ///
-  /// Example: `"Increment".toClassName("Steps")` -> `"IncrementSteps"`.
-  String toClassName(String suffix) {
-    return '$name$suffix';
+  /// Returns `null` when the text has no Latin letters or digits. A result
+  /// that starts with a digit gets [prefix] in front; a reserved word gets
+  /// `Step` appended.
+  String? toCamelIdentifier({String prefix = 'step'}) {
+    final words = identifierWords;
+    if (words.isEmpty) return null;
+    final result = _lowerFirst(words.first) + words.skip(1).map(_capitalize).join();
+    if (RegExp(r'^[0-9]').hasMatch(result)) {
+      return '$prefix${_capitalize(result)}';
+    }
+    return _reserved.contains(result) ? '${result}Step' : result;
   }
 
-  /// Converts a snake_case string to camelCase.
+  /// This string as a single-quoted Dart string literal.
   ///
-  /// Handles leading/trailing underscores and filters empty segments.
-  /// Example: `"first_name"` -> `"firstName"`.
-  String get snakeCaseToCamelCase {
-    final parts = split('_').where((word) => word.isNotEmpty).toList();
-    if (parts.isEmpty) return this;
-    return parts[0].toLowerCase() +
-        parts.skip(1).map((word) => word[0].toUpperCase() + word.substring(1).toLowerCase()).join('');
+  /// Escapes backslashes, quotes, `$` and line breaks so the generated code
+  /// produces exactly this value.
+  String get toDartStringLiteral {
+    final escaped = replaceAll(
+      r'\',
+      r'\\',
+    ).replaceAll("'", r"\'").replaceAll(r'$', r'\$').replaceAll('\n', r'\n').replaceAll('\r', r'\r');
+    return "'$escaped'";
   }
+}
 
-  /// Converts a space-separated string to snake_case.
-  ///
-  /// Example: `"Hello World"` -> `"hello_world"`.
-  String get toSnakeCase {
-    return split(' ').map((word) => word.toLowerCase()).join('_');
-  }
+/// `user` → `User`, `syncNote` → `SyncNote`, `JSON` → `Json`.
+String _capitalize(String word) {
+  final rest = word.substring(1);
+  return word[0].toUpperCase() + (word == word.toUpperCase() ? rest.toLowerCase() : rest);
+}
+
+/// `User` → `user`, `syncNote` → `syncNote`, `JSON` → `json`.
+String _lowerFirst(String word) {
+  if (word == word.toUpperCase()) return word.toLowerCase();
+  return word[0].toLowerCase() + word.substring(1);
 }

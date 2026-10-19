@@ -11,10 +11,10 @@ import 'step.dart';
 /// ```
 class Background {
   /// A description of the background (text after `Background:`).
-  String description;
+  final String description;
 
   /// The steps that make up the background setup.
-  List<Step> steps;
+  final List<Step> steps;
 
-  Background({required this.description, required this.steps});
+  const Background({required this.description, required this.steps});
 }

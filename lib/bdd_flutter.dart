@@ -7,15 +7,20 @@
 /// dart run bdd_flutter build
 /// ```
 ///
-/// This generates `.bdd_scenarios.dart` (step stubs) and `.bdd_test.dart`
-/// (test orchestration) files alongside each `.feature` file.
+/// For each `.feature` file this generates, next to it:
+/// - `<name>.bdd_steps.dart`: an interface with one method per step,
+///   rewritten on every build;
+/// - `<name>_steps.dart`: your implementation, created once;
+/// - `<name>.bdd_test.dart`: the tests, rewritten on every build.
 ///
 /// ## Quick Start
 ///
 /// 1. Create a `.feature` file in your test folder
 /// 2. Run `dart run bdd_flutter build` to generate test files
-/// 3. Implement the step methods in the generated scenario classes
-/// 4. Run `dart run bdd_flutter test` for a BDD-formatted test report
+/// 3. Implement the step methods in the `_steps.dart` file
+/// 4. Run `flutter test`, or `dart run bdd_flutter test` for a BDD report
+///
+/// Upgrading from 1.x: run `dart run bdd_flutter migrate`.
 ///
 /// ## Configuration
 ///
@@ -28,6 +33,6 @@
 ///   - test/features/login.feature
 /// additional_imports:
 ///   - "package:mocktail/mocktail.dart"
-/// scenario_suffix: "Scenario"
+/// steps_suffix: "Steps"
 /// ```
 library bdd_flutter;

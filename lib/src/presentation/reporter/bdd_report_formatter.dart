@@ -1,116 +1,165 @@
 import 'dart:io';
 
-const String _red = '\x1B[31m';
-const String _green = '\x1B[32m';
-const String _cyan = '\x1B[36m';
-const String _dim = '\x1B[2m';
-const String _reset = '\x1B[0m';
+import 'test_result.dart';
 
-/// Formats BDD test results into a colored Feature/Scenario report.
+/// Frames from the test framework itself, skipped when pointing at the
+/// line that failed.
+final RegExp _frameworkFrame = RegExp(r'^(package:(flutter_test|flutter|test_api|matcher|stack_trace)/|dart:)');
+
+/// Turns [TestResult]s into the report printed by `dart run bdd_flutter test`.
 ///
-/// Used by [BDDTestRunner] to display results from `flutter test --machine`.
+/// BDD tests are grouped by feature, with Scenario Outlines and Rules as
+/// sub-headings; other tests follow, grouped by file. Features and files
+/// are sorted by path, so the report is the same on every run.
 class BDDReportFormatter {
-  final List<FeatureReport> features = [];
-  DateTime? _startTime;
+  /// Whether to use ANSI colors.
+  final bool color;
 
-  void start() {
-    _startTime = DateTime.now();
+  /// Passing tests at least this slow show their duration.
+  final Duration slowThreshold;
+
+  /// Lines of a failure message to show before cutting it short.
+  final int maxErrorLines;
+
+  const BDDReportFormatter({
+    this.color = false,
+    this.slowThreshold = const Duration(milliseconds: 500),
+    this.maxErrorLines = 8,
+  });
+
+  /// A formatter that uses colors only when stdout is a terminal that
+  /// supports them and `NO_COLOR` is not set.
+  factory BDDReportFormatter.forStdout() {
+    final noColor = Platform.environment['NO_COLOR']?.isNotEmpty ?? false;
+    return BDDReportFormatter(color: !noColor && stdout.hasTerminal && stdout.supportsAnsiEscapes);
   }
 
-  FeatureReport getOrCreateFeature(String name) {
-    for (final feature in features) {
-      if (feature.name == name) return feature;
-    }
-    final feature = FeatureReport(name: name);
-    features.add(feature);
-    return feature;
-  }
-
-  void addTestResult({
-    required String featureName,
-    required String scenarioName,
-    required bool passed,
-    String? error,
-    Duration? duration,
-  }) {
-    final feature = getOrCreateFeature(featureName);
-    feature.scenarios.add(ScenarioResult(
-      name: scenarioName,
-      passed: passed,
-      error: error,
-      duration: duration,
-    ));
-  }
-
-  String formatReport() {
+  /// The full report for [results], which took [elapsed] to run.
+  String format(List<TestResult> results, {required Duration elapsed}) {
     final buffer = StringBuffer();
-    final totalDuration = _startTime != null ? DateTime.now().difference(_startTime!) : Duration.zero;
-
-    buffer.writeln();
-    buffer.writeln('${_cyan}BDD Test Report$_reset');
-    buffer.writeln('$_dim${'=' * 50}$_reset');
-
-    int totalScenarios = 0;
-    int totalPassed = 0;
-    int totalFailed = 0;
-
-    for (final feature in features) {
-      buffer.writeln();
-      buffer.writeln('  ${_cyan}Feature: ${feature.name}$_reset');
-
-      for (final scenario in feature.scenarios) {
-        totalScenarios++;
-        final durationStr = scenario.duration != null ? ' $_dim(${scenario.duration!.inMilliseconds}ms)$_reset' : '';
-
-        if (scenario.passed) {
-          totalPassed++;
-          buffer.writeln('    $_green✓$_reset ${scenario.name}$durationStr');
-        } else {
-          totalFailed++;
-          buffer.writeln('    $_red✗ ${scenario.name}$_reset$durationStr');
-          if (scenario.error != null) {
-            buffer.writeln('      $_red${scenario.error}$_reset');
-          }
-        }
+    final byFile = _byFile(results);
+    for (final MapEntry(key: file, value: tests) in byFile.entries.where((e) => e.value.first.isBdd)) {
+      _writeFeature(buffer, file, tests);
+    }
+    final others = byFile.entries.where((e) => !e.value.first.isBdd).toList();
+    if (others.isNotEmpty) {
+      buffer.writeln('\n${_bold('Other tests')}');
+      for (final MapEntry(key: file, value: tests) in others) {
+        buffer.writeln('  ${_cyan(file.split(RegExp(r'[/\\]')).last)}');
+        _writeTests(buffer, tests, indent: 4, groupsToSkip: 0);
       }
     }
-
-    buffer.writeln();
-    buffer.writeln('$_dim${'─' * 50}$_reset');
-
-    final passedStr = totalPassed > 0 ? '$_green$totalPassed passed$_reset' : '0 passed';
-    final failedStr = totalFailed > 0 ? '$_red$totalFailed failed$_reset' : '0 failed';
-    buffer.writeln('  $totalScenarios scenarios: $passedStr, $failedStr');
-    buffer.writeln('  Time: ${totalDuration.inMilliseconds}ms');
-    buffer.writeln();
-
+    _writeSummary(buffer, results, elapsed);
     return buffer.toString();
   }
 
-  void printReport() {
-    stdout.write(formatReport());
+  Map<String, List<TestResult>> _byFile(List<TestResult> results) {
+    final byFile = <String, List<TestResult>>{};
+    for (final result in results) {
+      byFile.putIfAbsent(result.file, () => []).add(result);
+    }
+    final files = byFile.keys.toList()..sort();
+    return {for (final file in files) file: byFile[file]!};
   }
-}
 
-/// Aggregated test results for a single feature.
-class FeatureReport {
-  final String name;
-  final List<ScenarioResult> scenarios = [];
+  void _writeFeature(StringBuffer buffer, String file, List<TestResult> tests) {
+    final name = tests.first.groups.firstOrNull ?? file;
+    final featurePath = file.replaceFirst(RegExp(r'\.bdd_test\.dart$'), '.feature');
+    buffer.writeln('\n${_bold(name)}  ${_dim(featurePath)}');
+    if (tests.every((t) => t.status == TestStatus.skipped)) {
+      buffer.writeln('  ${_dim('○ ${tests.length} scenario${tests.length == 1 ? '' : 's'} skipped')}');
+      return;
+    }
+    _writeTests(buffer, tests, indent: 2, groupsToSkip: 1);
+  }
 
-  FeatureReport({required this.name});
-}
+  /// Writes [tests] with a heading each time their group changes. The first
+  /// [groupsToSkip] groups are already shown by the caller.
+  void _writeTests(StringBuffer buffer, List<TestResult> tests, {required int indent, required int groupsToSkip}) {
+    var previous = <String>[];
+    for (final test in tests) {
+      final groups = test.groups.skip(groupsToSkip).toList();
+      final shared = _sharedLength(previous, groups);
+      for (var level = shared; level < groups.length; level++) {
+        buffer.writeln('${' ' * (indent + level * 2)}${groups[level]}');
+      }
+      _writeTest(buffer, test, indent + groups.length * 2);
+      previous = groups;
+    }
+  }
 
-/// The result of a single scenario test execution.
-class ScenarioResult {
-  final String name;
-  final bool passed;
-  final String? error;
-  final Duration? duration;
+  int _sharedLength(List<String> a, List<String> b) {
+    var i = 0;
+    while (i < a.length && i < b.length && a[i] == b[i]) {
+      i++;
+    }
+    return i;
+  }
 
-  ScenarioResult({
-    required this.name,
-    required this.passed,
-    this.error,
-    this.duration,
-  });
+  void _writeTest(StringBuffer buffer, TestResult test, int indent) {
+    final pad = ' ' * indent;
+    final time = _showsDuration(test) ? '  ${_dim(_duration(test.duration))}' : '';
+    switch (test.status) {
+      case TestStatus.passed:
+        buffer.writeln('$pad${_green('✓')} ${test.name}$time');
+      case TestStatus.skipped:
+        buffer.writeln('$pad${_dim('○ ${test.name} (skipped)')}');
+      case TestStatus.failed:
+        buffer.writeln('$pad${_red('✗ ${test.name}')}$time');
+        _writeFailure(buffer, test, '$pad    ');
+    }
+  }
+
+  bool _showsDuration(TestResult test) {
+    return test.status == TestStatus.failed || (test.status == TestStatus.passed && test.duration >= slowThreshold);
+  }
+
+  void _writeFailure(StringBuffer buffer, TestResult test, String pad) {
+    final lines = (test.error ?? '').trimRight().split('\n');
+    for (final line in lines.take(maxErrorLines)) {
+      buffer.writeln('$pad${_red(line)}');
+    }
+    if (lines.length > maxErrorLines) buffer.writeln('$pad${_dim('… ${lines.length - maxErrorLines} more lines')}');
+    final location = _location(test.stackTrace);
+    if (location != null) buffer.writeln('$pad${_dim('at $location')}');
+  }
+
+  /// The first stack frame in the user's steps file, else the first frame
+  /// outside the test framework.
+  String? _location(String? stackTrace) {
+    if (stackTrace == null) return null;
+    final frames = stackTrace
+        .split('\n')
+        .map((l) => l.trim().replaceAll(RegExp(r'\s+'), ' '))
+        .where((l) => l.isNotEmpty)
+        .toList();
+    return frames.where((f) => f.contains('_steps.dart')).firstOrNull ??
+        frames.where((f) => !_frameworkFrame.hasMatch(f)).firstOrNull;
+  }
+
+  void _writeSummary(StringBuffer buffer, List<TestResult> results, Duration elapsed) {
+    int count(TestStatus status) => results.where((r) => r.status == status).length;
+    final failed = count(TestStatus.failed);
+    final skipped = count(TestStatus.skipped);
+    final parts = [
+      _green('${count(TestStatus.passed)} passed'),
+      failed > 0 ? _red('$failed failed') : '0 failed',
+      if (skipped > 0) _dim('$skipped skipped'),
+    ];
+    buffer
+      ..writeln('\n${_dim('─' * 50)}')
+      ..writeln('${results.length} tests: ${parts.join(', ')}   ${_dim('(${_duration(elapsed)})')}');
+  }
+
+  String _duration(Duration d) {
+    if (d.inMilliseconds < 1000) return '${d.inMilliseconds}ms';
+    return '${(d.inMilliseconds / 1000).toStringAsFixed(1)}s';
+  }
+
+  String _paint(String code, String text) => color ? '\x1B[${code}m$text\x1B[0m' : text;
+  String _green(String text) => _paint('32', text);
+  String _red(String text) => _paint('31', text);
+  String _cyan(String text) => _paint('36', text);
+  String _dim(String text) => _paint('2', text);
+  String _bold(String text) => _paint('1', text);
 }
