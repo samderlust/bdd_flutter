@@ -7,7 +7,7 @@ class FileConstraint {
   static const String generatedTest = '.bdd_test.dart';
 
   /// Extension for the generated steps contract, rewritten on every build.
-  static const String generatedSteps = '.bdd_steps.g.dart';
+  static const String generatedSteps = '.bdd_steps.dart';
 
   /// Suffix for the steps file the user owns, created once.
   static const String userSteps = '_steps.dart';

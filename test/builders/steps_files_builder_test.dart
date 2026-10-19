@@ -34,7 +34,7 @@ void main() {
 
   group('FeatureFiles', () {
     test('names files next to the feature and classes after its name', () {
-      expect(files.contractPath, 'test/cart/cart.bdd_steps.g.dart');
+      expect(files.contractPath, 'test/cart/cart.bdd_steps.dart');
       expect(files.stepsPath, 'test/cart/cart_steps.dart');
       expect(files.testPath, 'test/cart/cart.bdd_test.dart');
       expect(files.legacyScenariosPath, 'test/cart/cart.bdd_scenarios.dart');
@@ -76,7 +76,7 @@ void main() {
       );
 
       expect(result, contains("import 'package:mocktail/mocktail.dart';"));
-      expect(result, contains("import 'cart.bdd_steps.g.dart';"));
+      expect(result, contains("import 'cart.bdd_steps.dart';"));
       expect(result, contains('class ShoppingCartSteps implements ShoppingCartStepsContract {'));
       expect(result, contains('  @override\n  late WidgetTester tester;'));
       expect(result, contains("    throw UnimplementedError('Given an empty cart');"));

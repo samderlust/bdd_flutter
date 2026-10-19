@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'sample.bdd_steps.g.dart';
+import 'sample.bdd_steps.dart';
 
 /// The steps of the feature "Sample".
 class SampleSteps implements SampleStepsContract {

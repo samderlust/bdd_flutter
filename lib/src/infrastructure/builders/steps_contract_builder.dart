@@ -3,7 +3,7 @@ import '../../domain/step_method.dart';
 import '../steps/steps_catalog.dart';
 import 'generated_header.dart';
 
-/// Generates the `.bdd_steps.g.dart` file: an interface with one method per
+/// Generates the `.bdd_steps.dart` file: an interface with one method per
 /// distinct step of the feature.
 ///
 /// This file is rewritten on every build. The user implements the interface

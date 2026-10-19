@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'counter.bdd_steps.g.dart';
+import 'counter.bdd_steps.dart';
 
 /// The steps of the feature "Counter".
 class CounterSteps implements CounterStepsContract {

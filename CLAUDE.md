@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What This Project Is
 
-bdd_flutter is a Dart CLI tool that generates Flutter/Dart test files from Gherkin `.feature` files. Users write BDD scenarios in `.feature` files, run `dart run bdd_flutter build`, and get three files next to each feature: a generated steps contract (`.bdd_steps.g.dart`), a steps file the user owns (`_steps.dart`, created once) and the generated tests (`.bdd_test.dart`).
+bdd_flutter is a Dart CLI tool that generates Flutter/Dart test files from Gherkin `.feature` files. Users write BDD scenarios in `.feature` files, run `dart run bdd_flutter build`, and get three files next to each feature: a generated steps contract (`.bdd_steps.dart`), a steps file the user owns (`_steps.dart`, created once) and the generated tests (`.bdd_test.dart`).
 
 ## Common Commands
 
@@ -41,7 +41,7 @@ BDDCLI.run(args)
     → FeatureParser.parseFeature(filePath)            # cucumber_gherkin → GherkinDocument
       → GherkinMapper.toFeature(document, path)       # GherkinDocument → Feature model
     → StepsCatalog.of(feature)                        # distinct step patterns → StepMethods
-    → StepsContractBuilder.build(...)                 # → .bdd_steps.g.dart (always rewritten)
+    → StepsContractBuilder.build(...)                 # → .bdd_steps.dart (always rewritten)
     → TestFileBuilder.build(...)                      # → .bdd_test.dart (always rewritten)
     → StepsStubBuilder.build(...)                     # → _steps.dart (only if missing)
     → checkStepsFile(...)                             # warn about missing/unused steps
@@ -69,7 +69,7 @@ A step's pattern key is its text with slots replaced by type markers, plus `+doc
 ### Generated Code Pattern
 
 ```dart
-// cart.bdd_steps.g.dart (generated)
+// cart.bdd_steps.dart (generated)
 abstract interface class ShoppingCartStepsContract {
   Future<void> iAddAtEach(num quantity, String item, num price);
 }

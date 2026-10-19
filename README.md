@@ -71,11 +71,11 @@ For `test/cart/cart.feature`, `build` writes three files next to it:
 
 | File | Owner | What it holds |
 | --- | --- | --- |
-| `cart.bdd_steps.g.dart` | bdd_flutter, rewritten on every build | `ShoppingCartStepsContract`: one method per distinct step |
+| `cart.bdd_steps.dart` | bdd_flutter, rewritten on every build | `ShoppingCartStepsContract`: one method per distinct step |
 | `cart_steps.dart` | **you**; created once, never touched again | `ShoppingCartSteps implements ShoppingCartStepsContract` |
 | `cart.bdd_test.dart` | bdd_flutter, rewritten on every build | The tests |
 
-### `cart.bdd_steps.g.dart`
+### `cart.bdd_steps.dart`
 
 ```dart
 abstract interface class ShoppingCartStepsContract {
@@ -319,12 +319,12 @@ your_project/
 │   └── cart/
 │       ├── cart.feature
 │       ├── cart_steps.dart         # yours
-│       ├── cart.bdd_steps.g.dart   # generated
+│       ├── cart.bdd_steps.dart   # generated
 │       └── cart.bdd_test.dart      # generated
 └── pubspec.yaml
 ```
 
-Commit the generated files so `flutter test` works on a fresh clone without running `build`, or add them to `.gitignore` and run `build` in CI.
+Every generated file matches `*.bdd_*.dart` and your own files never do, so one glob is enough for `.gitignore`, coverage excludes or `analyzer: exclude`. Commit the generated files so `flutter test` works on a fresh clone without running `build`, or ignore them and run `dart run bdd_flutter build` in CI. bdd_flutter does not use `build_runner`, so its files do not end in `.g.dart`.
 
 ## License
 

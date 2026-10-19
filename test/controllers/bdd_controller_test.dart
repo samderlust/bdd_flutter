@@ -90,7 +90,7 @@ void main() {
       final failed = await buildController().generateFeatureTestCases();
 
       expect(failed, 0);
-      expect(read('cart.bdd_steps.g.dart'), contains('abstract interface class ShoppingCartStepsContract'));
+      expect(read('cart.bdd_steps.dart'), contains('abstract interface class ShoppingCartStepsContract'));
       expect(read('cart.bdd_test.dart'), contains("await steps.iAdd(2, 'apple');"));
       expect(read('cart_steps.dart'), contains('class ShoppingCartSteps implements ShoppingCartStepsContract'));
     });
@@ -104,7 +104,7 @@ void main() {
       await buildController().generateFeatureTestCases();
 
       expect(read('cart_steps.dart'), '// my code');
-      expect(read('cart.bdd_steps.g.dart'), contains('Future<void> iClearTheCart();'));
+      expect(read('cart.bdd_steps.dart'), contains('Future<void> iClearTheCart();'));
       expect(read('cart.bdd_test.dart'), contains("test('Clear', () async {"));
     });
 

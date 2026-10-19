@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'complex1.bdd_steps.g.dart';
+import 'complex1.bdd_steps.dart';
 
 /// The steps of the feature "Note auto-sync".
 class NoteAutoSyncSteps implements NoteAutoSyncStepsContract {

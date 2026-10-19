@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'feature1.bdd_steps.g.dart';
+import 'feature1.bdd_steps.dart';
 
 /// The steps of the feature "Feature 1".
 class Feature1Steps implements Feature1StepsContract {

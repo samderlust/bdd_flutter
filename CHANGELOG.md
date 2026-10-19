@@ -5,7 +5,7 @@
 ### Breaking
 
 - Step code moves from `.bdd_scenarios.dart` (one class per scenario, edited by you and appended to by the tool) to three files per feature:
-  - `<name>.bdd_steps.g.dart`: a generated `abstract interface class <Feature>StepsContract`, rewritten on every build
+  - `<name>.bdd_steps.dart`: a generated `abstract interface class <Feature>StepsContract`, rewritten on every build
   - `<name>_steps.dart`: your `<Feature>Steps implements <Feature>StepsContract`, created once and never touched again
   - `<name>.bdd_test.dart`: the generated tests
 - One steps class per feature, with one method per distinct step. Background, Rule background and scenario steps share it, so state lives in normal fields instead of top-level variables

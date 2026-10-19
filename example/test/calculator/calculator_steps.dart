@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'calculator.bdd_steps.g.dart';
+import 'calculator.bdd_steps.dart';
 
 /// The steps of the feature "Calculator".
 class CalculatorSteps implements CalculatorStepsContract {

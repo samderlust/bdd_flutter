@@ -8,7 +8,7 @@
 /// ```
 ///
 /// For each `.feature` file this generates, next to it:
-/// - `<name>.bdd_steps.g.dart`: an interface with one method per step,
+/// - `<name>.bdd_steps.dart`: an interface with one method per step,
 ///   rewritten on every build;
 /// - `<name>_steps.dart`: your implementation, created once;
 /// - `<name>.bdd_test.dart`: the tests, rewritten on every build.

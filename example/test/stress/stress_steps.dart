@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
 
-import 'stress.bdd_steps.g.dart';
+import 'stress.bdd_steps.dart';
 
 /// The steps of the feature "Order processing".
 class OrderProcessingSteps implements OrderProcessingStepsContract {

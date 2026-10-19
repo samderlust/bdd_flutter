@@ -6,7 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:provider/provider.dart';
 
-import 'login.bdd_steps.g.dart';
+import 'login.bdd_steps.dart';
 
 class MockAuthRepository extends Mock implements AuthRepository {}
 

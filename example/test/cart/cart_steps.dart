@@ -1,7 +1,7 @@
 import 'package:example/src/cart.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'cart.bdd_steps.g.dart';
+import 'cart.bdd_steps.dart';
 
 /// The steps of the feature "Shopping cart".
 class ShoppingCartSteps implements ShoppingCartStepsContract {

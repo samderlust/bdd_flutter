@@ -5,7 +5,7 @@ import 'feature.dart';
 /// The files and class names generated for one feature.
 ///
 /// For `test/cart/cart.feature` with feature name `Shopping cart`:
-/// - `cart.bdd_steps.g.dart` holds `ShoppingCartStepsContract` (generated);
+/// - `cart.bdd_steps.dart` holds `ShoppingCartStepsContract` (generated);
 /// - `cart_steps.dart` holds `ShoppingCartSteps` (written by the user);
 /// - `cart.bdd_test.dart` holds the tests (generated).
 class FeatureFiles {
@@ -27,7 +27,7 @@ class FeatureFiles {
     return path.substring(0, _lastSeparator(path) + 1);
   }
 
-  /// Path of the generated contract, e.g. `test/cart/cart.bdd_steps.g.dart`.
+  /// Path of the generated contract, e.g. `test/cart/cart.bdd_steps.dart`.
   String get contractPath => '$_base${FileConstraint.generatedSteps}';
 
   /// Path of the user's steps file, e.g. `test/cart/cart_steps.dart`.
