@@ -65,6 +65,24 @@ flutter test
 
 or `dart run bdd_flutter test` for a Feature/Scenario report.
 
+## How It Works
+
+```
+                       dart run bdd_flutter build
+                                  │
+  cart.feature ───────────────────┼──► cart.bdd_steps.dart   generated, rewritten every build
+                                  │      ShoppingCartStepsContract: one method per step
+                                  ├──► cart.bdd_test.dart    generated, rewritten every build
+                                  │      the tests
+                                  └──► cart_steps.dart       created once, then yours
+                                         ShoppingCartSteps: your step code
+
+  cart_steps.dart     implements  cart.bdd_steps.dart   analyzer flags missing or outdated steps
+  cart.bdd_test.dart  calls       cart_steps.dart       flutter test runs it
+```
+
+`build` reads every `.feature` file, works out the distinct steps, and writes the contract and the tests. It creates your steps file only if it does not exist, then formats what it wrote with `dart format`. Run it again whenever a `.feature` file changes.
+
 ## Generated Files
 
 For `test/cart/cart.feature`, `build` writes three files next to it:
@@ -170,7 +188,15 @@ Values are taken out of the step text and passed as parameters:
 | A doc string (`"""`) | `String docString` |
 | A data table | `List<List<String>> dataTable` (header row included) |
 
-Steps with the same text once values are taken out share one method, whatever their keyword. Parameters are named after the placeholder (`<first_name>` → `firstName`), or `text`, `number`, `flag` otherwise.
+Steps with the same text once values are taken out share one method, whatever their keyword.
+
+```
+I add 2 "apple" at 1.5 each                 ┐
+I add 1 "pear" at 2 each                    ├─► I add {num} {string} at {num} each ─► iAddAtEach(num quantity, String item, num price)
+I add <quantity> "<item>" at <price> each   ┘
+the cart has 1 item                         ┐
+the cart has 0 item                         ┴─► the cart has {num} item            ─► theCartHasItem(num number)
+``` Parameters are named after the placeholder (`<first_name>` → `firstName`), or `text`, `number`, `flag` otherwise.
 
 To avoid losing data, a number stays part of the method name when it is part of something else: `3rd`, `09:00`, `$10.00`, `15%`, `1-second`. A number Dart would print differently (`007`, `1.50`) also stays as text, and an Examples column with such a value is passed as `String`.
 
