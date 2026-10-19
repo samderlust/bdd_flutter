@@ -22,8 +22,10 @@ Requires Dart 3.8 or later. Add to your `pubspec.yaml`:
 
 ```yaml
 dev_dependencies:
-  bdd_flutter: ^2.0.0
+  bdd_flutter: ^2.0.0-beta.1
 ```
+
+2.0 is in beta. Generated names and file names may still change before 2.0.0; feedback is welcome in the [issues](https://github.com/samderlust/bdd_flutter/issues). The latest stable release is 1.1.1.
 
 ## Quick Start
 

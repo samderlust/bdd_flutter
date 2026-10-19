@@ -1,4 +1,6 @@
-## 2.0.0
+## 2.0.0-beta.1
+
+A beta of 2.0: please try it, including `migrate` on a 1.x project, and report anything odd, especially generated names. Naming rules, file names and the contract shape can still change until 2.0.0; after that, changing them would break your steps files.
 
 2.0 changes the shape of the generated code. Run `dart run bdd_flutter migrate` once to move a 1.x project; see "Upgrading from 1.x" in the README.
 
