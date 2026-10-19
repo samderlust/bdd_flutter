@@ -8,13 +8,31 @@ import '../../domain/rule.dart';
 import '../../domain/scenario.dart';
 import '../../domain/step.dart';
 import '../../domain/step_keyword_type.dart';
+import 'feature_parse_exception.dart';
 
-/// Converts a Cucumber [cm.GherkinDocument] into bdd_flutter's [Feature].
+/// Converts the output of the Cucumber parser into bdd_flutter's [Feature].
 ///
 /// This is the only place that knows about `cucumber_messages` types, so
 /// upstream changes stay contained here.
 class GherkinMapper {
   const GherkinMapper();
+
+  /// Maps the [envelopes] that `generateMessages` produced for the file at
+  /// [path] to a [Feature].
+  ///
+  /// Throws [FeatureParseException] when the envelopes hold parse errors or
+  /// no Gherkin document.
+  Feature fromEnvelopes(List<cm.Envelope> envelopes, String path) {
+    final errors = envelopes.map((e) => e.parseError).whereType<cm.ParseError>().toList();
+    if (errors.isNotEmpty) {
+      throw FeatureParseException(path, errors.map((e) => e.message).toList());
+    }
+    final document = envelopes.map((e) => e.gherkinDocument).whereType<cm.GherkinDocument>().firstOrNull;
+    if (document == null) {
+      throw FeatureParseException(path, const ['No Gherkin document produced']);
+    }
+    return toFeature(document, path);
+  }
 
   /// Maps [document] parsed from the file at [path] to a [Feature].
   Feature toFeature(cm.GherkinDocument document, String path) {
