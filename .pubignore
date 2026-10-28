@@ -1,12 +1,4 @@
-# When this file exists, `dart pub publish` uses it INSTEAD of the root
-# .gitignore, so any non-hidden pattern from .gitignore must be repeated here.
-#
-# Pub already excludes, without needing an entry here:
-#   - every hidden file/directory (`.*`): .dart_tool/, .github/, .vscode/,
-#     .idea/, .DS_Store, .claude/, .cursor/, .flutter-plugins*, ...
-#   - every pubspec.lock, and the root pubspec_overrides.yaml
-#
-# Check the result with `dart pub publish --dry-run`.
+# pub uses this file instead of .gitignore when publishing, so it repeats it.
 
 # Mirrored from .gitignore
 *.class
@@ -24,6 +16,7 @@ CLAUDE.md
 # Local / generated output
 coverage/
 pubspec_overrides.yaml
+/example/test_results/
 
 # Contributor-only material
 /CONTRIBUTING.md
