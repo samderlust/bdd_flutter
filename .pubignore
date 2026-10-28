@@ -1,43 +1,39 @@
-# pub uses this file instead of .gitignore when publishing, so it repeats it.
+# When this file exists, `dart pub publish` uses it INSTEAD of the root
+# .gitignore, so any non-hidden pattern from .gitignore must be repeated here.
+#
+# Pub already excludes, without needing an entry here:
+#   - every hidden file/directory (`.*`): .dart_tool/, .github/, .vscode/,
+#     .idea/, .DS_Store, .claude/, .cursor/, .flutter-plugins*, ...
+#   - every pubspec.lock, and the root pubspec_overrides.yaml
+#
+# Check the result with `dart pub publish --dry-run`.
 
-# Miscellaneous
+# Mirrored from .gitignore
 *.class
 *.log
 *.pyc
 *.swp
-.DS_Store
-.atom/
-.buildlog/
-.history
-.svn/
-migrate_working_dir/
-
-# IntelliJ related
 *.iml
 *.ipr
 *.iws
-.idea/
-
-# The .vscode folder contains launch configuration and tasks you configure in
-# VS Code which you may wish to be included in version control, so this line
-# is commented out by default.
-#.vscode/
-
-# Flutter/Dart/Pub related
-# Libraries should not include pubspec.lock, per https://dart.dev/guides/libraries/private-files#pubspeclock.
-/pubspec.lock
+migrate_working_dir/
 **/doc/api/
-.dart_tool/
-.flutter-plugins
-.flutter-plugins-dependencies
 build/
-.cursor/
-# AI assistant files, kept local
 CLAUDE.md
-.claude/
 
-# Not shipped to pub.dev
-.github/
-.vscode/
-plan/
-overview.md
+# Local / generated output
+coverage/
+pubspec_overrides.yaml
+
+# Contributor-only material
+/CONTRIBUTING.md
+/overview.md
+/plan/
+
+# The package's own unit tests (example/test is kept: it shows generated output)
+/test/
+
+# Flutter platform runners of the example app; regenerate with `flutter create .`
+/example/android/
+/example/ios/
+/example/windows/
