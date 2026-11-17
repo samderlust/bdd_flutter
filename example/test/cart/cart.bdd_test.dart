@@ -10,34 +10,36 @@ void main() {
   group('Shopping cart', () {
     test('Add and remove items', () async {
       final steps = ShoppingCartSteps();
+      addTearDown(steps.neverNegative);
       // Background: An empty cart
       // Given an empty cart
       await steps.anEmptyCart();
       // Scenario
       // When I add 2 "apple" at 1.5 each
-      await steps.iAddAtEach(2, 'apple', 1.5);
+      await steps.iAdd(2, 'apple', 1.5);
       // * I add 1 "pear" at 2 each
-      await steps.iAddAtEach(1, 'pear', 2);
+      await steps.iAdd(1, 'pear', 2.0);
       // But I remove "apple"
       await steps.iRemove('apple');
       // Then the cart has 1 item
-      await steps.theCartHasItem(1);
+      await steps.theCartHas(1);
       // And the total is 2
-      await steps.theTotalIs(2);
+      await steps.theTotalIs(2.0);
     }, tags: ['cart']);
     group('Total for several items', () {
       test(
         'Small orders #1 (item: apple, quantity: 1, price: 1.5, total: 1.5)',
         () async {
           final steps = ShoppingCartSteps();
+          addTearDown(steps.neverNegative);
           // Background: An empty cart
           // Given an empty cart
           await steps.anEmptyCart();
           // Scenario
           // When I add <quantity> "<item>" at <price> each
-          await steps.iAddAtEach(1, 'apple', 1.5);
+          await steps.iAdd(1, 'apple', 1.5);
           // Then the total for "<item>" is <total>
-          await steps.theTotalForIs('apple', 1.5);
+          await steps.theTotalFor('apple', 1.5);
         },
         tags: ['cart'],
       );
@@ -45,14 +47,15 @@ void main() {
         'Small orders #2 (item: pear, quantity: 2, price: 2, total: 4)',
         () async {
           final steps = ShoppingCartSteps();
+          addTearDown(steps.neverNegative);
           // Background: An empty cart
           // Given an empty cart
           await steps.anEmptyCart();
           // Scenario
           // When I add <quantity> "<item>" at <price> each
-          await steps.iAddAtEach(2, 'pear', 2);
+          await steps.iAdd(2, 'pear', 2.0);
           // Then the total for "<item>" is <total>
-          await steps.theTotalForIs('pear', 4);
+          await steps.theTotalFor('pear', 4.0);
         },
         tags: ['cart'],
       );
@@ -60,21 +63,37 @@ void main() {
         'Bulk orders #1 (item: banana, quantity: 100, price: 0.25, total: 25)',
         () async {
           final steps = ShoppingCartSteps();
+          addTearDown(steps.neverNegative);
           // Background: An empty cart
           // Given an empty cart
           await steps.anEmptyCart();
           // Scenario
           // When I add <quantity> "<item>" at <price> each
-          await steps.iAddAtEach(100, 'banana', 0.25);
+          await steps.iAdd(100, 'banana', 0.25);
           // Then the total for "<item>" is <total>
-          await steps.theTotalForIs('banana', 25);
+          await steps.theTotalFor('banana', 25.0);
         },
         tags: ['cart'],
       );
     });
+    test('Plural steps and custom types', () async {
+      final steps = ShoppingCartSteps();
+      addTearDown(steps.neverNegative);
+      // Background: An empty cart
+      // Given an empty cart
+      await steps.anEmptyCart();
+      // Scenario
+      // When I add 2 "apple" at 1.5 each
+      await steps.iAdd(2, 'apple', 1.5);
+      // Then the cart has 2 items
+      await steps.theCartHas(2);
+      // And the cart should be open
+      await steps.theCartShouldBe(ShoppingCartSteps.state('open'));
+    }, tags: ['cart']);
     group('Rule: A closed cart cannot change', () {
       test('Adding to a closed cart', () async {
         final steps = ShoppingCartSteps();
+        addTearDown(steps.neverNegative);
         // Background: An empty cart
         // Given an empty cart
         await steps.anEmptyCart();
@@ -83,11 +102,13 @@ void main() {
         await steps.theCartIsClosed();
         // Scenario
         // When I add 1 "apple" at 1.5 each
-        await steps.iAddAtEach(1, 'apple', 1.5);
+        await steps.iAdd(1, 'apple', 1.5);
         // Then I see the error "Cart is closed"
         await steps.iSeeTheError('Cart is closed');
         // And the cart has 0 item
-        await steps.theCartHasItem(0);
+        await steps.theCartHas(0);
+        // And the cart should be closed
+        await steps.theCartShouldBe(ShoppingCartSteps.state('closed'));
       }, tags: ['cart']);
     });
   });

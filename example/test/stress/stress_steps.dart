@@ -1,12 +1,10 @@
+import 'package:bdd_flutter/bdd_flutter.dart';
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
 
-import 'stress.bdd_steps.dart';
-
 /// The steps of the feature "Order processing".
-class OrderProcessingSteps implements OrderProcessingStepsContract {
-  @override
+class OrderProcessingSteps {
   late WidgetTester tester;
 
   String? user;
@@ -20,17 +18,17 @@ class OrderProcessingSteps implements OrderProcessingStepsContract {
   String? message;
   int refunds = 0;
 
-  @override
+  @Given('I am logged in as {string}')
   Future<void> iAmLoggedInAs(String text) async {
     user = text;
   }
 
-  @override
+  @Given('the time is 09:00')
   Future<void> theTimeIs0900() async {
     expect(user, 'admin');
   }
 
-  @override
+  @Given('the following products:')
   Future<void> theFollowingProducts(List<List<String>> dataTable) async {
     expect(dataTable, [
       ['name', 'price'],
@@ -38,81 +36,86 @@ class OrderProcessingSteps implements OrderProcessingStepsContract {
     ]);
   }
 
-  @override
+  @When('I post the JSON:')
   Future<void> iPostTheJson(String docString) async {
     expect(jsonDecode(docString), {'item': 'apple', 'qty': 2});
     status = 201;
   }
 
-  @override
+  @Then('the response status is {num}')
   Future<void> theResponseStatusIs(num number) async {
     expect(status, number);
   }
 
-  @override
+  @When('I send the payload:')
   Future<void> iSendThePayload(String docString) async {
     payload = jsonDecode(docString) as Map<String, dynamic>;
   }
 
-  @override
+  @Then('the table shows:')
   Future<void> theTableShows(List<List<String>> dataTable) async {
     final row = dataTable[1];
     expect(row[0], payload['item']);
     expect(payload['note'], "it's \$${row[1]}");
   }
 
-  @override
-  Future<void> iMoveFromToAndBackTo(num qty, String from, String to, String from2) async {
+  @When('I move {num} from {string} to {string} and back to {string}')
+  Future<void> iMoveFromToAndBackTo(
+    num qty,
+    String from,
+    String to,
+    String from2,
+  ) async {
     expect(from2, from);
     stock[from] = 10 - qty;
   }
 
-  @override
+  @Then('the stock of {string} is {num}')
   Future<void> theStockOfIs(String from, num left) async {
     expect(stock[from], left);
   }
 
-  @override
+  @Then('the snake_case {} works')
   Future<void> theSnakeCaseWorks(String firstValue) async {
     expect(firstValue, isNotEmpty);
   }
 
-  @override
+  @Given(r'a price of $10.00')
   Future<void> aPriceOf1000() async {
     price = 10;
   }
 
-  @override
+  @When('I apply a 15% discount')
   Future<void> iApplyA15Discount() async {
     price *= 0.85;
   }
 
-  @override
+  @Then(r'the price is $8.50')
   Future<void> thePriceIs850() async {
     expect(price, closeTo(8.5, 1e-9));
   }
 
-  @override
+  @Then('nothing else happens')
   Future<void> nothingElseHappens() async {
     expect(emailsSent, 0);
   }
 
-  @override
+  @Then('no email is sent')
   Future<void> noEmailIsSent() async {
     expect(emailsSent, 0);
   }
 
-  @override
+  @Given('an order exists')
   Future<void> anOrderExists() async {
     order = 'open';
   }
 
-  @override
+  @When('the order has shipped')
   Future<void> theOrderHasShipped() async {
     shipped = true;
   }
 
-  @override
+  @When('I cancel the order')
   Future<void> iCancelTheOrder() async {
     if (shipped) {
       message = 'Too late';
@@ -121,22 +124,22 @@ class OrderProcessingSteps implements OrderProcessingStepsContract {
     order = 'cancelled';
   }
 
-  @override
+  @Then('the order is {string}')
   Future<void> theOrderIs(String text) async {
     expect(order, text);
   }
 
-  @override
+  @Then('I see {string}')
   Future<void> iSee(String text) async {
     expect(message, text);
   }
 
-  @override
+  @Given('{num} refunds today')
   Future<void> refundsToday(num number) async {
     refunds = number.toInt();
   }
 
-  @override
+  @Then('the 3rd refund is blocked')
   Future<void> the3rdRefundIsBlocked() async {
     expect(refunds + 1, greaterThan(2));
   }

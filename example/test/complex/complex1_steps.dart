@@ -1,54 +1,54 @@
+import 'package:bdd_flutter/bdd_flutter.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'complex1.bdd_steps.dart';
-
 /// The steps of the feature "Note auto-sync".
-class NoteAutoSyncSteps implements NoteAutoSyncStepsContract {
-  @override
+class NoteAutoSyncSteps {
   late WidgetTester tester;
 
-  @override
+  @Given('the user is on the editor screen for a draft note')
   Future<void> theUserIsOnTheEditorScreenForADraftNote() async {
     throw UnimplementedError(
       'Given the user is on the editor screen for a draft note',
     );
   }
 
-  @override
+  @Given('the note is not locked')
   Future<void> theNoteIsNotLocked() async {
     throw UnimplementedError('And the note is not locked');
   }
 
-  @override
+  @Given('the user is on the {string} section')
   Future<void> theUserIsOnTheSection(String arg1) async {
     throw UnimplementedError('Given the user is on the "Title" section');
   }
 
-  @override
+  @When('the user types {string} in the {string} field')
   Future<void> theUserTypesInTheField(String arg1, String arg2) async {
     throw UnimplementedError(
       'When the user types "Groceries" in the "Note Title" field',
     );
   }
 
-  @override
+  @When('waits {num} second without further input')
   Future<void> waitsSecondWithoutFurtherInput(num arg1) async {
     throw UnimplementedError('And waits 1 second without further input');
   }
 
-  @override
+  @Then('the app sends a syncNoteContent request with the current content')
   Future<void> theAppSendsASyncNoteContentRequestWithTheCurrentContent() async {
     throw UnimplementedError(
       'Then the app sends a syncNoteContent request with the current content',
     );
   }
 
-  @override
+  @Then('a {string} indicator appears')
   Future<void> aIndicatorAppears(String arg1) async {
     throw UnimplementedError('And a "Syncing..." indicator appears');
   }
 
-  @override
+  @Then(
+    'once the sync succeeds the indicator changes to {string} with a checkmark',
+  )
   Future<void> onceTheSyncSucceedsTheIndicatorChangesToWithACheckmark(
     String arg1,
   ) async {
@@ -57,36 +57,38 @@ class NoteAutoSyncSteps implements NoteAutoSyncStepsContract {
     );
   }
 
-  @override
+  @When('types {string} 200ms later')
   Future<void> types200msLater(String arg1) async {
     throw UnimplementedError('And types "r" 200ms later');
   }
 
-  @override
+  @Then('exactly one syncNoteContent request is sent')
   Future<void> exactlyOneSyncNoteContentRequestIsSent() async {
     throw UnimplementedError(
       'Then exactly one syncNoteContent request is sent',
     );
   }
 
-  @override
+  @Then('the content payload contains title: {string}')
   Future<void> theContentPayloadContainsTitle(String arg1) async {
     throw UnimplementedError('And the content payload contains title: "Groc"');
   }
 
-  @override
+  @Given('the {string} field already contains {string}')
   Future<void> theFieldAlreadyContains(String arg1, String arg2) async {
     throw UnimplementedError(
       'Given the "Note Title" field already contains "Groceries"',
     );
   }
 
-  @override
+  @Given('the last sync included title: {string}')
   Future<void> theLastSyncIncludedTitle(String arg1) async {
     throw UnimplementedError('And the last sync included title: "Groceries"');
   }
 
-  @override
+  @When(
+    'the user focuses the {string} field and then leaves without changing it',
+  )
   Future<void> theUserFocusesTheFieldAndThenLeavesWithoutChangingIt(
     String arg1,
   ) async {
@@ -95,12 +97,12 @@ class NoteAutoSyncSteps implements NoteAutoSyncStepsContract {
     );
   }
 
-  @override
+  @Then('no syncNoteContent request is sent')
   Future<void> noSyncNoteContentRequestIsSent() async {
     throw UnimplementedError('Then no syncNoteContent request is sent');
   }
 
-  @override
+  @Given('the user types {string} in {string} and a sync is in-flight')
   Future<void> theUserTypesInAndASyncIsInFlight(
     String arg1,
     String arg2,
@@ -110,7 +112,9 @@ class NoteAutoSyncSteps implements NoteAutoSyncStepsContract {
     );
   }
 
-  @override
+  @When(
+    'the user types {string} in {string} before the in-flight sync completes',
+  )
   Future<void> theUserTypesInBeforeTheInFlightSyncCompletes(
     String arg1,
     String arg2,
@@ -120,31 +124,31 @@ class NoteAutoSyncSteps implements NoteAutoSyncStepsContract {
     );
   }
 
-  @override
+  @When('waits {num} second')
   Future<void> waitsSecond(num arg1) async {
     throw UnimplementedError('And waits 1 second');
   }
 
-  @override
+  @Then('the in-flight sync for {string} is cancelled')
   Future<void> theInFlightSyncForIsCancelled(String arg1) async {
     throw UnimplementedError(
       'Then the in-flight sync for "Groceries" is cancelled',
     );
   }
 
-  @override
+  @Then('a new sync with title: {string} is sent')
   Future<void> aNewSyncWithTitleIsSent(String arg1) async {
     throw UnimplementedError('And a new sync with title: "Shopping" is sent');
   }
 
-  @override
+  @When('the syncNoteContent request fails and the user taps Retry')
   Future<void> theSyncNoteContentRequestFailsAndTheUserTapsRetry() async {
     throw UnimplementedError(
       'When the syncNoteContent request fails and the user taps Retry',
     );
   }
 
-  @override
+  @Then('the sync indicator first shows {string} with a {string} action')
   Future<void> theSyncIndicatorFirstShowsWithAAction(
     String arg1,
     String arg2,
@@ -154,31 +158,31 @@ class NoteAutoSyncSteps implements NoteAutoSyncStepsContract {
     );
   }
 
-  @override
+  @Then('after retry the request is re-sent and succeeds')
   Future<void> afterRetryTheRequestIsReSentAndSucceeds() async {
     throw UnimplementedError(
       'And after retry the request is re-sent and succeeds',
     );
   }
 
-  @override
+  @Given('the note is in {string} status')
   Future<void> theNoteIsInStatus(String arg1) async {
     throw UnimplementedError('Given the note is in "locked" status');
   }
 
-  @override
+  @When('the user views the note')
   Future<void> theUserViewsTheNote() async {
     throw UnimplementedError('When the user views the note');
   }
 
-  @override
+  @Then('no sync requests are sent regardless of field interactions')
   Future<void> noSyncRequestsAreSentRegardlessOfFieldInteractions() async {
     throw UnimplementedError(
       'Then no sync requests are sent regardless of field interactions',
     );
   }
 
-  @override
+  @Given('the user previously wrote title: {string} and body: {string}')
   Future<void> theUserPreviouslyWroteTitleAndBody(
     String arg1,
     String arg2,
@@ -188,29 +192,29 @@ class NoteAutoSyncSteps implements NoteAutoSyncStepsContract {
     );
   }
 
-  @override
+  @Given('those values were auto-synced to the server')
   Future<void> thoseValuesWereAutoSyncedToTheServer() async {
     throw UnimplementedError('And those values were auto-synced to the server');
   }
 
-  @override
+  @When('the user re-opens the note')
   Future<void> theUserReOpensTheNote() async {
     throw UnimplementedError('When the user re-opens the note');
   }
 
-  @override
+  @Then('the {string} field shows {string}')
   Future<void> theFieldShows(String arg1, String arg2) async {
     throw UnimplementedError('Then the "Note Title" field shows "Groceries"');
   }
 
-  @override
+  @Then(r'no sync is triggered on load \(content unchanged\)')
   Future<void> noSyncIsTriggeredOnLoadContentUnchanged() async {
     throw UnimplementedError(
       'And no sync is triggered on load (content unchanged)',
     );
   }
 
-  @override
+  @Given('the note has {num} required sections and {num} are filled')
   Future<void> theNoteHasRequiredSectionsAndAreFilled(
     num arg1,
     num arg2,
@@ -220,17 +224,19 @@ class NoteAutoSyncSteps implements NoteAutoSyncStepsContract {
     );
   }
 
-  @override
+  @When('the user fills a 4th required section')
   Future<void> theUserFillsA4thRequiredSection() async {
     throw UnimplementedError('When the user fills a 4th required section');
   }
 
-  @override
+  @When('the auto-sync completes')
   Future<void> theAutoSyncCompletes() async {
     throw UnimplementedError('And the auto-sync completes');
   }
 
-  @override
+  @Then(
+    'the progress indicator updates to reflect {num} of {num} required sections filled',
+  )
   Future<void> theProgressIndicatorUpdatesToReflectOfRequiredSectionsFilled(
     num arg1,
     num arg2,
@@ -240,29 +246,29 @@ class NoteAutoSyncSteps implements NoteAutoSyncStepsContract {
     );
   }
 
-  @override
+  @Given('the note model is empty')
   Future<void> theNoteModelIsEmpty() async {
     throw UnimplementedError('Given the note model is empty');
   }
 
-  @override
+  @When('onContentChanged is called with empty content')
   Future<void> onContentChangedIsCalledWithEmptyContent() async {
     throw UnimplementedError(
       'When onContentChanged is called with empty content',
     );
   }
 
-  @override
+  @Then('no request is sent')
   Future<void> noRequestIsSent() async {
     throw UnimplementedError('Then no request is sent');
   }
 
-  @override
+  @Given('a content change was made')
   Future<void> aContentChangeWasMade() async {
     throw UnimplementedError('Given a content change was made');
   }
 
-  @override
+  @When('cancel is called before the debounce fires')
   Future<void> cancelIsCalledBeforeTheDebounceFires() async {
     throw UnimplementedError('When cancel is called before the debounce fires');
   }

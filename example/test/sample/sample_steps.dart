@@ -1,56 +1,54 @@
+import 'package:bdd_flutter/bdd_flutter.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'sample.bdd_steps.dart';
-
 /// The steps of the feature "Sample".
-class SampleSteps implements SampleStepsContract {
-  @override
+class SampleSteps {
   late WidgetTester tester;
 
   bool featureRan = false;
   int counter = 0;
 
-  @override
+  @Given('I have a sample feature')
   Future<void> iHaveASampleFeature() async {
     featureRan = false;
   }
 
-  @override
+  @When('I run the sample feature')
   Future<void> iRunTheSampleFeature() async {
     featureRan = true;
   }
 
-  @override
+  @Then('I should see the sample feature')
   Future<void> iShouldSeeTheSampleFeature() async {
     expect(featureRan, isTrue);
   }
 
-  @override
+  @Given('I have a counter')
   Future<void> iHaveACounter() async {
     counter = 0;
   }
 
-  @override
+  @When('I increment the counter')
   Future<void> iIncrementTheCounter() async {
     counter++;
   }
 
-  @override
+  @When('I increment the {num}')
   Future<void> iIncrementThe(num counter) async {
     this.counter += counter.toInt();
   }
 
-  @override
+  @When('I increment the counter {num}')
   Future<void> iIncrementTheCounter2(num counter) async {
     this.counter += counter.toInt() + 1;
   }
 
-  @override
+  @Then('I should see the counter incremented')
   Future<void> iShouldSeeTheCounterIncremented() async {
     expect(counter, greaterThan(0));
   }
 
-  @override
+  @Then('I should see the result {num}')
   Future<void> iShouldSeeTheResult(num result) async {
     expect(counter, result);
   }

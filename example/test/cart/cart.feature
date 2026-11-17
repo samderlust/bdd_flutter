@@ -26,6 +26,12 @@ Feature: Shopping cart
       | item   | quantity | price | total |
       | banana | 100      | 0.25  | 25    |
 
+  # 3.0: `item(s)` matches both forms, and {state} is a custom parameter type.
+  Scenario: Plural steps and custom types
+    When I add 2 "apple" at 1.5 each
+    Then the cart has 2 items
+    And the cart should be open
+
   Rule: A closed cart cannot change
     Background:
       Given the cart is closed
@@ -34,3 +40,4 @@ Feature: Shopping cart
       When I add 1 "apple" at 1.5 each
       Then I see the error "Cart is closed"
       And the cart has 0 item
+      And the cart should be closed

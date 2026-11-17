@@ -1,49 +1,66 @@
+import 'package:bdd_flutter/bdd_flutter.dart';
 import 'package:example/src/cart.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'cart.bdd_steps.dart';
+/// Whether the cart accepts changes, written as `open` or `closed` in steps.
+enum CartState { open, closed }
 
 /// The steps of the feature "Shopping cart".
-class ShoppingCartSteps implements ShoppingCartStepsContract {
+class ShoppingCartSteps {
   late Cart cart;
 
-  @override
+  /// `{state}` in an expression: `open` or `closed`, passed as a [CartState].
+  @ParameterType(r'open|closed')
+  static CartState state(String value) => CartState.values.byName(value);
+
+  /// Runs after every scenario, even when a step fails.
+  @After()
+  Future<void> neverNegative() async {
+    expect(cart.itemCount, greaterThanOrEqualTo(0));
+  }
+
+  @Given('an empty cart')
   Future<void> anEmptyCart() async {
     cart = Cart();
   }
 
-  @override
-  Future<void> iAddAtEach(num quantity, String item, num price) async {
-    cart.add(item, price.toDouble(), quantity.toInt());
+  @When('I add {int} {string} at {float} each')
+  Future<void> iAdd(int quantity, String item, double price) async {
+    cart.add(item, price, quantity);
   }
 
-  @override
-  Future<void> iRemove(String text) async {
-    cart.remove(text);
+  @When('I remove {string}')
+  Future<void> iRemove(String item) async {
+    cart.remove(item);
   }
 
-  @override
-  Future<void> theCartHasItem(num number) async {
-    expect(cart.itemCount, number);
+  @Then('the cart has {int} item(s)')
+  Future<void> theCartHas(int count) async {
+    expect(cart.itemCount, count);
   }
 
-  @override
-  Future<void> theTotalIs(num number) async {
-    expect(cart.total, number);
+  @Then('the total is {float}')
+  Future<void> theTotalIs(double total) async {
+    expect(cart.total, total);
   }
 
-  @override
-  Future<void> theTotalForIs(String item, num total) async {
+  @Then('the total for {string} is {float}')
+  Future<void> theTotalFor(String item, double total) async {
     expect(cart.totalFor(item), total);
   }
 
-  @override
+  @Given('the cart is closed')
   Future<void> theCartIsClosed() async {
     cart.isClosed = true;
   }
 
-  @override
-  Future<void> iSeeTheError(String text) async {
-    expect(cart.error, text);
+  @Then('the cart should be {state}')
+  Future<void> theCartShouldBe(CartState state) async {
+    expect(cart.isClosed, state == CartState.closed);
+  }
+
+  @Then('I see the error {string}')
+  Future<void> iSeeTheError(String message) async {
+    expect(cart.error, message);
   }
 }
