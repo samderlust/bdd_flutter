@@ -1,3 +1,39 @@
+## 3.0.0 (unreleased)
+
+3.0 connects steps to code with [Cucumber Expressions](https://github.com/cucumber/cucumber-expressions#readme), using the official [`cucumber_expressions`](https://pub.dev/packages/cucumber_expressions) package (#11). `.feature` files do not change. Projects that want to keep the 2.x behaviour can set `steps_mode: contract` in `.bdd_flutter/config.yaml`; see "Upgrading from 2.x" in the README.
+
+### Breaking
+
+- `steps_mode: expressions` is the new default. Step methods are found through annotations instead of a generated contract:
+  ```dart
+  class ShoppingCartSteps {
+    @When('I add {int} {string} at {float} each')
+    Future<void> iAdd(int quantity, String item, double price) async { ... }
+  }
+  ```
+  A 2.x project without `steps_mode: contract` in its config fails to build until it is migrated
+- In expressions mode, `<name>.bdd_steps.dart` (the generated `<Feature>StepsContract`) is no longer generated; steps classes no longer `implements` it or use `@override`
+- Step values are typed by the expression (`{int}`, `{float}`, `{string}`, `{word}`, `{}`, ...) instead of being inferred from the step text, so `num` parameters can become `int` or `double`. `{num}` and `{bool}` are available to keep 2.x signatures
+- A step with no matching method, or with several, makes its test fail with a clear message (`Undefined step: ...`, `Ambiguous step: ...`) instead of being a compile error
+- New dependencies: `cucumber_expressions` and `analyzer` (steps files are read from source, never run)
+
+### Features
+
+- Annotations exported from `package:bdd_flutter/bdd_flutter.dart`: `@Given`, `@When`, `@Then` and the keyword-free `@StepDefinition` (matching ignores the keyword, as in Cucumber). It is not called `Step` because Flutter's `material.dart` has a `Step`. mocktail exports a `When` class: import it with `hide When`
+- Optional text and alternatives: `@Then('the cart has {int} item(s)')` matches `1 item` and `2 items`; `in my belly/stomach` matches both words
+- Custom parameter types with `@ParameterType` on a static method, named after the method: `@ParameterType(r'open|closed') static CartState state(String value)` lets steps use `{state}` and receive a `CartState`
+- Scenario hooks: `@Before()` and `@After()` instance methods; `@After` runs even when a step fails
+- Shared steps keep working through `mixin SharedSteps` in `test/shared_steps.dart`: annotate its methods, and a feature's own definition wins over the mixin's
+- Matching happens during `build`, and generated tests call your methods directly, so a wrong signature is still a compile error
+- `build` creates the steps class for a feature that has none (with a `tester` field for widget tests, mixing in `SharedSteps` when it exists) and lists undefined and ambiguous steps, expressions that do not compile, methods whose parameters do not fit their expression, steps no feature uses, and widget steps classes without a `tester`
+- A step defined only in `SharedSteps`, used by a class without `with SharedSteps`, makes its test fail with a message saying what to add
+- New config option `steps_mode`: `expressions` (default) or `contract` (2.x). An unknown value is an error, so a typo never switches a project's mode
+
+### Upgrading
+
+- To keep 2.x behaviour, add `steps_mode: contract` to `.bdd_flutter/config.yaml`; nothing else changes
+- To move to expressions, run `dart run bdd_flutter migrate`: each 2.x method gets `@Given`, `@When` or `@Then` (after its first step's keyword) with an expression built from its step text, `implements`/`@override` and the contract files are removed, mocktail's `When` is hidden, and method signatures and bodies are not changed. Generated tests stay the same
+
 ## 2.0.0
 
 2.0 changes the shape of the generated code. Run `dart run bdd_flutter migrate` once to move a 1.x project; see "Upgrading from 1.x" in the README.

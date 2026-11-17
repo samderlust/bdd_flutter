@@ -10,8 +10,10 @@ expressions with the official
 [`cucumber_expressions`](https://pub.dev/packages/cucumber_expressions)
 package, generates tests that call the matched methods, and prints a snippet
 for every step nothing matches. Steps used by several features stay in the
-shared steps mixin, as in 2.x. This is a breaking change;
-`migrate` moves 2.x (and 1.x) projects over without changing method bodies.
+shared steps mixin, as in 2.x. This is a breaking change:
+expressions are the default, `steps_mode: contract` in the config keeps the
+2.x behaviour, and `migrate` moves 2.x (and 1.x) projects over without
+changing method bodies.
 
 `.feature` files do not change.
 
@@ -40,21 +42,34 @@ identical needs more code than the ~80-line parser it replaces. In 3.0 the
 generator only writes a **first draft** that the user owns and edits once, so
 those choices stop being a problem.
 
-### Why no compatibility flag
+### Keeping 2.x: `steps_mode`
 
-A `step_expressions: false` switch would keep two engines (two code paths, two
-test suites, two sets of docs). `migrate` is mechanical and lossless, so 3.0
-ships one engine. 2.x gets bug fixes on a `release/2.x` branch.
+```yaml
+# .bdd_flutter/config.yaml
+steps_mode: contract   # 2.x behaviour; default is `expressions`
+```
+
+3.0 is still a breaking release: expressions are the default, so a 2.x project
+either adds this line or runs `migrate`. The option exists so teams can upgrade
+the package without changing their steps at the same time.
+
+The cost is two ways of connecting steps to code. It stays small because only
+step calls differ: `TestFileBuilder` takes a `StepCalls`, implemented by
+`CatalogStepCalls` (2.x contract) and `ExpressionStepCalls` (3.0). Gherkin
+parsing, test layout, tags, formatting and the `test` command are shared. An
+unknown `steps_mode` value is an error, so a typo never switches a project's
+mode. Whether contract mode is removed in a later major release is decided by
+how much it is used.
 
 ## Files
 
 | File | 2.x | 3.0 |
 |---|---|---|
 | `cart.feature` | Gherkin | unchanged |
-| `cart.bdd_steps.dart` | generated contract | **removed** |
-| `cart_steps.dart` | user-owned, `implements CartStepsContract` | user-owned, methods annotated with `@Step` (or `@Given`/`@When`/`@Then`) |
+| `cart.bdd_steps.dart` | generated contract | **not generated** (still generated with `steps_mode: contract`) |
+| `cart_steps.dart` | user-owned, `implements CartStepsContract` | user-owned, methods annotated with `@Given`/`@When`/`@Then` (or `@StepDefinition`) |
 | `cart.bdd_test.dart` | generated | generated, same shape |
-| `test/shared_steps.dart` | `mixin SharedSteps`, created the first time a step is used by several features; feature classes mix it in | same file and mixin, methods annotated with `@Step` |
+| `test/shared_steps.dart` | `mixin SharedSteps`, created the first time a step is used by several features; feature classes mix it in | same file and mixin, methods annotated with `@Given`/`@When`/`@Then` |
 
 ## Example
 
@@ -66,21 +81,22 @@ Feature: Cart
     When I pay $10.00
 ```
 
-### First `build`: snippets for undefined steps
+### Snippets for undefined steps (item 5, not built yet)
 
-`build` prints them; `build --write-snippets` appends them to `cart_steps.dart`
-(creating it if missing).
+Today `build` creates an empty steps class for a new feature and lists the
+undefined steps. Item 5 would print snippets like these, and
+`build --write-snippets` would append them to `cart_steps.dart`.
 
 ```dart
 class CartSteps {
-  @Step('the order is shipped')
+  @Given('the order is shipped')
   Future<void> theOrderIsShipped() async => throw UnimplementedError();
 
-  @Step('I have {int} cucumbers in my belly')
+  @Given('I have {int} cucumbers in my belly')
   Future<void> iHaveCucumbersInMyBelly(int int1) async =>
       throw UnimplementedError();
 
-  @Step(r'I pay ${float}')
+  @When(r'I pay ${float}')
   Future<void> iPay(double float1) async => throw UnimplementedError();
 }
 ```
@@ -98,7 +114,7 @@ class CartSteps {
   @Given('the order is {status}')
   Future<void> theOrderIs(OrderStatus status) async { ... }
 
-  @Step('I have {int} cucumber(s) in my belly/stomach')
+  @Given('I have {int} cucumber(s) in my belly/stomach')
   Future<void> iHaveCucumbers(int count) async { ... }
 
   @When('I pay {money}')
@@ -106,9 +122,18 @@ class CartSteps {
 }
 ```
 
-`@Given`, `@When` and `@Then` are aliases of `@Step`: matching ignores the
-keyword, as in Cucumber, so `And I pay $10.00` and `Then I pay $10.00` both
-match `@When('I pay {money}')`.
+`@Given`, `@When` and `@Then` are aliases of the keyword-free
+`@StepDefinition`: matching ignores the keyword, as in Cucumber, so
+`And I pay $10.00` and `Then I pay $10.00` both match `@When('I pay {money}')`.
+
+### Name clashes
+
+- The keyword-free annotation is `StepDefinition`, not `Step`: Flutter's
+  `material.dart` exports a `Step` (for `Stepper`), so `@Step` broke every
+  steps file that imports it.
+- mocktail exports a class `When`. Steps files import mocktail with
+  `hide When` (its `when(...)` function is unaffected); `migrate` and new
+  steps files add it. Prefixed imports (`@bdd.When`) also work.
 
 ### Generated `cart.bdd_test.dart`
 
@@ -212,16 +237,16 @@ reverse. Tag-filtered hooks (`@Before(tags: '@db')`) and per-feature hooks
 ```
 BDDCLI.run(args)
   → BDDController.generateFeatureTestCases()
-    → ConfigParser.loadConfig()                 # unchanged
+    → ConfigParser.loadConfig()                 # + steps_mode (contract → 2.x pipeline)
     → FeatureParser.parseFeature()              # unchanged
       → GherkinMapper.toFeature()               # unchanged
-    → StepsFileReader.read(_steps.dart,         # NEW: analyzer → @Step/@Given/@When/@Then,
+    → StepsFileReader.read(_steps.dart,         # NEW: analyzer → @Given/@When/@Then/@StepDefinition,
                            shared_steps.dart)   #      @ParameterType, @Before/@After
     → StepMatcher.match(step)                   # NEW: ExpressionFactory
         feature class, then SharedSteps mixin
         1 match  → call with converted arguments
-        2+       → build error: ambiguous step
-        0        → snippet + warning
+        2+       → fail('Ambiguous step: ...') in the test + reported
+        0        → fail('Undefined step: ...') + snippet
     → TestFileBuilder.build(...)                # hooks, then calls on one steps object
     → SnippetWriter.print / append              # NEW: CucumberExpressionGenerator
                                                 #      append only with --write-snippets
@@ -229,16 +254,15 @@ BDDCLI.run(args)
     → DartFormatCommand.formatFiles(...)        # unchanged
 ```
 
-Removed: `StepPatternParser`, `columnTypes`, `StepsCatalog`,
-`StepsContractBuilder`, `StepsStubBuilder` and `SharedStepsBuilder` (replaced
-by `SnippetWriter`). `SharedMixin`'s regex-based reading is replaced by
-`StepsFileReader`.
+Used only in contract mode: `StepPatternParser`, `columnTypes`,
+`StepsCatalog`, `StepsContractBuilder`, `StepsStubBuilder`,
+`SharedStepsBuilder` and `SharedMixin`.
 
 ## Decisions
 
 | # | Topic | Decision |
 |---|---|---|
-| 1 | Annotation | `@Step('...')`, with `@Given`/`@When`/`@Then` as aliases. Matching ignores the keyword, as in Cucumber. |
+| 1 | Annotation | `@Given`/`@When`/`@Then`, aliases of the keyword-free `@StepDefinition` (not `Step`: Flutter clash). Matching ignores the keyword, as in Cucumber. |
 | 2 | Custom types | `@ParameterType(regex)` on a static method taking `String`, as in Cucumber-JVM; the type name defaults to the method name (`name:` overrides it). The generated test calls `Steps.name('raw')`. |
 | 3 | Built-in types | Cucumber's `{int}`, `{float}`, `{word}`, `{string}`, `{}`, plus `{num}` and `{bool}` registered by bdd_flutter so migrated signatures stay `num` and `bool` (2.x types numbers and `true`/`false` Examples columns that way). |
 | 4 | Snippets | Printed by `build`, as in Cucumber. `build --write-snippets` appends them to `_steps.dart` (file created if missing) with `UnimplementedError` bodies. Existing code is never edited. |
@@ -246,9 +270,9 @@ by `SnippetWriter`). `SharedMixin`'s regex-based reading is replaced by
 | 6 | No match | Snippet + build warning. |
 | 7 | Several matches | Build error listing the expressions. |
 | 8 | Reading the steps file | `analyzer`; only string-literal expressions and regexes. |
-| 9 | Public API | `package:bdd_flutter/bdd_flutter.dart` exports `Step`, `Given`, `When`, `Then`, `ParameterType`, `Before` and `After`, with no CLI code. |
+| 9 | Public API | `package:bdd_flutter/bdd_flutter.dart` exports `Given`, `When`, `Then`, `StepDefinition`, `ParameterType`, `Before` and `After`, with no CLI code. |
 | 10 | Migration | `migrate` goes from 1.x or 2.x straight to 3.0. |
-| 11 | 2.x | `release/2.x` branch, bug fixes only. |
+| 11 | 2.x | `steps_mode: contract` keeps the 2.x pipeline; default `expressions`; unknown values are an error. |
 | 12 | Shared steps | Kept from 2.x: `mixin SharedSteps` in `shared_steps.dart`, mixed into feature classes. Feature class matched first, then the mixin; one steps object per test. |
 | 13 | Hooks | `@Before` / `@After` instance methods; `@After` registered with `addTearDown`. |
 
@@ -271,12 +295,12 @@ A 2.x pattern key is already close to an expression:
 
 ```
 2.x key:      I add {num} {string} at {num} each
-3.0 @Step:    I add {num} {string} at {num} each
+3.0:          @When('I add {num} {string} at {num} each')
 ```
 
 For each feature:
 
-1. Add `@Step('<key as expression>')` to every method in `_steps.dart`.
+1. Add `@Given`/`@When`/`@Then('<key as expression>')` to every method in `_steps.dart`, after the keyword of its first step (`And`, `But`, `*` take the previous one; `@StepDefinition` when there is none).
 2. Escape metacharacters in literal text: `(`, `)`, `{`, `}`, `/`, `\`.
 3. Bare string `<column>` slots (unquoted in the step) become `{word}`, or
    `{}` when a value contains spaces.
@@ -285,7 +309,7 @@ For each feature:
 6. Strip `+docString` / `+dataTable` from the key; the trailing argument stays.
 
 The same steps run on `shared_steps.dart`: each `SharedSteps` method gets the
-`@Step` of its 2.x shared key; the `with SharedSteps` clauses stay.
+annotation of its 2.x shared key; the `with SharedSteps` clauses stay.
 
 Signatures and method bodies are unchanged. 1.x projects go through the
 existing 1.x → 2.x mapping first, in the same run.
@@ -301,17 +325,22 @@ existing 1.x → 2.x mapping first, in the same run.
 
 ## Work order
 
-1. Public annotations (`Step`, `Given`, `When`, `Then`, `ParameterType`, `Before`, `After`) and exports.
+1. Public annotations (`Given`, `When`, `Then`, `StepDefinition`, `ParameterType`, `Before`, `After`) and exports.
 2. `StepsFileReader` (analyzer), for the feature's steps file and `shared_steps.dart` (classes and mixins).
 3. `StepMatcher` over `ExpressionFactory` with a type registry (built-ins + `{num}` + `{bool}` + custom), feature class first, then the shared mixin.
-4. `TestFileBuilder`: create the used classes, call hooks, turn matched values into Dart literals or `Steps.type('raw')`.
+4. `TestFileBuilder`: call hooks, turn matched values into Dart literals or `Steps.type('raw')`.
 5. `SnippetWriter` over `CucumberExpressionGenerator` (print; append with `--write-snippets`).
-6. Remove the 2.x pattern pipeline; rework `checkStepsFile`.
+6. Wire `steps_mode` into `build`: expressions by default, the 2.x pipeline for `contract`; rework `checkStepsFile` for expressions.
 7. `migrate` to 3.0.
 8. Migrate `example/`; add `{status}`, `{money}`, a shared step and hooks.
 9. README, CHANGELOG, migration guide, CLAUDE.md.
 
 1–3 are the core; 4–7 depend on them; 8–9 last.
+
+Status: 1–4 and 6–9 are done: `build` follows `steps_mode`, `migrate` moves
+2.x projects (the example included) and the docs describe 3.0. Item 5
+(snippets, `--write-snippets`) is not built; `build` creates an empty steps
+class for a new feature and lists its undefined steps instead.
 
 ## Comparison with other BDD tools
 
@@ -319,7 +348,7 @@ existing 1.x → 2.x mapping first, in the same run.
 |---|---|---|---|---|
 | Step definition | annotation or function + expression | attribute + expression | decorator + parse/regex | annotation + expression |
 | Expression syntax | Cucumber Expressions | Cucumber Expressions or regex | `parse` format | Cucumber Expressions |
-| Keyword | ignored when matching | keyword-specific by default (`[StepDefinition]` matches any) | keyword-specific | ignored (`@Step` and aliases) |
+| Keyword | ignored when matching | keyword-specific by default (`[StepDefinition]` matches any) | keyword-specific | ignored (`@Given`/`@When`/`@Then`/`@StepDefinition`) |
 | Custom types | `@ParameterType` / `defineParameterType` | `[StepArgumentTransformation]` | `register_type` | `@ParameterType` |
 | Undefined step | snippet printed | snippet suggested by the IDE | error | snippet printed (`--write-snippets` to append) |
 | Ambiguous step | error | error | error | error |

@@ -4,16 +4,19 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Buy Me a Coffee](https://img.shields.io/badge/Buy%20me%20a%20coffee-FFDD00?logo=buymeacoffee&logoColor=black)](https://www.buymeacoffee.com/samderlust)
 
-Write Flutter tests as Gherkin scenarios in plain English. BDD Flutter generates the test code from your `.feature` files; you write each step once, as a typed Dart method.
+Write Flutter tests as Gherkin scenarios in plain English. BDD Flutter generates the test code from your `.feature` files; you write each step once, as a typed Dart method marked with a [Cucumber Expression](https://github.com/cucumber/cucumber-expressions#readme).
+
+> **3.0 is a breaking change.** Steps are now matched with Cucumber Expressions instead of a generated contract. To keep the 2.x behaviour, set `steps_mode: contract` in `.bdd_flutter/config.yaml`; to move to expressions, run `dart run bdd_flutter migrate`. See [Upgrading from 2.x](#upgrading-from-2x).
 
 ## Features
 
 - Parses `.feature` files with the official Cucumber parser ([`cucumber_gherkin`](https://pub.dev/packages/cucumber_gherkin)), so the full Gherkin syntax and 70+ spoken languages work
-- **One method per step, reused everywhere.** Quoted text and numbers become typed parameters, so `I add 2 "apple"` and `I add <qty> "<item>"` share `iAdd(num qty, String item)`
-- **The analyzer tracks your steps.** A generated interface lists every step; your class implements it, so a missing or outdated step is a compile error, not a silent pass
-- **Your code is never overwritten.** Generated files and your steps file are separate
+- **Standard Cucumber Expressions** through the official [`cucumber_expressions`](https://pub.dev/packages/cucumber_expressions) package: `{int}`, `{float}`, `{string}`, `{word}`, optional text `item(s)` and alternatives `belly/stomach`
+- **Your own types**: `@ParameterType` turns `shipped` into an `OrderStatus`, `$10.00` into a `Money`
+- **Checked at build time.** `build` matches every step and generates tests that call your methods directly, so a wrong signature is a compile error and an undefined or ambiguous step fails its test with a clear message
+- **Your code is never overwritten.** Generated tests and your steps file are separate
 - **Steps shared across features are written once**, in a mixin every feature can use
-- One test per Scenario Outline row, each with fresh state
+- `@Before` / `@After` hooks, one test per Scenario Outline row with fresh state
 - Widget tests and unit tests, `@skip`, and Gherkin tags passed to `dart test --tags`
 - Generated code is run through `dart format`
 
@@ -23,7 +26,7 @@ Requires Dart 3.8 or later. Add to your `pubspec.yaml`:
 
 ```yaml
 dev_dependencies:
-  bdd_flutter: ^2.0.0
+  bdd_flutter: ^3.0.0
 ```
 
 Feedback and bug reports are welcome in the [issues](https://github.com/samderlust/bdd_flutter/issues).
@@ -41,7 +44,7 @@ Feature: Shopping cart
   Scenario: Add and remove items
     When I add 2 "apple" at 1.5 each
     But I remove "apple"
-    Then the cart has 0 item
+    Then the cart has 0 items
 
   Scenario Outline: Total for several items
     When I add <quantity> "<item>" at <price> each
@@ -53,17 +56,44 @@ Feature: Shopping cart
       | pear  | 2        | 2     | 4     |
 ```
 
-2. Generate the files:
+2. Generate the tests:
 
 ```bash
 dart run bdd_flutter build
 ```
 
-3. Implement the steps in `test/cart/cart_steps.dart`. The analyzer tells you which ones are missing.
+`build` creates `test/cart/cart_steps.dart` with an empty `ShoppingCartSteps` class, and lists the steps that have no method yet.
 
-4. Run the tests:
+3. Write the steps in `test/cart/cart_steps.dart`:
+
+```dart
+import 'package:bdd_flutter/bdd_flutter.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+class ShoppingCartSteps {
+  late Cart cart;
+
+  @Given('an empty cart')
+  Future<void> anEmptyCart() async => cart = Cart();
+
+  @When('I add {int} {string} at {float} each')
+  Future<void> iAdd(int quantity, String item, double price) async => cart.add(item, price, quantity);
+
+  @When('I remove {string}')
+  Future<void> iRemove(String item) async => cart.remove(item);
+
+  @Then('the cart has {int} item(s)')
+  Future<void> theCartHas(int count) async => expect(cart.itemCount, count);
+
+  @Then('the total for {string} is {float}')
+  Future<void> theTotalFor(String item, double total) async => expect(cart.totalFor(item), total);
+}
+```
+
+4. Run `build` again, then the tests:
 
 ```bash
+dart run bdd_flutter build
 flutter test
 ```
 
@@ -74,82 +104,26 @@ or `dart run bdd_flutter test` for a Feature/Scenario report.
 ```
                        dart run bdd_flutter build
                                   │
-  cart.feature ───────────────────┼──► cart.bdd_steps.dart   generated, rewritten every build
-                                  │      ShoppingCartStepsContract: one method per step
-                                  ├──► cart.bdd_test.dart    generated, rewritten every build
-                                  │      the tests
-                                  └──► cart_steps.dart       created once, then yours
-                                         ShoppingCartSteps: your step code
-
-  cart_steps.dart     implements  cart.bdd_steps.dart   analyzer flags missing or outdated steps
-  cart.bdd_test.dart  calls       cart_steps.dart       flutter test runs it
+  cart.feature ──────────┐        │
+                         ├────────┼──► cart.bdd_test.dart    generated, rewritten every build
+  cart_steps.dart ───────┘        │      calls the matching methods with typed values
+    @Given/@When/@Then methods    │
+  shared_steps.dart ──────────────┘    (steps used by several features)
 ```
 
-`build` reads every `.feature` file, works out the distinct steps, and writes the contract and the tests. It creates your steps file only if it does not exist, then formats what it wrote with `dart format`. Run it again whenever a `.feature` file changes.
+`build` reads every `.feature` file and the step annotations in your steps files (from source, without running them), matches each step's text against the expressions, and writes the tests. It creates a steps file only when a feature has none, and never changes one that exists. Run it again whenever a `.feature` or steps file changes.
 
 ## Generated Files
 
-For `test/cart/cart.feature`, `build` writes three files next to it:
+For `test/cart/cart.feature`:
 
 | File | Owner | What it holds |
 | --- | --- | --- |
-| `cart.bdd_steps.dart` | bdd_flutter, rewritten on every build | `ShoppingCartStepsContract`: one method per distinct step |
-| `cart_steps.dart` | **you**; created once, never touched again | `ShoppingCartSteps implements ShoppingCartStepsContract` |
+| `cart_steps.dart` | **you**; created empty once | `ShoppingCartSteps`: methods annotated with `@Given`, `@When`, `@Then` or `@StepDefinition` |
 | `cart.bdd_test.dart` | bdd_flutter, rewritten on every build | The tests |
 
-### `cart.bdd_steps.dart`
-
 ```dart
-abstract interface class ShoppingCartStepsContract {
-  /// `Given an empty cart`
-  Future<void> anEmptyCart();
-
-  /// `When I add 2 "apple" at 1.5 each`
-  /// `When I add <quantity> "<item>" at <price> each`
-  Future<void> iAddAtEach(num quantity, String item, num price);
-
-  /// `But I remove "apple"`
-  Future<void> iRemove(String text);
-
-  /// `Then the cart has 0 item`
-  Future<void> theCartHasItem(num number);
-
-  /// `Then the total for "<item>" is <total>`
-  Future<void> theTotalForIs(String item, num total);
-}
-```
-
-### `cart_steps.dart` (yours)
-
-The first build creates it with every method throwing `UnimplementedError`. Replace the bodies; keep state in fields.
-
-```dart
-class ShoppingCartSteps implements ShoppingCartStepsContract {
-  late Cart cart;
-
-  @override
-  Future<void> anEmptyCart() async => cart = Cart();
-
-  @override
-  Future<void> iAddAtEach(num quantity, String item, num price) async =>
-      cart.add(item, price.toDouble(), quantity.toInt());
-
-  @override
-  Future<void> iRemove(String text) async => cart.remove(text);
-
-  @override
-  Future<void> theCartHasItem(num number) async => expect(cart.itemCount, number);
-
-  @override
-  Future<void> theTotalForIs(String item, num total) async => expect(cart.totalFor(item), total);
-}
-```
-
-When you add a step to the feature and run `build`, the contract gains a method and the analyzer reports it missing in your class; the IDE's "Create missing overrides" quick fix writes the stub. When you remove or reword a step, your old method gets an `override_on_non_overriding_member` warning. `build` prints both lists too.
-
-### `cart.bdd_test.dart`
-
-```dart
+// cart.bdd_test.dart
 void main() {
   group('Shopping cart', () {
     test('Add and remove items', () async {
@@ -159,18 +133,18 @@ void main() {
       await steps.anEmptyCart();
       // Scenario
       // When I add 2 "apple" at 1.5 each
-      await steps.iAddAtEach(2, 'apple', 1.5);
+      await steps.iAdd(2, 'apple', 1.5);
       // But I remove "apple"
       await steps.iRemove('apple');
-      // Then the cart has 0 item
-      await steps.theCartHasItem(0);
+      // Then the cart has 0 items
+      await steps.theCartHas(0);
     });
     group('Total for several items', () {
       test('Small orders #1 (item: apple, quantity: 1, price: 1.5, total: 1.5)', () async {
         final steps = ShoppingCartSteps();
         await steps.anEmptyCart();
-        await steps.iAddAtEach(1, 'apple', 1.5);
-        await steps.theTotalForIs('apple', 1.5);
+        await steps.iAdd(1, 'apple', 1.5);
+        await steps.theTotalFor('apple', 1.5);
       });
       // ... one test per row
     });
@@ -180,87 +154,118 @@ void main() {
 
 Every test creates a fresh `ShoppingCartSteps`, so tests never share state.
 
-## Steps and Parameters
+## Step Expressions
 
-Values are taken out of the step text and passed as parameters:
+Each step method carries a [Cucumber Expression](https://github.com/cucumber/cucumber-expressions#readme) in `@Given`, `@When`, `@Then` or the keyword-free `@StepDefinition`. The keyword is ignored when matching, as in Cucumber: `@Given('the cart is closed')` also matches `And the cart is closed` or `When the cart is closed`. A method can have several annotations.
 
-| In the step | Becomes |
-| --- | --- |
-| `"quoted text"`, including `"<column>"` | `String` |
-| A number on its own: `2`, `-1`, `1.5` | `num` |
-| A bare `<column>` in a Scenario Outline | `num` if every value in the column is a number, `bool` if all are `true`/`false`, else `String` |
-| A doc string (`"""`) | `String docString` |
-| A data table | `List<List<String>> dataTable` (header row included) |
+> **mocktail users:** mocktail exports a class named `When`. Import it with `import 'package:mocktail/mocktail.dart' hide When;` (its `when(...)` function still works). `migrate` and new steps files do this for you. If another library clashes too, import bdd_flutter with a prefix instead: `import 'package:bdd_flutter/bdd_flutter.dart' as bdd;` and `@bdd.When('...')`.
 
-Steps with the same text once values are taken out share one method, whatever their keyword.
+| In the expression | Matches | Parameter |
+| --- | --- | --- |
+| `{int}` | `2`, `-1` | `int` |
+| `{float}` | `1.5`, `2` | `double` |
+| `{num}` | `2`, `1.5` | `num` (added by bdd_flutter; what 2.x used) |
+| `{bool}` | `true`, `false` | `bool` (added by bdd_flutter) |
+| `{string}` | `"apple"` or `'apple'` | `String`, without the quotes |
+| `{word}` | `apple` (no spaces) | `String` |
+| `{}` | anything | `String` |
+| `item(s)` | `item` or `items` | optional text |
+| `belly/stomach` | `belly` or `stomach` | alternatives |
+| `\(`, `\{`, `\/` | a literal `(`, `{`, `/` (write the expression as a raw string, `r'...'`) | |
 
+A doc string is passed as an extra `String`, and a data table as an extra `List<List<String>>` (header row included), after the expression's parameters:
+
+```dart
+@Given('the prices:')
+Future<void> thePrices(List<List<String>> table) async { ... }
 ```
-I add 2 "apple" at 1.5 each                 ┐
-I add 1 "pear" at 2 each                    ├─► I add {num} {string} at {num} each ─► iAddAtEach(num quantity, String item, num price)
-I add <quantity> "<item>" at <price> each   ┘
-the cart has 1 item                         ┐
-the cart has 0 item                         ┴─► the cart has {num} item            ─► theCartHasItem(num number)
-``` Parameters are named after the placeholder (`<first_name>` → `firstName`), or `text`, `number`, `flag` otherwise.
 
-To avoid losing data, a number stays part of the method name when it is part of something else: `3rd`, `09:00`, `$10.00`, `15%`, `1-second`. A number Dart would print differently (`007`, `1.50`) also stays as text, and an Examples column with such a value is passed as `String`.
+In a Scenario Outline, each Examples row's values are put into the step text before matching, so `I add <quantity> "<item>" at <price> each` matches `I add {int} {string} at {float} each` for every row.
 
-Accented letters are folded for names (`j'incrémente` → `jincremente`, `Tiếng Việt` → `tiengViet`). Steps with no Latin letters get a stable name like `stepA1b2c3`; the doc comment shows the original text.
+Expressions and regexes must be string literals: `build` reads them from source.
+
+### Custom parameter types
+
+Put `@ParameterType` on a static method that takes the matched text. The type is named after the method, unless you pass `name:`:
+
+```dart
+enum OrderStatus { shipped, pending, cancelled }
+
+class OrderSteps {
+  @ParameterType(r'shipped|pending|cancelled')
+  static OrderStatus status(String value) => OrderStatus.values.byName(value);
+
+  @Given('the order is {status}')
+  Future<void> theOrderIs(OrderStatus status) async { ... }
+}
+```
+
+The generated test converts the value with your method: `await steps.theOrderIs(OrderSteps.status('shipped'));`. A type declared in the shared steps mixin can be used by every feature.
+
+### Undefined and ambiguous steps
+
+| Situation | What happens |
+| --- | --- |
+| No expression matches | `build` lists it; the test fails with `Undefined step: ...` |
+| Several expressions match | The test fails with `Ambiguous step: ...`, listing the methods |
+| Invalid expression or unknown `{type}` | `build` reports it with the file and line |
+
+The test file always compiles, so one missing step never stops the other tests from running.
 
 ### Steps shared across features
 
-A step used by several features, like `Given I am logged in as "admin"`, can be written once in a mixin. The same step gets the same method name in every feature, because the name comes from the step's text.
-
-The first time `build` sees a step used by two or more features, it creates **`shared_steps.dart`** at the root of your test directory, with a stub for each shared step. It is your file: bdd_flutter never changes it again. New steps classes that use those steps mix it in and contain only their own steps:
+A step used by several features, like `Given I am logged in as {string}`, is written once in **`mixin SharedSteps`** in `shared_steps.dart` at the root of your test directory. Feature steps classes mix it in:
 
 ```dart
 // test/shared_steps.dart (yours)
 mixin SharedSteps {
   String? user;
 
-  /// `Given I am logged in as "admin"`
-  Future<void> iAmLoggedInAs(String text) async => user = text;
+  @Given('I am logged in as {string}')
+  Future<void> iAmLoggedInAs(String name) async => user = name;
 }
 
 // test/cart/cart_steps.dart
-class CartSteps with SharedSteps implements CartStepsContract {
-  @override
-  Future<void> iAddAtEach(num quantity, String item, num price) async { ... }
+class ShoppingCartSteps with SharedSteps {
+  @When('I add {int} {string} at {float} each')
+  Future<void> iAdd(int quantity, String item, double price) async { ... }
 }
 ```
 
-**A step is shared when your mixin implements it**, with the same name and parameter types as in the feature contract. The mixin has no generated interface. Each feature contract still declares every step its feature uses, so the analyzer checks each class against its own feature:
+- A feature's own class is matched first, so it can override a shared step.
+- Shared steps run on the same steps object, so the mixin's fields hold state for one test, like the class's.
+- A step matched only by the mixin, in a class without `with SharedSteps`, fails its test with a message saying what to add.
+- To use the tester in shared steps, declare `WidgetTester get tester;` in the mixin.
 
-- When a step becomes shared later, because a new feature reuses it, nothing changes in your code. `build` prints a tip:
-  ```
-  Tip: `When I add 2 "apple"` is used by cart.feature, checkout.feature. Move iAdd into SharedSteps (test/shared_steps.dart) to write it once.
-  ```
-- To move a step, add the method to the mixin, add `with SharedSteps` to the classes that should use it, and delete their copies. A class's own method overrides the mixin's, so both can exist while you move it.
-- If a mixin step is no longer used by any feature, `build` warns about it.
-- If a new feature has a step with the same method name as a mixin step but different parameter types, its new class doesn't mix in the shared steps, and `build` warns.
-- To use the tester in shared steps, declare `WidgetTester get tester;` in the mixin; classes that mix it in then need a `tester` field. `build` adds both when it creates the mixin and a widget feature uses a shared step, and new steps classes get the field whenever the mixin declares `tester`.
+### Hooks
 
-Each test still creates a fresh steps object, so the mixin's fields hold state for one test only.
+```dart
+class ShoppingCartSteps with SharedSteps {
+  @Before()
+  Future<void> openDatabase() async { ... }
 
-Method names are worked out per feature. Adding or editing one feature never renames methods in another. Two different steps in one feature that would get the same name (`the cart has 1 item` and `the cart has item`) get a number (`theCartHasItem2`), and `build` warns so you can reword one.
+  @After()
+  Future<void> closeDatabase() async { ... }
+}
+```
+
+`@Before` methods run before the Background; `@After` methods run after the scenario, even when a step fails (they are registered with `addTearDown`). Hooks in `SharedSteps` run before the class's own `@Before` hooks and after its `@After` hooks.
 
 ### Widget tests
 
 In widget tests the steps class gets a `tester` field, set before the first step:
 
 ```dart
-class LoginSteps implements LoginStepsContract {
-  @override
+class LoginSteps {
   late WidgetTester tester;
 
-  @override
+  @When('I tap the login button')
   Future<void> iTapTheLoginButton() async {
     await tester.tap(find.text('Login'));
     await tester.pumpAndSettle();
   }
 }
 ```
-
-A step used by both unit and widget scenarios has one signature.
 
 ## Tags
 
@@ -277,7 +282,7 @@ The closest `@unitTest`/`@widgetTest` wins; with none, `generate_widget_tests` i
 
 | Syntax | How bdd_flutter uses it |
 | --- | --- |
-| `Given` / `When` / `Then` / `And` / `But` / `*` | One call each; the keyword does not affect the method |
+| `Given` / `When` / `Then` / `And` / `But` / `*` | One call each; the keyword does not affect matching |
 | `Background:` | Runs at the start of every test in the feature |
 | `Rule:` | A `group('Rule: …')`; its own `Background:` runs after the feature's |
 | `Scenario Outline:` / `Examples:` | A group with one test per row, named after the Examples block and row values |
@@ -312,8 +317,13 @@ ignore_features:
 additional_imports:
   - "package:mocktail/mocktail.dart"
 
-# Steps class suffix: CartSteps, CartStepsContract
+# Steps class suffix: CartSteps
 steps_suffix: "Steps"
+
+# How steps are connected to code:
+#   expressions (default): @Given/@When/@Then methods matched with Cucumber Expressions
+#   contract: 2.x behaviour, a generated contract the steps class implements
+steps_mode: expressions
 ```
 
 | Option | Type | Default | Description |
@@ -323,18 +333,88 @@ steps_suffix: "Steps"
 | `ignore_features` | List | `[]` | Feature file paths to skip |
 | `additional_imports` | List | `[]` | Imports added to new `_steps.dart` files |
 | `steps_suffix` | String | `Steps` | Suffix of the steps class name |
+| `steps_mode` | `expressions` or `contract` | `expressions` | `contract` keeps the 2.x generated contract; any other value is an error |
 
 ## Commands
 
 | Command | Description |
 | --- | --- |
-| `build` | Rewrite the generated files for every feature; create missing `_steps.dart` files |
-| `migrate` | Move a 1.x project to 2.0 (see below) |
+| `build` | Rewrite the generated tests for every feature, create missing steps files, and list undefined steps and other problems |
+| `migrate` | Move a 2.x project (or a 1.x one) to expressions (see below) |
 | `test` | Run all tests with a Feature/Scenario report |
+
+## Upgrading from 2.x
+
+3.0 changes how steps are connected to code. `.feature` files do not change. Pick one:
+
+**Keep the 2.x behaviour.** Add one line to `.bdd_flutter/config.yaml` (create it if needed):
+
+```yaml
+steps_mode: contract
+```
+
+`build` then works exactly as in 2.x; see [Contract mode](#contract-mode-2x). Without this line, a 2.x project does not build until it is migrated.
+
+**Move to expressions.** Commit your work, then run:
+
+```bash
+dart run bdd_flutter migrate
+```
+
+For each feature, and for `shared_steps.dart`, `migrate`:
+
+- adds `@Given`, `@When` or `@Then` (after the keyword of the method's first step) to every method, with an expression built from the 2.x step text: `@When('I add {num} {string} at {num} each')`;
+- removes `implements <Feature>StepsContract` and `@override`, and deletes the `.bdd_steps.dart` contracts;
+- hides mocktail's `When` in your imports;
+- keeps signatures and method bodies as they are (`{num}` and `{bool}` exist so `num` and `bool` parameters still match), so the generated tests stay the same.
+
+Afterwards you can tighten expressions at your own pace: `{num}` to `{int}` or `{float}`, `item` to `item(s)`, values to custom types.
+
+## Contract mode (2.x)
+
+With `steps_mode: contract`, `build` writes three files per feature, as in 2.x:
+
+| File | Owner | What it holds |
+| --- | --- | --- |
+| `cart.bdd_steps.dart` | bdd_flutter, rewritten on every build | `ShoppingCartStepsContract`: one method per distinct step |
+| `cart_steps.dart` | **you**; created once, never touched again | `ShoppingCartSteps implements ShoppingCartStepsContract` |
+| `cart.bdd_test.dart` | bdd_flutter, rewritten on every build | The tests |
+
+```dart
+// cart.bdd_steps.dart
+abstract interface class ShoppingCartStepsContract {
+  /// `When I add 2 "apple" at 1.5 each`
+  /// `When I add <quantity> "<item>" at <price> each`
+  Future<void> iAddAtEach(num quantity, String item, num price);
+}
+
+// cart_steps.dart
+class ShoppingCartSteps implements ShoppingCartStepsContract {
+  @override
+  Future<void> iAddAtEach(num quantity, String item, num price) async =>
+      cart.add(item, price.toDouble(), quantity.toInt());
+}
+```
+
+Values are taken out of the step text and passed as parameters; steps with the same text once values are taken out share one method, whatever their keyword:
+
+| In the step | Becomes |
+| --- | --- |
+| `"quoted text"`, including `"<column>"` | `String` |
+| A number on its own: `2`, `-1`, `1.5` | `num` |
+| A bare `<column>` in a Scenario Outline | `num` if every value in the column is a number, `bool` if all are `true`/`false`, else `String` |
+| A doc string (`"""`) | `String docString` |
+| A data table | `List<List<String>> dataTable` (header row included) |
+
+A number stays part of the method name when it is part of something else (`3rd`, `09:00`, `$10.00`, `15%`, `1-second`) or when Dart would print it differently (`007`, `1.50`). Accented letters are folded for names (`Tiếng Việt` → `tiengViet`); steps with no Latin letters get a stable name like `stepA1b2c3`.
+
+When you add a step, the contract gains a method and the analyzer reports it missing in your class; when you remove or reword one, your old method gets an `override_on_non_overriding_member` warning. `build` prints both lists too.
+
+Shared steps live in `mixin SharedSteps` (`shared_steps.dart`), created with stubs the first time a step is used by two features; a step is shared when the mixin implements it with the same name and parameter types. `build` prints a tip when a step becomes shared later, and warns about mixin steps no feature uses.
 
 ## Upgrading from 1.x
 
-1.x put your step code in `.bdd_scenarios.dart`, one class per scenario, with literal values in method names. 2.0 uses one steps class per feature with typed parameters. Commit your work, then run:
+1.x put your step code in `.bdd_scenarios.dart`, one class per scenario, with literal values in method names. Commit your work, then run `migrate`: it moves 1.x code to 2.x steps classes, then on to expressions (or stops at 2.x with `steps_mode: contract`):
 
 ```bash
 dart run bdd_flutter migrate
@@ -343,10 +423,10 @@ dart run bdd_flutter migrate
 For each feature with a `.bdd_scenarios.dart` file, `migrate`:
 
 - creates `_steps.dart` with your imports, top-level declarations and fields carried over;
-- copies a 1.x method body as working code when the 2.0 method takes no values and every 1.x version of it was the same;
+- copies a 1.x method body as working code when the new method takes no values and every 1.x version of it was the same;
 - otherwise puts each 1.x body above the new method as a comment, followed by a `throw`, for you to adapt to the new parameters;
-- generates the 2.0 contract and test file;
-- renames the old file to `.bdd_scenarios.dart.bak` and removes `.bdd_flutter/manifest.yaml`, which 2.0 does not use.
+- generates the test file (and, in contract mode, the contract);
+- renames the old file to `.bdd_scenarios.dart.bak` and removes `.bdd_flutter/manifest.yaml`, which 2.0 and later do not use.
 
 `build` skips any feature that still has a `.bdd_scenarios.dart` file and no `_steps.dart` file. Search for `UnimplementedError` to find what is left, then delete the `.bak` files. If you had set `scenario_suffix`, keep it in the config until you have migrated: `migrate` uses it to find your 1.x classes.
 
@@ -359,7 +439,7 @@ Shopping cart  test/cart/cart.feature
   ✗ Add and remove items  25ms
       Expected: <0>
         Actual: <1>
-      at test/cart/cart_steps.dart 27:5 ShoppingCartSteps.theCartHasItem
+      at test/cart/cart_steps.dart 27:5 ShoppingCartSteps.theCartHas
   Total for several items
     ✓ Small orders #1 (item: apple, quantity: 1, price: 1.5, total: 1.5)
     ✓ Small orders #2 (item: pear, quantity: 2, price: 2, total: 4)
@@ -395,9 +475,9 @@ your_project/
 │   ├── shared_steps.dart           # yours: steps used by several features
 │   └── cart/
 │       ├── cart.feature
-│       ├── cart_steps.dart         # yours
-│       ├── cart.bdd_steps.dart     # generated
+│       ├── cart_steps.dart         # yours: @Given/@When/@Then methods
 │       └── cart.bdd_test.dart      # generated
+│                                   # (+ cart.bdd_steps.dart in contract mode)
 └── pubspec.yaml
 ```
 
