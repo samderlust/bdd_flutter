@@ -2,6 +2,7 @@ import '../../domain/step.dart';
 import '../../domain/step_pattern.dart';
 import '../../domain/value_type.dart';
 import '../../extensions/string_x.dart';
+import 'row_values.dart';
 
 /// The Dart arguments for calling [step]'s method, in parameter order:
 /// slots, doc string, data table.
@@ -10,30 +11,17 @@ import '../../extensions/string_x.dart';
 /// doc strings and data tables. A placeholder with no value in [row] stays
 /// as its `<column>` text.
 List<String> stepArguments(Step step, StepPattern pattern, {Map<String, String> row = const {}}) {
+  final values = RowValues(row);
   final docString = step.docString;
   final dataTable = step.dataTable;
   return [
-    for (final slot in pattern.slots) _slotLiteral(slot, row),
-    if (docString != null) _fill(docString, row).toDartStringLiteral,
-    if (dataTable != null) _tableLiteral(dataTable, row),
+    for (final slot in pattern.slots) _slotLiteral(slot, values),
+    if (docString != null) values.docStringLiteral(docString),
+    if (dataTable != null) values.dataTableLiteral(dataTable),
   ];
 }
 
-String _slotLiteral(StepSlot slot, Map<String, String> row) {
-  final value = _fill(slot.template, row);
+String _slotLiteral(StepSlot slot, RowValues values) {
+  final value = values.fill(slot.template);
   return slot.type == ValueType.string ? value.toDartStringLiteral : value;
-}
-
-String _tableLiteral(List<List<String>> rows, Map<String, String> row) {
-  final rowLiterals = rows.map((cells) => '[${cells.map((c) => _fill(c, row).toDartStringLiteral).join(', ')}]');
-  return '[${rowLiterals.join(', ')}]';
-}
-
-/// [text] with every `<column>` of [row] replaced by its value.
-String _fill(String text, Map<String, String> row) {
-  var result = text;
-  for (final entry in row.entries) {
-    result = result.replaceAll('<${entry.key}>', entry.value);
-  }
-  return result;
 }

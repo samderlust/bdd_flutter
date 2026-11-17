@@ -8,29 +8,42 @@ import '../../domain/step.dart';
 import '../../domain/value_type.dart';
 import '../../extensions/string_x.dart';
 import '../steps/column_types.dart';
-import '../steps/steps_catalog.dart';
 import 'generated_header.dart';
 import 'scenario_settings.dart';
-import 'step_arguments.dart';
+import 'step_calls.dart';
 
 /// Generates `.bdd_test.dart` files: one test per scenario, and one test
 /// per example row of a Scenario Outline.
 ///
-/// Every test creates a fresh steps object, runs the Background, then the
-/// scenario's steps. This file is rewritten on every build.
+/// Every test creates a fresh steps object, runs its set-up (hooks), the
+/// Background, then the scenario's steps. How each step is called comes from
+/// [StepCalls]. This file is rewritten on every build.
 class TestFileBuilder {
   /// When a scenario has no `@unitTest`/`@widgetTest`, generate `testWidgets`.
   final bool widgetTestsByDefault;
 
   const TestFileBuilder({this.widgetTestsByDefault = true});
 
-  /// Builds the test file for [files]'s feature.
-  String build(FeatureFiles files, StepsCatalog catalog) {
-    final writer = _TestWriter(files, catalog, widgetTestsByDefault);
-    final feature = files.feature;
-    final buffer = StringBuffer(generatedHeader('${feature.fileName}.feature'))
+  /// Builds the test file for [files]'s feature, calling steps with [calls].
+  String build(FeatureFiles files, StepCalls calls) {
+    final body = _body(files, calls);
+    final buffer = StringBuffer(generatedHeader('${files.feature.fileName}.feature'))
       ..writeln("import 'package:flutter_test/flutter_test.dart';\n")
-      ..writeln("import '${files.stepsFileName}';\n")
+      ..writeln("import '${files.stepsFileName}';");
+    for (final path in calls.imports) {
+      buffer.writeln("import '$path';");
+    }
+    buffer
+      ..writeln()
+      ..write(body);
+    return buffer.toString();
+  }
+
+  /// `main()`, written first because [StepCalls.imports] depends on it.
+  String _body(FeatureFiles files, StepCalls calls) {
+    final writer = _TestWriter(files, calls, widgetTestsByDefault);
+    final feature = files.feature;
+    final buffer = StringBuffer()
       ..writeln('void main() {')
       ..writeln('  group(${feature.name.toDartStringLiteral}, () {');
     for (final scenario in feature.scenarios) {
@@ -62,10 +75,10 @@ class TestFileBuilder {
 /// Writes the tests of one feature.
 class _TestWriter {
   final FeatureFiles files;
-  final StepsCatalog catalog;
+  final StepCalls calls;
   final bool widgetTestsByDefault;
 
-  _TestWriter(this.files, this.catalog, this.widgetTestsByDefault);
+  _TestWriter(this.files, this.calls, this.widgetTestsByDefault);
 
   void writeScenario(StringBuffer buffer, Scenario scenario, {Rule? rule}) {
     final settings = ScenarioSettings.of(files.feature, rule, scenario, widgetTestsByDefault: widgetTestsByDefault);
@@ -113,6 +126,9 @@ class _TestWriter {
         ..writeln('  testWidgets($literal, (tester) async {')
         ..writeln('    final steps = ${files.stepsClass}()..tester = tester;');
     }
+    for (final statement in calls.setUpStatements) {
+      buffer.writeln('    $statement');
+    }
     writeBody();
     buffer.writeln('  }${_options(tags, skip)});');
   }
@@ -157,11 +173,8 @@ class _TestWriter {
     Map<String, String> row = const {},
     Map<String, ValueType> columns = const {},
   }) {
-    final pattern = catalog.patternOf(step, columns: columns);
-    final method = catalog.methodOf(files.feature, pattern);
-    final arguments = stepArguments(step, pattern, row: row).join(', ');
     buffer
       ..writeln('    // ${step.message}')
-      ..writeln('    await steps.${method.name}($arguments);');
+      ..writeln('    ${calls.statementFor(step, row: row, columns: columns)}');
   }
 }

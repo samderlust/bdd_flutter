@@ -6,7 +6,13 @@ class StepParameter {
   /// The parameter name.
   final String name;
 
-  const StepParameter(this.dartType, this.name);
+  /// Whether it is a named parameter (`{...}`).
+  final bool isNamed;
+
+  /// Whether a call may leave it out (`[...]`, or named and not `required`).
+  final bool isOptional;
+
+  const StepParameter(this.dartType, this.name, {this.isNamed = false, this.isOptional = false});
 
   /// The declaration as written in Dart, e.g. `num quantity`.
   String get declaration => '$dartType $name';

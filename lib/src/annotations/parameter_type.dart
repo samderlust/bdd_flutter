@@ -7,7 +7,7 @@
 /// @ParameterType(r'shipped|pending|cancelled')
 /// static OrderStatus status(String value) => OrderStatus.values.byName(value);
 ///
-/// @Step('the order is {status}')
+/// @Given('the order is {status}')
 /// Future<void> theOrderIs(OrderStatus status) async { ... }
 /// ```
 ///

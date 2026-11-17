@@ -190,6 +190,17 @@ void main() {
       ]);
     });
 
+    test('treats a value its type cannot convert as no match', () {
+      // Arrange
+      final matcher = StepMatcher.build(own: _class([_step('the account {int} exists', 'a')]));
+
+      // Act
+      final result = matcher.match('the account 12345678901234567890123 exists');
+
+      // Assert
+      expect(result.isUndefined, isTrue);
+    });
+
     test('matches the whole text only', () {
       // Arrange
       final matcher = StepMatcher.build(own: _class([_step('I wait', 'iWait')]));

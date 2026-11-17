@@ -1,7 +1,8 @@
 import 'source_location.dart';
 import 'step_method.dart';
 
-/// A step method declared with `@Step`, `@Given`, `@When` or `@Then`.
+/// A step method declared with `@Given`, `@When`, `@Then` or
+/// `@StepDefinition`.
 class StepDefinition {
   /// The Cucumber Expression from the annotation.
   final String expression;

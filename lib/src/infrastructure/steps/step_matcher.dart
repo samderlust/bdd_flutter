@@ -22,7 +22,10 @@ class StepMatcher {
   /// definitions never match.
   final List<StepsProblem> problems;
 
-  StepMatcher._(this._tiers, this._customTypes, this.problems);
+  /// The definitions whose expression could not be compiled.
+  final Set<StepDefinition> invalidDefinitions;
+
+  StepMatcher._(this._tiers, this._customTypes, this.problems, this.invalidDefinitions);
 
   /// A matcher over the definitions of [own] (the feature's steps class)
   /// and then [shared].
@@ -30,18 +33,20 @@ class StepMatcher {
     final classes = [?own, ...shared];
     final types = StepTypeRegistry.build(classes.expand((c) => c.parameterTypes));
     final problems = [...types.problems];
+    final invalid = <StepDefinition>{};
     final factory = ce.ExpressionFactory(types.registry);
     final tiers = [
-      _compile(own?.steps ?? const [], factory, problems),
-      _compile(shared.expand((c) => c.steps), factory, problems),
+      _compile(own?.steps ?? const [], factory, problems, invalid),
+      _compile(shared.expand((c) => c.steps), factory, problems, invalid),
     ];
-    return StepMatcher._(tiers, types.customNames, problems);
+    return StepMatcher._(tiers, types.customNames, problems, invalid);
   }
 
   static List<_CompiledStep> _compile(
     Iterable<StepDefinition> definitions,
     ce.ExpressionFactory factory,
     List<StepsProblem> problems,
+    Set<StepDefinition> invalid,
   ) {
     final compiled = <_CompiledStep>[];
     for (final definition in definitions) {
@@ -49,6 +54,7 @@ class StepMatcher {
         compiled.add(_CompiledStep(definition, factory.createExpression(definition.expression)));
       } on ce.CucumberExpressionException catch (e) {
         problems.add(StepsProblem(definition.location, "Invalid expression '${definition.expression}': ${e.message}"));
+        invalid.add(definition);
       }
     }
     return compiled;
@@ -62,12 +68,23 @@ class StepMatcher {
     for (final tier in _tiers) {
       final matches = [
         for (final step in tier)
-          if (step.expression.match(text) case final List<ce.Argument<Object?>> arguments)
-            StepMatch(step.definition, arguments.map(_argument).toList()),
+          if (_matchOne(step, text) case final StepMatch match) match,
       ];
       if (matches.isNotEmpty) return StepMatchResult(matches);
     }
     return const StepMatchResult([]);
+  }
+
+  /// [step]'s match of [text], or null. A value its type cannot convert,
+  /// such as an `{int}` too large for `int`, is no match.
+  StepMatch? _matchOne(_CompiledStep step, String text) {
+    final arguments = step.expression.match(text);
+    if (arguments == null) return null;
+    try {
+      return StepMatch(step.definition, arguments.map(_argument).toList());
+    } on FormatException {
+      return null;
+    }
   }
 
   MatchedArgument _argument(ce.Argument<Object?> argument) {

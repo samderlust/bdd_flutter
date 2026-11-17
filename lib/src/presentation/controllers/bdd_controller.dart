@@ -4,6 +4,8 @@ import '../../domain/config.dart';
 import '../../domain/feature.dart';
 import '../../domain/feature_files.dart';
 import '../../domain/shared_files.dart';
+import '../../domain/steps_mode.dart';
+import '../../infrastructure/builders/catalog_step_calls.dart';
 import '../../infrastructure/builders/shared_steps_builder.dart';
 import '../../infrastructure/builders/steps_contract_builder.dart';
 import '../../infrastructure/builders/steps_stub_builder.dart';
@@ -14,15 +16,19 @@ import '../../infrastructure/parsers/feature_parse_exception.dart';
 import '../../infrastructure/parsers/feature_parser.dart';
 import '../../infrastructure/steps/steps_catalog.dart';
 import 'build_report.dart';
+import 'expressions_build.dart';
 import 'shared_mixin.dart';
 import 'steps_file_check.dart';
 
 /// Orchestrates the BDD test generation pipeline.
 ///
-/// It parses every `.feature` file first, so steps used by several features
-/// get one name and go into the shared steps contract. Then, for each
-/// feature, it rewrites the steps contract and the test file, and creates
-/// the user's steps file once. It never changes a file the user owns.
+/// It parses every `.feature` file first. With `steps_mode: expressions`
+/// (the default), [ExpressionsBuild] matches the steps against the
+/// Cucumber Expressions in the steps files and writes the tests. With
+/// `steps_mode: contract` (2.x), steps used by several features get one name
+/// and go into the shared steps contract; then, for each feature, it
+/// rewrites the steps contract and the test file. Either way it creates the
+/// user's steps file once and never changes a file the user owns.
 class BDDController {
   final FeatureParser _featureParser;
   final ConfigParser _configParser;
@@ -30,6 +36,7 @@ class BDDController {
   final StepsContractBuilder _contractBuilder;
   final StepsStubBuilder _stubBuilder;
   final SharedStepsBuilder _sharedBuilder;
+  final ExpressionsBuild _expressionsBuild;
 
   BDDController({
     FeatureParser? featureParser,
@@ -38,12 +45,14 @@ class BDDController {
     StepsContractBuilder contractBuilder = const StepsContractBuilder(),
     StepsStubBuilder stubBuilder = const StepsStubBuilder(),
     SharedStepsBuilder sharedBuilder = const SharedStepsBuilder(),
+    ExpressionsBuild expressionsBuild = const ExpressionsBuild(),
   }) : _featureParser = featureParser ?? const FeatureParser(),
        _configParser = configParser ?? ConfigParser(),
        _formatter = formatter ?? const DartFormatCommand(),
        _contractBuilder = contractBuilder,
        _stubBuilder = stubBuilder,
-       _sharedBuilder = sharedBuilder;
+       _sharedBuilder = sharedBuilder,
+       _expressionsBuild = expressionsBuild;
 
   /// Generates test files from every `.feature` file in the test directory.
   ///
@@ -55,6 +64,20 @@ class BDDController {
 
     final report = BuildReport();
     final features = await parseFeatures(featurePaths, config, report);
+    if (config.stepsMode == StepsMode.expressions) {
+      await _expressionsBuild.run(features, config, report, (path, content, {created = false}) {
+        return _write(path, content, report, created: created);
+      });
+    } else {
+      await _buildContracts(features, config, report);
+    }
+    await _formatter.formatFiles(report.writtenFiles);
+    report.printSummary();
+    return report.failed;
+  }
+
+  /// `build` for `steps_mode: contract`, the 2.x pipeline.
+  Future<void> _buildContracts(List<Feature> features, BDDConfig config, BuildReport report) async {
     final catalog = StepsCatalog.of(features);
     report.addWarnings([for (final collision in catalog.nameCollisions) '$collision']);
     final mixin = await _sharedMixin(
@@ -72,9 +95,6 @@ class BDDController {
       }
       await writeGeneratedFiles(files, config, catalog, report: report, mixin: mixin);
     }
-    await _formatter.formatFiles(report.writtenFiles);
-    report.printSummary();
-    return report.failed;
   }
 
   /// The `.feature` files to build, sorted, or `null` after printing why
@@ -171,8 +191,8 @@ class BDDController {
     );
   }
 
-  /// Writes the contract and test file for [files], and the steps file if
-  /// it does not exist yet.
+  /// Contract mode: writes the contract and test file for [files], and the
+  /// steps file if it does not exist yet.
   ///
   /// With [mixin], a new steps file mixes in the shared steps it uses
   /// instead of declaring them.
@@ -189,7 +209,7 @@ class BDDController {
     final needsTester = testBuilder.needsTester(files.feature);
 
     await _write(files.contractPath, _contractBuilder.build(files, catalog, needsTester: needsTester), buildReport);
-    await _write(files.testPath, testBuilder.build(files, catalog), buildReport);
+    await _write(files.testPath, testBuilder.build(files, CatalogStepCalls(files.feature, catalog)), buildReport);
     buildReport.addTags(files.feature);
 
     final own = catalog.methodsFor(files.feature);

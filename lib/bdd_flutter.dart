@@ -43,7 +43,8 @@
 /// ## Step annotations (3.0, in progress)
 ///
 /// Importing this library gives the annotations used in steps files:
-/// [Step], [Given], [When], [Then], [ParameterType], [Before] and [After].
+/// [Given], [When], [Then], [StepDefinition], [ParameterType], [Before] and
+/// [After].
 /// It contains no CLI code.
 library bdd_flutter;
 
@@ -51,6 +52,6 @@ export 'src/annotations/after.dart';
 export 'src/annotations/before.dart';
 export 'src/annotations/given.dart';
 export 'src/annotations/parameter_type.dart';
-export 'src/annotations/step.dart';
+export 'src/annotations/step_definition.dart';
 export 'src/annotations/then.dart';
 export 'src/annotations/when.dart';

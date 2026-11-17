@@ -7,12 +7,13 @@ import 'package:bdd_flutter/src/domain/rule.dart';
 import 'package:bdd_flutter/src/domain/scenario.dart';
 import 'package:bdd_flutter/src/domain/step.dart';
 import 'package:bdd_flutter/src/infrastructure/builders/test_file_builder.dart';
+import 'package:bdd_flutter/src/infrastructure/builders/catalog_step_calls.dart';
 import 'package:bdd_flutter/src/infrastructure/steps/steps_catalog.dart';
 import 'package:test/test.dart';
 
 String _build(Feature feature, {bool widgetTestsByDefault = true}) {
   final builder = TestFileBuilder(widgetTestsByDefault: widgetTestsByDefault);
-  return builder.build(FeatureFiles(feature), StepsCatalog.of([feature]));
+  return builder.build(FeatureFiles(feature), CatalogStepCalls(feature, StepsCatalog.of([feature])));
 }
 
 Feature _feature(

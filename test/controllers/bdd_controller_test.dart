@@ -67,7 +67,7 @@ void main() {
     Directory(testDir).createSync(recursive: true);
     File(configFile)
       ..createSync(recursive: true)
-      ..writeAsStringSync('test_dir: "$testDir/"');
+      ..writeAsStringSync('test_dir: "$testDir/"\nsteps_mode: contract\n');
   });
 
   tearDown(() {
@@ -129,7 +129,9 @@ void main() {
     });
 
     test('skips features listed in ignore_features', () async {
-      File(configFile).writeAsStringSync('test_dir: "$testDir/"\nignore_features:\n  - cart.feature\n');
+      File(
+        configFile,
+      ).writeAsStringSync('test_dir: "$testDir/"\nsteps_mode: contract\nignore_features:\n  - cart.feature\n');
       File('$testDir/cart.feature').writeAsStringSync(_cartFeature);
 
       await buildController().generateFeatureTestCases();

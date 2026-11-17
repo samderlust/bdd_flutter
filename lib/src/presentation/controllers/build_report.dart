@@ -20,11 +20,20 @@ class BuildReport {
   /// Every file written, to be formatted.
   List<String> get writtenFiles => List.unmodifiable(_written);
 
+  /// Every warning recorded, in order.
+  List<String> get warnings => List.unmodifiable(_warnings);
+
   /// Records a written file.
   void written(String path, {bool created = false}) {
     _written.add(path);
     stdout.writeln('  ${created ? 'Created' : 'Generated'}: $path');
     if (path.endsWith('.bdd_test.dart')) _generated++;
+  }
+
+  /// Records a user file that `migrate` rewrote.
+  void updated(String path) {
+    _written.add(path);
+    stdout.writeln('  Updated: $path');
   }
 
   /// Records a skipped feature with the reason in [message].

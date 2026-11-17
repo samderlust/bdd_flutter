@@ -15,7 +15,7 @@ void main() {
 import 'package:bdd_flutter/bdd_flutter.dart';
 
 class CartSteps {
-  @Step('I have {int} cucumber(s)')
+  @StepDefinition('I have {int} cucumber(s)')
   Future<void> iHaveCucumbers(int count) async {}
 
   @Given('the table:')
@@ -50,7 +50,7 @@ class S {
   @Then(r'costs $1')
   Future<void> c() async {}
 
-  @Step('long ' 'text')
+  @StepDefinition('long ' 'text')
   Future<void> d() async {}
 }
 ''';
@@ -109,7 +109,7 @@ class S {
       // Arrange
       const source = '''
 mixin SharedSteps {
-  @Step('I am logged in')
+  @StepDefinition('I am logged in')
   Future<void> iAmLoggedIn() async {}
 }
 ''';
@@ -120,6 +120,54 @@ mixin SharedSteps {
       // Assert
       expect(shared.isMixin, isTrue);
       expect(shared.steps.single.methodName, 'iAmLoggedIn');
+    });
+
+    test('records parameter kinds and whether tester is declared', () {
+      // Arrange
+      const source = '''
+class A {
+  late WidgetTester tester;
+
+  @Given('a {int}')
+  Future<void> a(int n, [int? m]) async {}
+
+  @Given('b {int}')
+  Future<void> b(int n, {String? note, required int x}) async {}
+}
+mixin B {
+  WidgetTester get tester;
+}
+class C {
+  final int tester = 0;
+}
+''';
+
+      // Act
+      final file = reader.parse(source, path: path);
+
+      // Assert
+      final steps = file.classNamed('A')!.steps;
+      expect(steps.first.parameters.map((p) => p.isOptional), [false, true]);
+      expect(steps.last.parameters.map((p) => p.isOptional), [false, true, false]);
+      expect(steps.last.parameters.map((p) => p.isNamed), [false, true, true]);
+      expect(file.classNamed('A')!.declaresTester, isTrue);
+      expect(file.classNamed('B')!.declaresTester, isTrue);
+      expect(file.classNamed('C')!.declaresTester, isFalse);
+    });
+
+    test('records the mixins a class uses', () {
+      // Arrange
+      const source = '''
+class CartSteps with SharedSteps, Helpers implements CartStepsContract {}
+class Plain {}
+''';
+
+      // Act
+      final file = reader.parse(source, path: path);
+
+      // Assert
+      expect(file.classNamed('CartSteps')!.mixins, ['SharedSteps', 'Helpers']);
+      expect(file.classNamed('Plain')!.mixins, isEmpty);
     });
 
     test('ignores methods and annotations that are not bdd_flutter ones', () {
@@ -146,7 +194,7 @@ class S {
       const source = r'''
 const text = 'x';
 class S {
-  @Step(text)
+  @StepDefinition(text)
   Future<void> a() async {}
 
   @When('I have $text')
@@ -163,7 +211,7 @@ class S {
       // Assert
       expect(file.classNamed('S')!.steps, isEmpty);
       expect(file.problems.map((p) => p.location.line), [3, 6, 9]);
-      expect(file.problems.first.message, '@Step needs one string literal expression.');
+      expect(file.problems.first.message, '@StepDefinition needs one string literal expression.');
     });
 
     test('reports invalid parameter types and hooks', () {
@@ -202,7 +250,7 @@ class S {
       // Arrange
       const source = '''
 class S {
-  @Step('ok')
+  @StepDefinition('ok')
   Future<void> ok() async {}
 
   void broken( {

@@ -13,6 +13,13 @@ class StepsClass {
   /// Whether it is a mixin (it cannot be created on its own).
   final bool isMixin;
 
+  /// The mixins it uses in its `with` clause, e.g. `['SharedSteps']`.
+  final List<String> mixins;
+
+  /// Whether it declares `tester` (a `WidgetTester` field or getter), which
+  /// widget tests set.
+  final bool declaresTester;
+
   /// Its step methods, one per annotation.
   final List<StepDefinition> steps;
 
@@ -26,6 +33,8 @@ class StepsClass {
     required this.name,
     required this.path,
     this.isMixin = false,
+    this.mixins = const [],
+    this.declaresTester = false,
     this.steps = const [],
     this.parameterTypes = const [],
     this.hooks = const [],

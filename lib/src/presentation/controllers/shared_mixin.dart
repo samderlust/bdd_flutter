@@ -2,6 +2,7 @@ import 'dart:io';
 
 import '../../domain/shared_files.dart';
 import '../../domain/step_method.dart';
+import '../../infrastructure/steps/steps_file_reader.dart';
 import 'steps_file_check.dart';
 
 /// What the user's shared steps mixin provides.
@@ -46,7 +47,9 @@ class SharedMixin {
     return SharedMixin(
       files,
       signatures: definedSignatures(source),
-      declaresTester: RegExp(r'WidgetTester\s+(get\s+)?tester\b').hasMatch(source),
+      declaresTester:
+          const StepsFileReader().parse(source, path: files.stepsPath).classNamed(files.mixinName)?.declaresTester ??
+          false,
     );
   }
 }

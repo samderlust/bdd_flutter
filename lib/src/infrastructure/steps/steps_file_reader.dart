@@ -17,13 +17,14 @@ import '../../domain/steps_problem.dart';
 /// Reads the step definitions, parameter types and hooks of a steps file
 /// from its source, without resolving or running it.
 ///
-/// Annotations are recognised by name (`@Step`, `@Given`, `@When`, `@Then`,
+/// Annotations are recognised by name (`@Given`, `@When`, `@Then`,
+/// `@StepDefinition`,
 /// `@ParameterType`, `@Before`, `@After`, optionally with an import prefix).
 /// Their expressions and regexes must be string literals.
 class StepsFileReader {
   const StepsFileReader();
 
-  static const Set<String> _stepAnnotations = {'Step', 'Given', 'When', 'Then'};
+  static const Set<String> _stepAnnotations = {'StepDefinition', 'Given', 'When', 'Then'};
 
   /// Reads the file at [path]; a missing file reads as empty.
   StepsFile read(String path) {
@@ -48,13 +49,24 @@ class StepsFileReader {
 
   StepsClass? _readDeclaration(CompilationUnitMember declaration, _ReadContext context) {
     return switch (declaration) {
-      ClassDeclaration() => _readClass(declaration.namePart.typeName.lexeme, declaration.body, false, context),
-      MixinDeclaration() => _readClass(declaration.name.lexeme, declaration.body, true, context),
+      ClassDeclaration() => _readClass(
+        declaration.namePart.typeName.lexeme,
+        declaration.body,
+        context,
+        mixins: [for (final type in declaration.withClause?.mixinTypes ?? const <NamedType>[]) type.name.lexeme],
+      ),
+      MixinDeclaration() => _readClass(declaration.name.lexeme, declaration.body, context, isMixin: true),
       _ => null,
     };
   }
 
-  StepsClass _readClass(String name, ClassBody body, bool isMixin, _ReadContext context) {
+  StepsClass _readClass(
+    String name,
+    ClassBody body,
+    _ReadContext context, {
+    bool isMixin = false,
+    List<String> mixins = const [],
+  }) {
     final owner = _OwnerBuilder(name);
     for (final method in body.members.whereType<MethodDeclaration>()) {
       for (final annotation in method.metadata) {
@@ -65,6 +77,8 @@ class StepsFileReader {
       name: name,
       path: context.path,
       isMixin: isMixin,
+      mixins: mixins,
+      declaresTester: _declaresTester(body),
       steps: owner.steps,
       parameterTypes: owner.parameterTypes,
       hooks: owner.hooks,
@@ -152,6 +166,21 @@ class StepsFileReader {
     );
   }
 
+  /// Whether [body] declares `tester` as a `WidgetTester` field or getter.
+  static bool _declaresTester(ClassBody body) {
+    for (final member in body.members) {
+      if (member is MethodDeclaration && member.isGetter && member.name.lexeme == 'tester') {
+        return member.returnType?.toSource() == 'WidgetTester';
+      }
+      if (member is FieldDeclaration &&
+          member.fields.type?.toSource() == 'WidgetTester' &&
+          member.fields.variables.any((v) => v.name.lexeme == 'tester')) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   static String _annotationName(Annotation annotation) {
     final name = annotation.name;
     return name is PrefixedIdentifier ? name.identifier.name : name.name;
@@ -183,7 +212,12 @@ class StepsFileReader {
   static List<StepParameter> _parameters(MethodDeclaration method) {
     return [
       for (final parameter in method.parameters?.parameters ?? const <FormalParameter>[])
-        StepParameter(parameter.type?.toSource() ?? 'dynamic', parameter.name?.lexeme ?? ''),
+        StepParameter(
+          parameter.type?.toSource() ?? 'dynamic',
+          parameter.name?.lexeme ?? '',
+          isNamed: parameter.isNamed,
+          isOptional: parameter.isOptional,
+        ),
     ];
   }
 
