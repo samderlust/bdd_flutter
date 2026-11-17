@@ -9,8 +9,8 @@ the user's steps file. `build` matches every feature step against those
 expressions with the official
 [`cucumber_expressions`](https://pub.dev/packages/cucumber_expressions)
 package, generates tests that call the matched methods, and prints a snippet
-for every step nothing matches. Steps can live in the feature's own steps class
-or in shared steps classes used by many features. This is a breaking change;
+for every step nothing matches. Steps used by several features stay in the
+shared steps mixin, as in 2.x. This is a breaking change;
 `migrate` moves 2.x (and 1.x) projects over without changing method bodies.
 
 `.feature` files do not change.
@@ -54,7 +54,7 @@ ships one engine. 2.x gets bug fixes on a `release/2.x` branch.
 | `cart.bdd_steps.dart` | generated contract | **removed** |
 | `cart_steps.dart` | user-owned, `implements CartStepsContract` | user-owned, methods annotated with `@Step` (or `@Given`/`@When`/`@Then`) |
 | `cart.bdd_test.dart` | generated | generated, same shape |
-| shared steps (e.g. `test/steps/auth_steps.dart`) | not possible | optional, listed in `config.yaml` |
+| `test/shared_steps.dart` | `mixin SharedSteps`, created the first time a step is used by several features; feature classes mix it in | same file and mixin, methods annotated with `@Step` |
 
 ## Example
 
@@ -126,47 +126,63 @@ compile error in the generated test.
 
 ## Shared steps
 
-Cucumber users expect to write `I am logged in` once and use it in every
-feature. 3.0 supports that with shared steps classes listed in config:
-
-```yaml
-# .bdd_flutter/config.yaml
-shared_steps:
-  - test/steps/auth_steps.dart
-  - test/steps/common_steps.dart
-```
+2.x already shares steps between features: a step used by more than one
+feature goes into `mixin SharedSteps` in `shared_steps.dart` at the root of
+the test directory (named after `steps_suffix`), created once with stubs, and
+every feature steps class mixes it in. 3.0 keeps that model and adds
+expressions to it:
 
 ```dart
-// test/steps/auth_steps.dart
-class AuthSteps {
+// test/shared_steps.dart
+mixin SharedSteps {
+  WidgetTester get tester; // only when a shared step needs it
+
   @Given('I am logged in as {string}')
   Future<void> iAmLoggedInAs(String user) async { ... }
 }
 ```
 
-`build` matches each step against the feature's own class first, then the
-shared classes. The generated test creates only the classes it uses:
+```dart
+// test/cart/cart_steps.dart
+class CartSteps with SharedSteps {
+  @When('I pay {money}')
+  Future<void> iPay(Money amount) async { ... }
+}
+```
+
+`build` reads the mixin and the feature's class and matches each step against
+the feature's class first, then the mixin. Everything runs on one object, so
+the generated test is unchanged:
 
 ```dart
 test('Pay', () async {
   final steps = CartSteps();
-  final authSteps = AuthSteps();
-  await authSteps.iAmLoggedInAs('ann');
+  await steps.iAmLoggedInAs('ann');
   await steps.iPay(CartSteps.money(r'$10.00'));
 });
 ```
 
-- The feature's own class wins over shared classes, so a feature can override a
-  shared step. Two shared classes matching the same step is an error.
-- Widget tests set `tester` on every class created (`..tester = tester`).
-- Sharing state between classes (Cucumber uses DI for this) is an open question;
-  the first version gives each class its own state.
+- **One object, shared state for free.** Shared steps keep their state in the
+  mixin's fields, which live on the feature's steps object; nothing like
+  Cucumber's DI is needed.
+- **Override.** A definition in the feature's class wins over the mixin, so a
+  feature can replace a shared step.
+- **A shared step on a class that does not mix it in** is a build error asking
+  for `with SharedSteps`, since the generated call would not compile.
+- **Snippets.** An undefined step used by several features gets its snippet
+  for `SharedSteps` (in `shared_steps.dart`), like 2.x's shared stubs; one used
+  by a single feature gets it for that feature's class.
+- **Parameter types and hooks** declared on the mixin apply to every class that
+  mixes it in.
+- Several shared mixins (e.g. `AuthSteps`, `CartSharedSteps`) are possible
+  later by reading every mixin a class uses; 3.0 keeps the single
+  `SharedSteps` mixin of 2.x.
 
 ## Hooks
 
 2.x has no hooks; `Background` steps are inlined into each test. 3.0 adds
-scenario hooks as annotated instance methods, on the feature class or a shared
-class:
+scenario hooks as annotated instance methods, on the feature class or the
+`SharedSteps` mixin:
 
 ```dart
 class CartSteps {
@@ -187,8 +203,8 @@ test('Pay', () async {
 });
 ```
 
-Order: `@Before` hooks of shared classes, then of the feature class; `@After`
-in reverse. Tag-filtered hooks (`@Before(tags: '@db')`) and per-feature hooks
+Order: `@Before` hooks of the mixin, then of the feature class; `@After` in
+reverse. Tag-filtered hooks (`@Before(tags: '@db')`) and per-feature hooks
 (`setUpAll`) can follow later.
 
 ## Pipeline
@@ -200,13 +216,13 @@ BDDCLI.run(args)
     → FeatureParser.parseFeature()              # unchanged
       → GherkinMapper.toFeature()               # unchanged
     → StepsFileReader.read(_steps.dart,         # NEW: analyzer → @Step/@Given/@When/@Then,
-                           shared_steps)        #      @ParameterType, @Before/@After
+                           shared_steps.dart)   #      @ParameterType, @Before/@After
     → StepMatcher.match(step)                   # NEW: ExpressionFactory
-        feature class, then shared classes
+        feature class, then SharedSteps mixin
         1 match  → call with converted arguments
         2+       → build error: ambiguous step
         0        → snippet + warning
-    → TestFileBuilder.build(...)                # creates used classes, hooks, calls
+    → TestFileBuilder.build(...)                # hooks, then calls on one steps object
     → SnippetWriter.print / append              # NEW: CucumberExpressionGenerator
                                                 #      append only with --write-snippets
     → checkStepsFile(...)                       # reworked diagnostics
@@ -214,7 +230,9 @@ BDDCLI.run(args)
 ```
 
 Removed: `StepPatternParser`, `columnTypes`, `StepsCatalog`,
-`StepsContractBuilder`, `StepsStubBuilder` (replaced by `SnippetWriter`).
+`StepsContractBuilder`, `StepsStubBuilder` and `SharedStepsBuilder` (replaced
+by `SnippetWriter`). `SharedMixin`'s regex-based reading is replaced by
+`StepsFileReader`.
 
 ## Decisions
 
@@ -222,7 +240,7 @@ Removed: `StepPatternParser`, `columnTypes`, `StepsCatalog`,
 |---|---|---|
 | 1 | Annotation | `@Step('...')`, with `@Given`/`@When`/`@Then` as aliases. Matching ignores the keyword, as in Cucumber. |
 | 2 | Custom types | `@ParameterType(regex)` on a static method taking `String`, as in Cucumber-JVM; the type name defaults to the method name (`name:` overrides it). The generated test calls `Steps.name('raw')`. |
-| 3 | Built-in types | Cucumber's `{int}`, `{float}`, `{word}`, `{string}`, `{}`, plus `{num}` registered by bdd_flutter so migrated signatures stay `num`. |
+| 3 | Built-in types | Cucumber's `{int}`, `{float}`, `{word}`, `{string}`, `{}`, plus `{num}` and `{bool}` registered by bdd_flutter so migrated signatures stay `num` and `bool` (2.x types numbers and `true`/`false` Examples columns that way). |
 | 4 | Snippets | Printed by `build`, as in Cucumber. `build --write-snippets` appends them to `_steps.dart` (file created if missing) with `UnimplementedError` bodies. Existing code is never edited. |
 | 5 | Scenario Outline | Each Examples row's expanded text is matched, as in Cucumber. |
 | 6 | No match | Snippet + build warning. |
@@ -231,7 +249,7 @@ Removed: `StepPatternParser`, `columnTypes`, `StepsCatalog`,
 | 9 | Public API | `package:bdd_flutter/bdd_flutter.dart` exports `Step`, `Given`, `When`, `Then`, `ParameterType`, `Before` and `After`, with no CLI code. |
 | 10 | Migration | `migrate` goes from 1.x or 2.x straight to 3.0. |
 | 11 | 2.x | `release/2.x` branch, bug fixes only. |
-| 12 | Shared steps | `shared_steps` in config; feature class matched first, then shared classes; the test creates only the classes it uses. |
+| 12 | Shared steps | Kept from 2.x: `mixin SharedSteps` in `shared_steps.dart`, mixed into feature classes. Feature class matched first, then the mixin; one steps object per test. |
 | 13 | Hooks | `@Before` / `@After` instance methods; `@After` registered with `addTearDown`. |
 
 ## Argument values in generated tests
@@ -241,6 +259,7 @@ Removed: `StepPatternParser`, `columnTypes`, `StepsCatalog`,
 | `{int}` | `2` | `2` |
 | `{float}` | `1.5` | `1.5` (`1` → `1.0`) |
 | `{num}` | `2` | `2` |
+| `{bool}` | `true` | `true` |
 | `{string}` | `"apple"` / `'apple'` | `'apple'` (escaped) |
 | `{word}`, `{}` | `apple` | `'apple'` |
 | custom | `shipped` | `CartSteps.status('shipped')` |
@@ -265,14 +284,17 @@ For each feature:
 5. Delete `.bdd_steps.dart`.
 6. Strip `+docString` / `+dataTable` from the key; the trailing argument stays.
 
+The same steps run on `shared_steps.dart`: each `SharedSteps` method gets the
+`@Step` of its 2.x shared key; the `with SharedSteps` clauses stay.
+
 Signatures and method bodies are unchanged. 1.x projects go through the
 existing 1.x → 2.x mapping first, in the same run.
 
 ## Diagnostics
 
 - Step with no matching expression → warning + snippet.
-- Step matching several expressions (in one class, or in two shared classes) → error.
-- Shared steps file listed in config but missing → error.
+- Step matching several expressions in the feature's class, or several in the mixin → error.
+- Step matched only by `SharedSteps` in a class without `with SharedSteps` → error.
 - Expression no step uses → warning.
 - Parameter count or type that disagrees with the expression → error.
 - Unknown parameter type (`{colour}`) or invalid expression → error with position.
@@ -280,13 +302,13 @@ existing 1.x → 2.x mapping first, in the same run.
 ## Work order
 
 1. Public annotations (`Step`, `Given`, `When`, `Then`, `ParameterType`, `Before`, `After`) and exports.
-2. `StepsFileReader` (analyzer), for the feature's steps file and `shared_steps`.
-3. `StepMatcher` over `ExpressionFactory` with a type registry (built-ins + `{num}` + custom), feature class first, then shared classes.
+2. `StepsFileReader` (analyzer), for the feature's steps file and `shared_steps.dart` (classes and mixins).
+3. `StepMatcher` over `ExpressionFactory` with a type registry (built-ins + `{num}` + `{bool}` + custom), feature class first, then the shared mixin.
 4. `TestFileBuilder`: create the used classes, call hooks, turn matched values into Dart literals or `Steps.type('raw')`.
 5. `SnippetWriter` over `CucumberExpressionGenerator` (print; append with `--write-snippets`).
 6. Remove the 2.x pattern pipeline; rework `checkStepsFile`.
 7. `migrate` to 3.0.
-8. Migrate `example/`; add `{status}`, `{money}`, a shared steps class and hooks.
+8. Migrate `example/`; add `{status}`, `{money}`, a shared step and hooks.
 9. README, CHANGELOG, migration guide, CLAUDE.md.
 
 1–3 are the core; 4–7 depend on them; 8–9 last.
@@ -303,8 +325,8 @@ existing 1.x → 2.x mapping first, in the same run.
 | Ambiguous step | error | error | error | error |
 | DocString / DataTable | last argument | last argument | `context.text` / `context.table` | last argument |
 | Scenario Outline | expanded row matched | expanded row matched | expanded row matched | expanded row matched |
-| Step scope | global (glue) | global (bindings) | global | feature class + `shared_steps` |
-| State | new instance per scenario + DI | context injection | `context` object | new instance per test |
+| Step scope | global (glue) | global (bindings) | global | feature class + `SharedSteps` mixin |
+| State | new instance per scenario + DI | context injection | `context` object | one object per test (class + mixin) |
 | Hooks | `@Before` / `@After` | `[BeforeScenario]` / `[AfterScenario]` | `before_scenario` | `@Before` / `@After` |
 | When matched | runtime | runtime | runtime | **build time** |
 | Generated tests | none | yes, calls `testRunner.Given("text")` | none | yes, **direct method calls** |
@@ -317,8 +339,6 @@ from a test goes straight to the step method.
 
 - Where `--write-snippets` appends when `_steps.dart` has several classes or
   `part` files: last class of the expected name, otherwise error?
-- Sharing state between the feature class and shared classes: constructor
-  injection of a shared context object, or leave it to users?
 - Tag-filtered hooks and per-feature hooks (`setUpAll`) in 3.0 or later?
 - Should `{float}` snippets use `double` or `num`?
 - Keep the `steps_suffix` config, or derive the class from the file?
