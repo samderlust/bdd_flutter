@@ -9,7 +9,8 @@ import '../reporter/bdd_test_runner.dart';
 ///
 /// Supports commands:
 /// - `build` — generate test files from `.feature` files
-/// - `migrate` — move 1.x scenario files to 2.0 steps files
+/// - `migrate` — move 1.x scenario files and 2.x steps files to the current
+///   `steps_mode`
 /// - `test` — run BDD tests with formatted report
 class BDDCLI {
   final BDDController _bddController;
@@ -22,7 +23,19 @@ class BDDCLI {
       _configParser = configParser ?? ConfigParser();
 
   /// Parses [arguments] and executes the corresponding command.
+  ///
+  /// An invalid config (e.g. an unknown `steps_mode`) is printed and exits
+  /// with code 1.
   Future<void> run(List<String> arguments) async {
+    try {
+      await _run(arguments);
+    } on FormatException catch (e) {
+      stderr.writeln(e.message);
+      exit(1);
+    }
+  }
+
+  Future<void> _run(List<String> arguments) async {
     if (arguments.isEmpty) {
       _printUsage();
       return;
@@ -57,7 +70,9 @@ class BDDCLI {
     stdout.writeln('');
     stdout.writeln('Available commands:');
     stdout.writeln('  build    Generate test files from .feature files');
-    stdout.writeln('  migrate  Move 1.x .bdd_scenarios.dart files to 2.0 _steps.dart files');
+    stdout.writeln(
+      '  migrate  Move 1.x and 2.x steps files to Cucumber Expressions (or 1.x to 2.x with steps_mode: contract)',
+    );
     stdout.writeln('  test     Run BDD tests with formatted report');
   }
 }

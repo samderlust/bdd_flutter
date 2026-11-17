@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:bdd_flutter/src/domain/steps_mode.dart';
 import 'package:bdd_flutter/src/infrastructure/parsers/config_parser.dart';
 import 'package:test/test.dart';
 
@@ -27,6 +28,28 @@ void main() {
       expect(config.ignoreFeatures, isEmpty);
       expect(config.additionalImports, isEmpty);
       expect(config.stepsSuffix, equals('Steps'));
+      expect(config.stepsMode, StepsMode.expressions);
+    });
+
+    test('reads steps_mode, keeping 2.x behaviour with contract', () async {
+      // Arrange
+      Directory('${tempDir.path}/.bdd_flutter').createSync();
+      File('${tempDir.path}/.bdd_flutter/config.yaml').writeAsStringSync('steps_mode: contract\n');
+
+      // Act
+      final config = await parserInDir().loadConfig();
+
+      // Assert
+      expect(config.stepsMode, StepsMode.contract);
+    });
+
+    test('rejects an unknown steps_mode', () async {
+      // Arrange
+      Directory('${tempDir.path}/.bdd_flutter').createSync();
+      File('${tempDir.path}/.bdd_flutter/config.yaml').writeAsStringSync('steps_mode: v2\n');
+
+      // Act & Assert
+      await expectLater(parserInDir().loadConfig(), throwsA(isA<FormatException>()));
     });
 
     test('parses config file with all options', () async {

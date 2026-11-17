@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:yaml/yaml.dart';
 
 import '../../domain/config.dart';
+import '../../domain/steps_mode.dart';
 
 /// Reads configuration from `.bdd_flutter/config.yaml`.
 ///
@@ -17,6 +18,8 @@ class ConfigParser {
   ConfigParser({String? configFile}) : configFile = configFile ?? defaultConfigFile;
 
   /// Loads the config file and returns a [BDDConfig].
+  ///
+  /// Throws [FormatException] for an unknown `steps_mode`.
   Future<BDDConfig> loadConfig() async {
     final file = File(configFile);
 
@@ -41,6 +44,7 @@ class ConfigParser {
       additionalImports: _parseStringList(yaml['additional_imports']),
       stepsSuffix: yaml['steps_suffix'] as String? ?? 'Steps',
       legacyScenarioSuffix: yaml['scenario_suffix'] as String? ?? 'Scenario',
+      stepsMode: StepsMode.parse(yaml['steps_mode']?.toString()),
     );
   }
 

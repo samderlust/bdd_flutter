@@ -1,3 +1,5 @@
+import 'steps_mode.dart';
+
 /// Configuration loaded from `.bdd_flutter/config.yaml`.
 ///
 /// Controls how the generator finds feature files, generates test code,
@@ -27,6 +29,10 @@ class BDDConfig {
   /// The 1.x `scenario_suffix`, read only by `migrate` to find 1.x classes.
   final String legacyScenarioSuffix;
 
+  /// How steps are connected to code: Cucumber Expressions (default) or
+  /// the 2.x generated contract.
+  final StepsMode stepsMode;
+
   const BDDConfig({
     this.testDir = 'test/',
     this.generateWidgetTests = true,
@@ -34,5 +40,6 @@ class BDDConfig {
     this.additionalImports = const [],
     this.stepsSuffix = 'Steps',
     this.legacyScenarioSuffix = 'Scenario',
+    this.stepsMode = StepsMode.expressions,
   });
 }
