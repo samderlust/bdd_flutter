@@ -81,6 +81,14 @@ class StepsCatalog {
   /// The method of [feature] that [pattern] calls.
   StepMethod methodOf(Feature feature, StepPattern pattern) => _methodsByFeature[feature.path]![pattern.key]!;
 
+  /// Every step of [feature] with its pattern, in file order: Background,
+  /// scenarios, then rules.
+  Iterable<(Step, StepPattern)> patternsIn(Feature feature) sync* {
+    for (final (step, columns) in _stepsWithColumns(feature)) {
+      yield (step, _parser.parse(step, columns: columns));
+    }
+  }
+
   String _keyOf(StepMethod method) {
     for (final methods in _methodsByFeature.values) {
       for (final MapEntry(:key, :value) in methods.entries) {
