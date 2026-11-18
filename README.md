@@ -206,11 +206,34 @@ The generated test converts the value with your method: `await steps.theOrderIs(
 
 | Situation | What happens |
 | --- | --- |
-| No expression matches | `build` lists it; the test fails with `Undefined step: ...` |
+| No expression matches | `build` prints a snippet and the class to add it to; the test fails with `Undefined step: ...` |
 | Several expressions match | The test fails with `Ambiguous step: ...`, listing the methods |
 | Invalid expression or unknown `{type}` | `build` reports it with the file and line |
 
 The test file always compiles, so one missing step never stops the other tests from running.
+
+As in Cucumber, `build` suggests code for undefined steps but never writes it into your steps files:
+
+```
+Warning: undefined step `When I add 2 "apple" at 1.5 each` in cart.feature.
+  Add to ShoppingCartSteps in test/cart/cart_steps.dart:
+
+    @When('I add {int} {string} at {float} each')
+    Future<void> iAddAtEach(int number, String text, double value) async {
+      throw UnimplementedError();
+    }
+
+Warning: undefined step `Given I am logged in` in cart.feature, login.feature.
+  Add to SharedSteps in test/shared_steps.dart:
+  Create test/shared_steps.dart with `import 'package:bdd_flutter/bdd_flutter.dart';` and `mixin SharedSteps {}`.
+  Add `with SharedSteps` to ShoppingCartSteps in test/cart/cart_steps.dart, with `import '../shared_steps.dart';`.
+  ...
+```
+
+- A step used by one feature goes in that feature's class; one used by several goes in `SharedSteps`.
+- A step another feature's class already defines is suggested to move to `SharedSteps`.
+- Snippets use your `@ParameterType` types when the text matches them (`the cart is open` → `the cart is {state}`).
+- Steps that one method can serve (`I add 2 "apple"`, `I add 5 "pear"`) get one snippet.
 
 ### Steps shared across features
 

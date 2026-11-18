@@ -81,11 +81,11 @@ Feature: Cart
     When I pay $10.00
 ```
 
-### Snippets for undefined steps (item 5, not built yet)
+### Snippets for undefined steps
 
-Today `build` creates an empty steps class for a new feature and lists the
-undefined steps. Item 5 would print snippets like these, and
-`build --write-snippets` would append them to `cart_steps.dart`.
+`build` prints a snippet for every undefined step, with the class to add it
+to, and never writes it: like Cucumber, it suggests and the user pastes.
+Printed snippets look like these (the steps file starts as an empty class):
 
 ```dart
 class CartSteps {
@@ -195,8 +195,10 @@ test('Pay', () async {
 - **A shared step on a class that does not mix it in** is a build error asking
   for `with SharedSteps`, since the generated call would not compile.
 - **Snippets.** An undefined step used by several features gets its snippet
-  for `SharedSteps` (in `shared_steps.dart`), like 2.x's shared stubs; one used
-  by a single feature gets it for that feature's class.
+  for `SharedSteps` (in `shared_steps.dart`); one used by a single feature gets
+  it for that feature's class; one defined in another feature's class is
+  suggested to move to `SharedSteps`. The hint says to create the file or add
+  `with SharedSteps` when needed; `build` never creates `shared_steps.dart`.
 - **Parameter types and hooks** declared on the mixin apply to every class that
   mixes it in.
 - Several shared mixins (e.g. `AuthSteps`, `CartSharedSteps`) are possible
@@ -248,8 +250,8 @@ BDDCLI.run(args)
         2+       → fail('Ambiguous step: ...') in the test + reported
         0        → fail('Undefined step: ...') + snippet
     → TestFileBuilder.build(...)                # hooks, then calls on one steps object
-    → SnippetWriter.print / append              # NEW: CucumberExpressionGenerator
-                                                #      append only with --write-snippets
+    → UndefinedSteps.hints()                    # NEW: SnippetGenerator over
+                                                #      CucumberExpressionGenerator; printed only
     → checkStepsFile(...)                       # reworked diagnostics
     → DartFormatCommand.formatFiles(...)        # unchanged
 ```
@@ -265,7 +267,7 @@ Used only in contract mode: `StepPatternParser`, `columnTypes`,
 | 1 | Annotation | `@Given`/`@When`/`@Then`, aliases of the keyword-free `@StepDefinition` (not `Step`: Flutter clash). Matching ignores the keyword, as in Cucumber. |
 | 2 | Custom types | `@ParameterType(regex)` on a static method taking `String`, as in Cucumber-JVM; the type name defaults to the method name (`name:` overrides it). The generated test calls `Steps.name('raw')`. |
 | 3 | Built-in types | Cucumber's `{int}`, `{float}`, `{word}`, `{string}`, `{}`, plus `{num}` and `{bool}` registered by bdd_flutter so migrated signatures stay `num` and `bool` (2.x types numbers and `true`/`false` Examples columns that way). |
-| 4 | Snippets | Printed by `build`, as in Cucumber. `build --write-snippets` appends them to `_steps.dart` (file created if missing) with `UnimplementedError` bodies. Existing code is never edited. |
+| 4 | Snippets | Printed by `build`, as in Cucumber, with the class to add each one to (`SharedSteps` when several features use the step) and `UnimplementedError` bodies. `build` never writes them: the generated test already compiles with `fail('Undefined step: ...')`. |
 | 5 | Scenario Outline | Each Examples row's expanded text is matched, as in Cucumber. |
 | 6 | No match | Snippet + build warning. |
 | 7 | Several matches | Build error listing the expressions. |
@@ -329,7 +331,7 @@ existing 1.x → 2.x mapping first, in the same run.
 2. `StepsFileReader` (analyzer), for the feature's steps file and `shared_steps.dart` (classes and mixins).
 3. `StepMatcher` over `ExpressionFactory` with a type registry (built-ins + `{num}` + `{bool}` + custom), feature class first, then the shared mixin.
 4. `TestFileBuilder`: call hooks, turn matched values into Dart literals or `Steps.type('raw')`.
-5. `SnippetWriter` over `CucumberExpressionGenerator` (print; append with `--write-snippets`).
+5. `SnippetGenerator` over `CucumberExpressionGenerator`; `build` prints snippets with where to add them.
 6. Wire `steps_mode` into `build`: expressions by default, the 2.x pipeline for `contract`; rework `checkStepsFile` for expressions.
 7. `migrate` to 3.0.
 8. Migrate `example/`; add `{status}`, `{money}`, a shared step and hooks.
@@ -337,10 +339,11 @@ existing 1.x → 2.x mapping first, in the same run.
 
 1–3 are the core; 4–7 depend on them; 8–9 last.
 
-Status: 1–4 and 6–9 are done: `build` follows `steps_mode`, `migrate` moves
-2.x projects (the example included) and the docs describe 3.0. Item 5
-(snippets, `--write-snippets`) is not built; `build` creates an empty steps
-class for a new feature and lists its undefined steps instead.
+Status: 1–9 are done: `build` follows `steps_mode` and prints snippets for
+undefined steps, `migrate` moves 2.x projects (the example included) and the
+docs describe 3.0. `--write-snippets` was dropped: every Cucumber
+implementation only prints snippets, and the generated tests compile without
+them.
 
 ## Comparison with other BDD tools
 
@@ -350,7 +353,7 @@ class for a new feature and lists its undefined steps instead.
 | Expression syntax | Cucumber Expressions | Cucumber Expressions or regex | `parse` format | Cucumber Expressions |
 | Keyword | ignored when matching | keyword-specific by default (`[StepDefinition]` matches any) | keyword-specific | ignored (`@Given`/`@When`/`@Then`/`@StepDefinition`) |
 | Custom types | `@ParameterType` / `defineParameterType` | `[StepArgumentTransformation]` | `register_type` | `@ParameterType` |
-| Undefined step | snippet printed | snippet suggested by the IDE | error | snippet printed (`--write-snippets` to append) |
+| Undefined step | snippet printed | snippet suggested by the IDE | error | snippet printed, with the class to add it to |
 | Ambiguous step | error | error | error | error |
 | DocString / DataTable | last argument | last argument | `context.text` / `context.table` | last argument |
 | Scenario Outline | expanded row matched | expanded row matched | expanded row matched | expanded row matched |
@@ -366,10 +369,8 @@ from a test goes straight to the step method.
 
 ## Open questions
 
-- Where `--write-snippets` appends when `_steps.dart` has several classes or
-  `part` files: last class of the expected name, otherwise error?
 - Tag-filtered hooks and per-feature hooks (`setUpAll`) in 3.0 or later?
-- Should `{float}` snippets use `double` or `num`?
+- `{float}` snippets use `double`, as the matched value is a `double`.
 - Keep the `steps_suffix` config, or derive the class from the file?
 - Performance of analyzer on large projects: read only `_steps.dart` files
   next to features.

@@ -27,6 +27,7 @@
 - Matching happens during `build`, and generated tests call your methods directly, so a wrong signature is still a compile error
 - `build` creates the steps class for a feature that has none (with a `tester` field for widget tests, mixing in `SharedSteps` when it exists) and lists undefined and ambiguous steps, expressions that do not compile, methods whose parameters do not fit their expression, steps no feature uses, and widget steps classes without a `tester`
 - A step defined only in `SharedSteps`, used by a class without `with SharedSteps`, makes its test fail with a message saying what to add
+- Snippets for undefined steps, as in Cucumber: `build` prints each one once, with the expression from `CucumberExpressionGenerator` (your `@ParameterType` types included) and the class to add it to: the feature's class, or `SharedSteps` for a step several features use or another feature's class defines. `build` never writes snippets into steps files and never creates `shared_steps.dart`
 - New config option `steps_mode`: `expressions` (default) or `contract` (2.x). An unknown value is an error, so a typo never switches a project's mode
 
 ### Upgrading
