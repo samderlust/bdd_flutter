@@ -1,5 +1,6 @@
 import 'step.dart';
 import 'step_definition.dart';
+import 'step_keyword_type.dart';
 import 'unresolved_reason.dart';
 
 /// A feature step that a generated test cannot call, and why.
@@ -17,5 +18,15 @@ class UnresolvedStep {
   /// The matching definitions when [reason] is ambiguous or a missing mixin.
   final List<StepDefinition> candidates;
 
-  const UnresolvedStep({required this.step, required this.text, required this.reason, this.candidates = const []});
+  /// The step's role: for `And`, `But` and `*`, the role of the step they
+  /// continue.
+  final StepKeywordType keywordType;
+
+  const UnresolvedStep({
+    required this.step,
+    required this.text,
+    required this.reason,
+    this.candidates = const [],
+    this.keywordType = StepKeywordType.unknown,
+  });
 }

@@ -92,9 +92,85 @@ class ShoppingCartSteps {
       expect(steps, isNot(contains('tester')));
       expect(read('cart/cart.bdd_test.dart'), contains("fail('Undefined step: When I add 2 \"apple\"');"));
       expect(report.warnings, [
-        'cart.feature: undefined step `When I add 2 "apple"`.',
-        'cart.feature: undefined step `Then the cart has 2 items`.',
+        'undefined step `When I add 2 "apple"` in cart.feature.',
+        'undefined step `Then the cart has 2 items` in cart.feature.',
       ]);
+      expect(report.undefinedSteps.first.details, [
+        'Add to ShoppingCartSteps in ${path('cart/cart_steps.dart')}:',
+        '',
+        "  @When('I add {int} {string}')",
+        '  Future<void> iAdd(int number, String text) async {',
+        '    throw UnimplementedError();',
+        '  }',
+        '',
+      ]);
+    });
+
+    test('suggests SharedSteps for a step several features use, and never writes it', () async {
+      // Arrange
+      write('cart/cart.feature', '@unitTest\nFeature: Shopping cart\n  Scenario: A\n    Given I am logged in\n');
+      write('other/other.feature', '@unitTest\nFeature: Other\n  Scenario: B\n    Given I am logged in\n');
+      write('other/other_steps.dart', 'class OtherSteps {}\n');
+
+      // Act
+      final report = await build(featurePaths: ['cart/cart.feature', 'other/other.feature']);
+
+      // Assert
+      final hint = report.undefinedSteps.single;
+      expect(hint.warning, 'undefined step `Given I am logged in` in cart.feature, other.feature.');
+      expect(hint.details, contains('Add to SharedSteps in ${path('shared_steps.dart')}:'));
+      expect(hint.details, contains(startsWith('Create ${path('shared_steps.dart')} with')));
+      expect(
+        hint.details,
+        contains(
+          "Add `with SharedSteps` to OtherSteps in ${path('other/other_steps.dart')}, with `import '../shared_steps.dart';`.",
+        ),
+      );
+      expect(hint.details, contains("  @Given('I am logged in')"));
+      expect(File(path('shared_steps.dart')).existsSync(), isFalse);
+      expect(read('other/other_steps.dart'), 'class OtherSteps {}\n');
+    });
+
+    test("suggests moving a step another feature's class defines into SharedSteps", () async {
+      // Arrange
+      write('cart/cart.feature', '@unitTest\nFeature: Shopping cart\n  Scenario: A\n    Given I am logged in\n');
+      write('cart/cart_steps.dart', '''
+class ShoppingCartSteps {
+  @Given('I am logged in')
+  Future<void> iAmLoggedIn() async {}
+}
+''');
+      write('other/other.feature', '@unitTest\nFeature: Other\n  Scenario: B\n    Given I am logged in\n');
+      write('other/other_steps.dart', 'class OtherSteps {}\n');
+
+      // Act
+      final report = await build(featurePaths: ['cart/cart.feature', 'other/other.feature']);
+
+      // Assert
+      final hint = report.undefinedSteps.single;
+      expect(hint.warning, 'undefined step `Given I am logged in` in other.feature.');
+      expect(
+        hint.details.first,
+        'ShoppingCartSteps defines it, but only cart.feature can use it; move it to SharedSteps.',
+      );
+      expect(hint.details, contains(startsWith('Add `with SharedSteps` to ShoppingCartSteps')));
+    });
+
+    test('gives a snippet a method name its class does not have yet', () async {
+      // Arrange
+      write('cart/cart.feature', _cartFeature);
+      write('cart/cart_steps.dart', '''
+class ShoppingCartSteps {
+  @When('I add {int} {string} now')
+  Future<void> iAdd(int quantity, String item) async {}
+}
+''');
+
+      // Act
+      final report = await build();
+
+      // Assert
+      expect(report.undefinedSteps.first.details, contains('  Future<void> iAdd2(int number, String text) async {'));
     });
 
     test('never changes an existing steps file', () async {

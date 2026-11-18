@@ -3,12 +3,14 @@ import 'dart:io';
 import '../../domain/feature.dart';
 import '../../domain/rule.dart';
 import '../../domain/scenario.dart';
+import '../../domain/undefined_step_hint.dart';
 import '../../infrastructure/builders/scenario_settings.dart';
 
 /// Collects what a build did and prints it.
 class BuildReport {
   final List<String> _written = [];
   final List<String> _warnings = [];
+  final List<UndefinedStepHint> _undefinedSteps = [];
   final Set<String> _tags = {};
   int _generated = 0;
   int _skipped = 0;
@@ -22,6 +24,9 @@ class BuildReport {
 
   /// Every warning recorded, in order.
   List<String> get warnings => List.unmodifiable(_warnings);
+
+  /// Every undefined step reported, with its snippet.
+  List<UndefinedStepHint> get undefinedSteps => List.unmodifiable(_undefinedSteps);
 
   /// Records a written file.
   void written(String path, {bool created = false}) {
@@ -53,6 +58,16 @@ class BuildReport {
     _warnings.addAll(warnings);
     for (final warning in warnings) {
       stdout.writeln('  Warning: $warning');
+    }
+  }
+
+  /// Records an undefined step as a warning, and prints where to add its
+  /// definition and the snippet under it.
+  void addUndefinedStep(UndefinedStepHint hint) {
+    _undefinedSteps.add(hint);
+    addWarnings([hint.warning]);
+    for (final line in hint.details) {
+      stdout.writeln(line.isEmpty ? '' : '    $line');
     }
   }
 

@@ -14,13 +14,15 @@ import '../../infrastructure/builders/test_file_builder.dart';
 import '../../infrastructure/steps/steps_file_reader.dart';
 import 'build_file_writer.dart';
 import 'build_report.dart';
+import 'undefined_steps.dart';
 
 /// `build` for `steps_mode: expressions`: matches every step with the
 /// Cucumber Expressions of the feature's steps class and the shared steps
 /// mixin, writes the tests, and reports what the user has to fix.
 ///
 /// It creates a steps file only when a feature has none, and never edits
-/// one that exists.
+/// one that exists: for undefined steps it prints snippets, as Cucumber
+/// does, with the class each one belongs in.
 class ExpressionsBuild {
   final StepsFileReader _reader;
   final ExpressionStepsFileBuilder _stepsFileBuilder;
@@ -37,16 +39,18 @@ class ExpressionsBuild {
     final reported = <String>{};
     _warnOnce(report, reported, shared.problems);
     final sharedUsed = <StepDefinition>{};
+    final undefined = UndefinedSteps(shared.files, shared.mixin);
     for (final feature in features) {
       final files = FeatureFiles(feature, stepsSuffix: config.stepsSuffix);
       if (_isUnmigrated1x(files)) {
         report.skip('Skipped (1.x scenarios file): ${feature.path}. Run `dart run bdd_flutter migrate` first.');
         continue;
       }
-      final used = await _buildFeature(files, config, shared, report, reported, write);
+      final used = await _buildFeature(files, config, shared, report, reported, write, undefined);
       sharedUsed.addAll(used.where((d) => d.ownerName == shared.mixin?.name));
     }
     _warnUnused(report, shared.mixin, sharedUsed, shared.files.stepsPath);
+    undefined.hints().forEach(report.addUndefinedStep);
   }
 
   bool _isUnmigrated1x(FeatureFiles files) {
@@ -61,6 +65,7 @@ class ExpressionsBuild {
     BuildReport report,
     Set<String> reported,
     BuildFileWriter write,
+    UndefinedSteps undefined,
   ) async {
     final testBuilder = TestFileBuilder(widgetTestsByDefault: config.generateWidgetTests);
     final needsTester = testBuilder.needsTester(files.feature);
@@ -79,6 +84,7 @@ class ExpressionsBuild {
     report.addTags(files.feature);
     _warnOnce(report, reported, [...stepsFile.problems, ...calls.problems].map((p) => '$p'));
     _reportFeature(report, files, own, calls, needsTester: needsTester);
+    undefined.add(files, own, calls.unresolved);
     return calls.usedDefinitions;
   }
 
@@ -103,7 +109,8 @@ class ExpressionsBuild {
     final featureFile = '${files.feature.fileName}.feature';
     report.addWarnings([
       if (own == null) '${files.stepsPath} has no class ${files.stepsClass}; every step of $featureFile is undefined.',
-      for (final step in calls.unresolved) '$featureFile: ${_describe(step)}',
+      for (final step in calls.unresolved)
+        if (step.reason != UnresolvedReason.undefined) '$featureFile: ${_describe(step)}',
       ...calls.warnings,
       if (needsTester && own != null && !own.declaresTester)
         '${files.stepsPath}: $featureFile has widget tests; add `late WidgetTester tester;` to ${files.stepsClass}.',
@@ -115,7 +122,7 @@ class ExpressionsBuild {
     final text = '`${step.step.keyword} ${step.text}`';
     String where(StepDefinition d) => '${d.ownerName}.${d.methodName} (${d.location})';
     return switch (step.reason) {
-      UnresolvedReason.undefined => 'undefined step $text.',
+      UnresolvedReason.undefined => 'undefined step $text.', // reported by UndefinedSteps
       UnresolvedReason.ambiguous => 'ambiguous step $text matches ${step.candidates.map(where).join(', ')}.',
       UnresolvedReason.missingSharedMixin =>
         'step $text is defined in ${step.candidates.first.ownerName}; mix it in with `with ${step.candidates.first.ownerName}`.',

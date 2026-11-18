@@ -2,6 +2,7 @@ import '../../domain/hook_kind.dart';
 import '../../domain/parameter_type_definition.dart';
 import '../../domain/step_definition.dart';
 import '../../domain/step.dart';
+import '../../domain/step_keyword_type.dart';
 import '../../domain/step_match.dart';
 import '../../domain/step_match_result.dart';
 import '../../domain/steps_class.dart';
@@ -32,6 +33,7 @@ class ExpressionStepCalls implements StepCalls {
   final Set<StepDefinition> _used = {};
   final Set<String> _warnings = {};
   bool _usesSharedStatics = false;
+  StepKeywordType _previousType = StepKeywordType.unknown;
 
   /// Calls on [own], the feature's steps class [stepsClassName] (null when
   /// its file does not declare it yet), and [shared], the shared steps mixin
@@ -84,6 +86,7 @@ class ExpressionStepCalls implements StepCalls {
   String statementFor(Step step, {Map<String, String> row = const {}, Map<String, ValueType> columns = const {}}) {
     final values = RowValues(row);
     final text = values.fill(step.text);
+    if (!_continuesPrevious(step)) _previousType = step.keywordType;
     final result = _matcher.match(text);
     final reason = _reasonFor(result);
     if (reason != null) return _fail(step, text, reason, result);
@@ -92,6 +95,10 @@ class ExpressionStepCalls implements StepCalls {
     _used.add(match.definition);
     _checkArity(match.definition, arguments.length, step);
     return 'await steps.${match.definition.methodName}(${arguments.join(', ')});';
+  }
+
+  bool _continuesPrevious(Step step) {
+    return step.keywordType == StepKeywordType.conjunction || step.keywordType == StepKeywordType.unknown;
   }
 
   void _checkArity(StepDefinition definition, int given, Step step) {
@@ -133,7 +140,11 @@ class ExpressionStepCalls implements StepCalls {
     final candidates = result.matches.map((m) => m.definition).toList();
     _used.addAll(candidates);
     final known = _unresolved.any((u) => u.text == text && u.reason == reason);
-    if (!known) _unresolved.add(UnresolvedStep(step: step, text: text, reason: reason, candidates: candidates));
+    if (!known) {
+      _unresolved.add(
+        UnresolvedStep(step: step, text: text, reason: reason, candidates: candidates, keywordType: _previousType),
+      );
+    }
     final message = switch (reason) {
       UnresolvedReason.undefined => 'Undefined step: ${step.keyword} $text',
       UnresolvedReason.ambiguous =>
