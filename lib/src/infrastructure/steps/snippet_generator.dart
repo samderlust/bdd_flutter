@@ -6,6 +6,7 @@ import '../../domain/step_method.dart';
 import '../../domain/step_snippet.dart';
 import '../../domain/unresolved_step.dart';
 import '../../extensions/string_x.dart';
+import 'parameter_names.dart';
 import 'step_type_registry.dart';
 
 /// Suggests a step definition for an undefined step, as Cucumber does:
@@ -33,21 +34,28 @@ class SnippetGenerator {
   StepSnippet snippetFor(UnresolvedStep step) {
     final generated = _generator.generateExpressions(step.text).first;
     final usedNames = <String>{};
+    final typeNames = [for (final type in generated.parameterTypes) type.name ?? ''];
+    final contextNames = parameterNamesFrom(generated.source, typeNames);
     return StepSnippet(
       annotation: _annotation(step.keywordType),
       expression: generated.source,
       methodName: _methodName(generated.source, step.text),
       parameters: [
-        for (final type in generated.parameterTypes) _parameter(type.name ?? '', usedNames),
+        for (var i = 0; i < typeNames.length; i++) _parameter(typeNames[i], contextNames[i], usedNames),
         if (step.step.docString != null) StepParameter('String', _unique('docString', usedNames)),
         if (step.step.dataTable != null) StepParameter('List<List<String>>', _unique('dataTable', usedNames)),
       ],
     );
   }
 
-  StepParameter _parameter(String typeName, Set<String> usedNames) {
+  /// A parameter of type [typeName]: a custom type is named after the type,
+  /// a built-in one after its [contextName] when there is one.
+  StepParameter _parameter(String typeName, String? contextName, Set<String> usedNames) {
     final dartType = _builtInDartTypes[typeName] ?? _customDartTypes[typeName] ?? 'String';
-    final name = _builtInNames[typeName] ?? typeName.toCamelIdentifier(prefix: 'value') ?? 'value';
+    final builtInName = _builtInNames[typeName];
+    final name = builtInName == null
+        ? typeName.toCamelIdentifier(prefix: 'value') ?? 'value'
+        : contextName ?? builtInName;
     return StepParameter(dartType, _unique(name, usedNames));
   }
 

@@ -34,6 +34,33 @@ void main() {
       expect(snippet.parameters.map((p) => p.declaration), ['int number', 'String text', 'double value']);
     });
 
+    test('names parameters after the words around them when a rule applies', () {
+      // Arrange
+      final generator = SnippetGenerator.build(const []);
+      String names(String text) =>
+          generator.snippetFor(_undefined(Step('When', text))).parameters.map((p) => p.declaration).join(', ');
+
+      // Act & Assert
+      expect(names('I apply the coupon "SAVE10" for 3 days'), 'String coupon, int days');
+      expect(names('I pick the "red" colour'), 'String colour');
+      expect(names('I pick the "red" gift wrap for her'), 'String giftWrap');
+      expect(names('the cart has 2 items and 1 bag'), 'int items, int bag');
+      expect(names('I am logged in as "ann"'), 'String text');
+      expect(names('I pay 2.5 each'), 'double value');
+      expect(names('the price "a" "b"'), 'String price, String text');
+    });
+
+    test('keeps names unique when the words repeat', () {
+      // Arrange
+      final generator = SnippetGenerator.build(const []);
+
+      // Act
+      final snippet = generator.snippetFor(_undefined(const Step('When', 'I wait 2 days then 3 days')));
+
+      // Assert
+      expect(snippet.parameters.map((p) => p.name), ['days', 'days2']);
+    });
+
     test("uses the user's parameter types", () {
       // Arrange
       const state = ParameterTypeDefinition(
