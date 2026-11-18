@@ -26,7 +26,7 @@ Requires Dart 3.8 or later. Add to your `pubspec.yaml`:
 
 ```yaml
 dev_dependencies:
-  bdd_flutter: ^3.0.0
+  bdd_flutter: ^3.0.0-dev.1
 ```
 
 Feedback and bug reports are welcome in the [issues](https://github.com/samderlust/bdd_flutter/issues).

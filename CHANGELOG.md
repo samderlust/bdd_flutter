@@ -1,4 +1,6 @@
-## 3.0.0 (unreleased)
+## 3.0.0-dev.1
+
+Pre-release of 3.0, for feedback before the stable release.
 
 3.0 connects steps to code with [Cucumber Expressions](https://github.com/cucumber/cucumber-expressions#readme), using the official [`cucumber_expressions`](https://pub.dev/packages/cucumber_expressions) package (#11). `.feature` files do not change. Projects that want to keep the 2.x behaviour can set `steps_mode: contract` in `.bdd_flutter/config.yaml`; see "Upgrading from 2.x" in the README.
 
